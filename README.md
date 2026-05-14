@@ -13,18 +13,9 @@
 
 # ✈️ JetFrame
 
-JetFrame is a modern Apple-style FlightWall adapter for ioBroker.
+JetFrame is a modern FlightWall adapter for ioBroker.
 
 It detects nearby aircraft based on your window position and visualizes them with live flight information, airline branding, aircraft metadata and optional speech announcements.
-
-Designed especially for:
-
-- Kitchen FlightWalls
-- Wall-mounted tablets
-- iPads
-- Smart mirrors
-- Home dashboards
-- Aviation enthusiasts
 
 ---
 
