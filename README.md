@@ -47,6 +47,33 @@ It detects nearby aircraft based on your window position and visualizes them wit
 
 ---
 
+# 🚀 Usage
+
+1. Install and start the required ioBroker adapters:
+   - `web` adapter
+   - `simple-api` adapter
+
+2. Make sure the `simple-api` adapter is reachable on port `8087`.
+
+3. Open the JetFrame adapter settings and configure:
+   - your home position
+   - your nearest airport
+   - your visible window direction / viewing area
+
+4. Open the visualization in your browser:
+
+```text
+http://IPADRESSE:8082/jetframe.admin/
+```
+
+Example:
+
+```text
+http://192.168.178.10:8082/jetframe.admin/
+```
+
+---
+
 # 📦 Installation
 
 ```bash
@@ -102,7 +129,8 @@ Planned future features:
 
 ### v0.4.0
 
-initial release
+- Initial release
+
 ---
 
 # License
