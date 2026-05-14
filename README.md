@@ -7,156 +7,156 @@
 ![Number of Installations](https://iobroker.live/badges/jetframe-installed.svg)
 ![Current version in stable repository](https://iobroker.live/badges/jetframe-stable.svg)
 
-[![NPM](https://nodei.co/npm/iobroker.jetframe.png?downloads=true)](https://nodei.co/npm/iobroker.jetframe/)
+[![Test and Release](https://github.com/backfisch88/ioBroker.jetframe/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/backfisch88/ioBroker.jetframe/actions/workflows/test-and-release.yml)
 
-**Tests:** ![Test and Release](https://github.com/backfisch88/ioBroker.jetframe/workflows/Test%20and%20Release/badge.svg)
+---
 
-## jetframe adapter for ioBroker
+# ✈️ JetFrame
 
-Flight tracking and visualization for window-based aircraft detection
+JetFrame is a modern Apple-style FlightWall adapter for ioBroker.
 
-## Developer manual
+It detects nearby aircraft based on your window position and visualizes them with live flight information, airline branding, aircraft metadata and optional speech announcements.
 
-This section is intended for the developer. It can be deleted later.
+Designed especially for:
 
-### DISCLAIMER
+- Kitchen FlightWalls
+- Wall-mounted tablets
+- iPads
+- Smart mirrors
+- Home dashboards
+- Aviation enthusiasts
 
-Please make sure that you consider copyrights and trademarks when you use names or logos of a company and add a disclaimer to your README.
-You can check other adapters for examples or ask in the developer community. Using a name or logo of a company without permission may cause legal problems for you.
+---
 
-### Getting started
+# ✨ Features
 
-You are almost done, only a few steps left:
+- Live aircraft detection
+- Window-direction based filtering
+- Apple-style glass UI
+- Airline logos
+- Manufacturer logos
+- Flight routes
+- Aircraft type detection
+- Callsign / flight number
+- Live ADS-B data
+- JetPhotos integration
+- Special liveries
+- `specialLiveryVisText` support
+- Browser speech synthesis
+- Optional external speech output via ioBroker
+- Speech mode:
+  - `browser`
+  - `external`
+  - `both`
+- Flyover animations
+- Adaptive mobile UI
+- Safari/iPhone optimized
+- Night mode
+- Airline pill UI
+- Performance optimized rendering
 
-1. Create a new repository on GitHub with the name `ioBroker.jetframe`
-1. Initialize the current folder as a new git repository:
-    ```bash
-    git init -b main
-    git add .
-    git commit -m "Initial commit"
-    ```
-1. Link your local repository with the one on GitHub:
+---
 
-    ```bash
-    git remote add origin https://github.com/backfisch88/ioBroker.jetframe
-    ```
+# 🛠 Requirements
 
-1. Push all files to the GitHub repo:
-    ```bash
-    git push origin main
-    ```
-1. Add a new secret under https://github.com/backfisch88/ioBroker.jetframe/settings/secrets. It must be named `AUTO_MERGE_TOKEN` and contain a personal access token with push access to the repository, e.g. yours. You can create a new token under https://github.com/settings/tokens.
+- ioBroker
+- simple-api adapter
+- modern browser (Safari or Chrome recommended)
 
-1. Head over to [src/main.ts](src/main.ts) and start programming!
+---
 
-### Best Practices
-
-We've collected some [best practices](https://github.com/ioBroker/ioBroker.repositories#development-and-coding-best-practices) regarding ioBroker development and coding in general. If you're new to ioBroker or Node.js, you should
-check them out. If you're already experienced, you should also take a look at them - you might learn something new :)
-
-### State Roles
-
-When creating state objects, it is important to use the correct role for the state. The role defines how the state should be interpreted by visualizations and other adapters. For a list of available roles and their meanings, please refer to the [state roles documentation](https://www.iobroker.net/#en/documentation/dev/stateroles.md).
-
-**Important:** Do not invent your own custom role names. If you need a role that is not part of the official list, please contact the ioBroker developer community for guidance and discussion about adding new roles.
-
-### Scripts in `package.json`
-
-Several npm scripts are predefined for your convenience. You can run them using `npm run <scriptname>`
-| Script name | Description |
-|-------------|-------------|
-| `build` | Compile the TypeScript sources. |
-| `watch` | Compile the TypeScript sources and watch for changes. |
-| `test:ts` | Executes the tests you defined in `*.test.ts` files. |
-| `test:package` | Ensures your `package.json` and `io-package.json` are valid. |
-| `test:integration` | Tests the adapter startup with an actual instance of ioBroker. |
-| `test` | Performs a minimal test run on package files and your tests. |
-| `check` | Performs a type-check on your code (without compiling anything). |
-| `lint` | Runs `ESLint` to check your code for formatting errors and potential bugs. |
-| `translate` | Translates texts in your adapter to all required languages, see [`@iobroker/adapter-dev`](https://github.com/ioBroker/adapter-dev#manage-translations) for more details. |
-| `release` | Creates a new release, see [`@alcalzone/release-script`](https://github.com/AlCalzone/release-script#usage) for more details. |
-
-### Configuring the compilation
-
-The adapter template uses [esbuild](https://esbuild.github.io/) to compile TypeScript and/or React code. You can configure many compilation settings
-either in `tsconfig.json` or by changing options for the build tasks. These options are described in detail in the
-[`@iobroker/adapter-dev` documentation](https://github.com/ioBroker/adapter-dev#compile-adapter-files).
-
-### Writing tests
-
-When done right, testing code is invaluable, because it gives you the
-confidence to change your code while knowing exactly if and when
-something breaks. A good read on the topic of test-driven development
-is https://hackernoon.com/introduction-to-test-driven-development-tdd-61a13bc92d92.
-Although writing tests before the code might seem strange at first, but it has very
-clear upsides.
-
-The template provides you with basic tests for the adapter startup and package files.
-It is recommended that you add your own tests into the mix.
-
-### Publishing the adapter
-
-Using GitHub Actions, you can enable automatic releases on npm whenever you push a new git tag that matches the form
-`v<major>.<minor>.<patch>`. We **strongly recommend** that you do. The necessary steps are described in `.github/workflows/test-and-release.yml`.
-
-Since you installed the release script, you can create a new
-release simply by calling:
+# 📦 Installation
 
 ```bash
-npm run release
+iobroker url https://github.com/backfisch88/ioBroker.jetframe/releases/latest/download/iobroker.jetframe-0.4.0.tgz --host this
 ```
 
-Additional command line options for the release script are explained in the
-[release-script documentation](https://github.com/AlCalzone/release-script#command-line).
+---
 
-To get your adapter released in ioBroker, please refer to the documentation
-of [ioBroker.repositories](https://github.com/ioBroker/ioBroker.repositories#requirements-for-adapter-to-get-added-to-the-latest-repository).
+# ⚠️ Legal Notice
 
-### Test the adapter manually with dev-server
+JetFrame may display publicly available aviation-related information including:
 
-Since you set up `dev-server`, you can use it to run, test and debug your adapter.
+- airline names
+- aircraft metadata
+- airport information
+- aircraft images
+- airline logos
+- manufacturer logos
+- live flight tracking data
 
-You may start `dev-server` by calling from your dev directory:
+All trademarks, logos, airline names, aircraft images and related content remain the property of their respective owners.
 
-```bash
-dev-server watch
-```
+JetFrame is not affiliated with, endorsed by or officially connected to any airline, airport, aircraft manufacturer, JetPhotos, ADS-B provider or flight tracking service.
 
-The ioBroker.admin interface will then be available at http://localhost:undefined/
+The adapter is intended exclusively for:
 
-Please refer to the [`dev-server` documentation](https://github.com/ioBroker/dev-server#command-line) for more details.
+- private use
+- informational purposes
+- non-commercial local visualizations
 
-## Changelog
+JetFrame itself does not bundle or claim ownership of third-party trademarks, airline logos or aircraft photography unless explicitly stated otherwise.
 
-<!--
-	Placeholder for the next version (at the beginning of the line):
-	### **WORK IN PROGRESS**
--->
+Users are responsible for complying with the respective licenses, API terms and usage restrictions of configured external data sources.
 
-### **WORK IN PROGRESS**
+If you are a rights holder and believe content is being used improperly, please open an issue in this repository.
 
-- (backfisch88) initial release
+---
 
-## License
+# 📱 Optimized for
+
+- iPad
+- iPhone
+- Safari
+- Chrome
+- ioBroker VIS
+- Dashboard panels
+- Smart mirrors
+- Kitchen displays
+
+---
+
+# 🚀 Roadmap
+
+Planned future features:
+
+- multi-aircraft mode
+- enhanced map overlays
+- HomeKit integration
+- additional speech providers
+- local image caching improvements
+- configurable themes
+- advanced airport filtering
+
+---
+
+# Changelog
+
+## **WORK IN PROGRESS**
+
+### v0.4.0
+
+- Initial public release
+- Live aircraft detection
+- Speech synthesis support
+- Special liveries
+- Airline logos
+- Mobile optimized UI
+- Flyover animations
+- Apple-style glass interface
+
+---
+
+# License
 
 MIT License
 
-Copyright (c) 2026 backfisch88 <h@h.de>
+Copyright (c) 2026 backfisch88
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+copies of the Software.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
