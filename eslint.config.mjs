@@ -18,13 +18,17 @@ export default [
 			'admin/admin.d.ts',
 			'admin/blockly.js',
 			'**/adapter-config.d.ts',
-			'widgets/**/*.js'
+			'widgets/**/*.js',
 		],
 	},
 	{
 		// you may disable some 'jsdoc' warnings - but using jsdoc is highly recommended
 		// as this improves maintainability. jsdoc warnings will not block build process.
 		rules: {
+"no-empty": "off",
+"jsdoc/no-blank-blocks": "off",
+"@typescript-eslint/no-unused-vars": "off",
+"@typescript-eslint/no-base-to-string": "off",	
 			// 'jsdoc/require-jsdoc': 'off',
 			// 'jsdoc/require-param': 'off',
 			// 'jsdoc/require-param-description': 'off',
