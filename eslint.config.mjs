@@ -7,6 +7,18 @@ export default [
 	{
 		// specify files to exclude from linting here
 		ignores: [
+
+	'admin/src/**',
+
+            'build/**',
+
+  "**/admin/src/**",
+
+            "**/build/**",
+
+            "admin/src/**",
+
+            "build/**",
 			'.dev-server/',
 			'.vscode/',
 			'*.test.js',
