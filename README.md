@@ -32,19 +32,10 @@ It detects nearby aircraft based on your window position and visualizes them wit
 - Live ADS-B data
 - JetPhotos integration
 - Special liveries
-- `specialLiveryVisText` support
 - Browser speech synthesis
-- Optional external speech output via ioBroker
-- Speech mode:
-  - `browser`
-  - `external`
-  - `both`
 - Flyover animations
 - Adaptive mobile UI
-- Safari/iPhone optimized
-- Night mode
-- Airline pill UI
-- Performance optimized rendering
+
 
 ---
 
@@ -94,30 +85,14 @@ If you are a rights holder and believe content is being used improperly, please 
 
 ---
 
-# 📱 Optimized for
-
-- iPad
-- iPhone
-- Safari
-- Chrome
-- ioBroker VIS
-- Dashboard panels
-- Smart mirrors
-- Kitchen displays
-
----
-
 # 🚀 Roadmap
 
 Planned future features:
 
 - multi-aircraft mode
 - enhanced map overlays
-- HomeKit integration
-- additional speech providers
 - local image caching improvements
-- configurable themes
-- advanced airport filtering
+
 
 ---
 
@@ -127,15 +102,7 @@ Planned future features:
 
 ### v0.4.0
 
-- Initial public release
-- Live aircraft detection
-- Speech synthesis support
-- Special liveries
-- Airline logos
-- Mobile optimized UI
-- Flyover animations
-- Apple-style glass interface
-
+initial release
 ---
 
 # License
