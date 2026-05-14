@@ -29,7 +29,8 @@ export default [
 "jsdoc/no-blank-blocks": "off",
 "@typescript-eslint/no-unused-vars": "off",
 "@typescript-eslint/no-base-to-string": "off",	
-
+"jsdoc/require-param-description": "off",
+"jsdoc/require-returns-description": "off",
 	"jsdoc/require-jsdoc": "off",
 "jsdoc/require-description": "off",
 "jsdoc/require-param": "off",

@@ -212,7 +212,7 @@ async function loadAdsbdbByCallsign(
 	httpJson: HttpJson,
 	logDebug: (msg: string, level?: number) => void,
 	logWarn: (msg: string) => void,
-): Promise<any | null> {
+): Promise<null> {
 	const cs = clean(callsign).toUpperCase();
 
 	if (!cs || cs.length < 3) {
@@ -802,7 +802,7 @@ function parseFlighteraSingleRow(
 	const airportPairs: string[] = [];
 	let m: RegExpExecArray | null;
 
-	const pairRegex = /([A-Za-zÄÖÜäöüß .'\-]+?)\s*\(([A-Z]{3})\s*\/\s*[A-Z]{4}\)/g;
+	const pairRegex = /([A-Za-zÄÖÜäöüß .'-]+?)\s*\(([A-Z]{3})\s*\/\s*[A-Z]{4}\)/g;
 
 	while ((m = pairRegex.exec(text)) !== null) {
 		const code = clean(m[2]).toUpperCase();
@@ -1076,7 +1076,7 @@ function parseRouteFromAirportPairs(
 	const pairs: string[] = [];
 	let m: RegExpExecArray | null;
 
-	const pairRegex = /([A-Za-zÄÖÜäöüß .'\-]+?)\s*\(([A-Z]{3})\s*\/\s*[A-Z]{4}\)/g;
+	const pairRegex = /([A-Za-zÄÖÜäöüß .'-]+?)\s*\(([A-Z]{3})\s*\/\s*[A-Z]{4}\)/g;
 
 	while ((m = pairRegex.exec(text)) !== null) {
 		const code = clean(m[2]).toUpperCase();
