@@ -1,0 +1,11 @@
+{
+  "jetframe adapter settings": "Configurações do adaptador para jetframe",
+  "option1": "opção1",
+  "option2": "opção2",
+  "speechMode": "Sprachausgabe",
+  "speechModeBrowser": "Browser intern",
+  "speechModeExternal": "Extern per Datenpunkt",
+  "speechModeBoth": "Browser + extern",
+  "speechModeOff": "Aus",
+  "speechTemplate": "Ansage-Template"
+}

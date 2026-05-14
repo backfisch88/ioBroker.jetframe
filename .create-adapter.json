@@ -1,0 +1,48 @@
+{
+	"cli": true,
+	"target": "directory",
+	"adapterName": "jetframe",
+	"title": "JetFrame",
+	"description": "Flight tracking and visualization for window-based aircraft detection",
+	"keywords": [
+		"flight",
+		"adsb",
+		"aircraft",
+		"tracking",
+		"fr24"
+	],
+	"contributors": [
+		"backfisch"
+	],
+	"expert": "yes",
+	"features": [
+		"adapter"
+	],
+	"adminFeatures": [],
+	"type": "visualization",
+	"startMode": "daemon",
+	"connectionType": "cloud",
+	"dataSource": "poll",
+	"connectionIndicator": "no",
+	"language": "TypeScript",
+	"nodeVersion": "22",
+	"adminUi": "html",
+	"tools": [
+		"ESLint"
+	],
+	"eslintConfig": "official",
+	"i18n": "words.js",
+	"releaseScript": "yes",
+	"devServer": "local",
+	"indentation": "Tab",
+	"quotes": "single",
+	"authorName": "backfisch88",
+	"authorGithub": "backfisch88",
+	"authorEmail": "h@h.de",
+	"gitRemoteProtocol": "HTTPS",
+	"gitCommit": "no",
+	"defaultBranch": "main",
+	"license": "MIT License",
+	"dependabot": "yes",
+	"creatorVersion": "3.1.5"
+}
