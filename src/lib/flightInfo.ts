@@ -1,6 +1,5 @@
 import type { Aircraft, JetFrameConfig } from './types';
 
-
 export type HttpJson = (url: string) => Promise<any>;
 export type HttpText = (url: string) => Promise<string>;
 
@@ -24,6 +23,9 @@ interface CacheEntry<T> {
 	imageUrl?: string;
 }
 
+/**
+ *
+ */
 export async function enrichFlightInfo(
 	adapter: any,
 	config: JetFrameConfig,
@@ -44,32 +46,15 @@ export async function enrichFlightInfo(
 	try {
 		const operationalCallsign = clean(a.callsign).toUpperCase();
 
-		const operationalData = await loadAdsbdbByCallsign(
-			operationalCallsign,
-			httpJson,
-			logDebug,
-			logWarn,
-		);
+		const operationalData = await loadAdsbdbByCallsign(operationalCallsign, httpJson, logDebug, logWarn);
 
-		let parsed = parseAdsbdbResponse(
-			operationalData,
-			a,
-			operationalCallsign,
-			operationalCallsign,
-		);
+		let parsed = parseAdsbdbResponse(operationalData, a, operationalCallsign, operationalCallsign);
 
 		const regForRoute = parsed.registration || a.registration;
 
 		let routeFound = false;
 
-		const hexRoute = await resolveRouteViaHexDb(
-			adapter,
-			operationalCallsign,
-			httpJson,
-			logDebug,
-			logWarn,
-			config,
-		);
+		const hexRoute = await resolveRouteViaHexDb(adapter, operationalCallsign, httpJson, logDebug, logWarn, config);
 
 		const flighteraRoute = await resolveRouteViaFlighteraPlane(
 			regForRoute,
@@ -81,17 +66,11 @@ export async function enrichFlightInfo(
 			config,
 		);
 
-		const mergedRoute = mergeHexAndFlighteraRoute(
-			hexRoute,
-			flighteraRoute,
-		);
+		const mergedRoute = mergeHexAndFlighteraRoute(hexRoute, flighteraRoute);
 
 		if (mergedRoute?.originIata && mergedRoute?.destIata) {
 			parsed.routeCallsign =
-				flighteraRoute?.routeCallsign ||
-				hexRoute?.routeCallsign ||
-				parsed.routeCallsign ||
-				operationalCallsign;
+				flighteraRoute?.routeCallsign || hexRoute?.routeCallsign || parsed.routeCallsign || operationalCallsign;
 
 			parsed.originIata = mergedRoute.originIata;
 			parsed.destIata = mergedRoute.destIata;
@@ -102,13 +81,14 @@ export async function enrichFlightInfo(
 				hexRoute?.destIata &&
 				flighteraRoute?.originIata &&
 				flighteraRoute?.destIata &&
-				(
-					hexRoute.originIata !== flighteraRoute.originIata ||
-					hexRoute.destIata !== flighteraRoute.destIata
-				)
+				(hexRoute.originIata !== flighteraRoute.originIata || hexRoute.destIata !== flighteraRoute.destIata)
 			) {
-				parsed.routeWarning = flighteraRoute?.isLive ? 'Flightera Live bevorzugt, HexDB abweichend' : 'HexDB bevorzugt, Flightera abweichend';
-				parsed.routeSource = flighteraRoute?.isLive ? 'flightera-live-route-conflict-hexdb+airportjson' : 'hexdb-route-verified-conflict+airportjson';
+				parsed.routeWarning = flighteraRoute?.isLive
+					? 'Flightera Live bevorzugt, HexDB abweichend'
+					: 'HexDB bevorzugt, Flightera abweichend';
+				parsed.routeSource = flighteraRoute?.isLive
+					? 'flightera-live-route-conflict-hexdb+airportjson'
+					: 'hexdb-route-verified-conflict+airportjson';
 			} else if (hexRoute?.originIata && hexRoute?.destIata) {
 				parsed.routeWarning = flighteraRoute ? 'HexDB + Flightera geprüft' : 'HexDB Route';
 				parsed.routeSource = flighteraRoute
@@ -136,10 +116,7 @@ export async function enrichFlightInfo(
 			);
 
 			if (fr24Live?.originIata && fr24Live?.destIata) {
-				parsed.routeCallsign =
-					fr24Live.routeCallsign ||
-					parsed.routeCallsign ||
-					operationalCallsign;
+				parsed.routeCallsign = fr24Live.routeCallsign || parsed.routeCallsign || operationalCallsign;
 
 				parsed.originIata = fr24Live.originIata;
 				parsed.destIata = fr24Live.destIata;
@@ -156,17 +133,10 @@ export async function enrichFlightInfo(
 		}
 
 		if (!routeFound) {
-			const adsbdbRoute = parseAdsbdbRouteFallback(
-				operationalData,
-				a.mode || '',
-				config,
-			);
+			const adsbdbRoute = parseAdsbdbRouteFallback(operationalData, a.mode || '', config);
 
 			if (adsbdbRoute?.originIata && adsbdbRoute?.destIata) {
-				parsed.routeCallsign =
-					adsbdbRoute.routeCallsign ||
-					parsed.routeCallsign ||
-					operationalCallsign;
+				parsed.routeCallsign = adsbdbRoute.routeCallsign || parsed.routeCallsign || operationalCallsign;
 
 				parsed.originIata = adsbdbRoute.originIata;
 				parsed.destIata = adsbdbRoute.destIata;
@@ -189,16 +159,9 @@ export async function enrichFlightInfo(
 			parsed.fr24ImageUrl = '';
 		}
 
-		parsed = await applyAirportNamesFromJson(
-			adapter,
-			config,
-			parsed,
-			logWarn,
-		);
+		parsed = await applyAirportNamesFromJson(adapter, config, parsed, logWarn);
 
-		const jet = parsed.fr24ImageUrl
-			? { best: parsed.fr24ImageUrl }
-			: { best: '' };
+		const jet = parsed.fr24ImageUrl ? { best: parsed.fr24ImageUrl } : { best: '' };
 
 		const baseInfo: Partial<Aircraft> = {
 			...parsed,
@@ -206,25 +169,17 @@ export async function enrichFlightInfo(
 			operationalCallsign,
 
 			jetphotosUrl: parsed.registration
-				? 'https://www.flightradar24.com/data/aircraft/' +
-					encodeURIComponent(String(parsed.registration).toLowerCase())
+				? `https://www.flightradar24.com/data/aircraft/${encodeURIComponent(
+						String(parsed.registration).toLowerCase(),
+					)}`
 				: '',
 
 			jetphotosImageUrl: jet.best || '',
 
-			aircraftType:
-				parsed.aircraftType ||
-				a.aircraftType ||
-				a.type ||
-				'',
+			aircraftType: parsed.aircraftType || a.aircraftType || a.type || '',
 
 			aircraftModel:
-				parsed.aircraftModel ||
-				parsed.aircraftType ||
-				a.aircraftModel ||
-				a.aircraftType ||
-				a.type ||
-				'',
+				parsed.aircraftModel || parsed.aircraftType || a.aircraftModel || a.aircraftType || a.type || '',
 		};
 
 		const specialInfo = buildSpecialInfo({
@@ -276,9 +231,7 @@ async function loadAdsbdbByCallsign(
 	try {
 		logDebug(`ADSBDB Anfrage EINMALIG: ${cs}`);
 
-		const data = await httpJson(
-			`https://api.adsbdb.com/v0/callsign/${encodeURIComponent(cs)}`,
-		);
+		const data = await httpJson(`https://api.adsbdb.com/v0/callsign/${encodeURIComponent(cs)}`);
 
 		adsbdbCallsignCache[cs] = {
 			ts: now,
@@ -297,46 +250,29 @@ async function loadAdsbdbByCallsign(
 	}
 }
 
-function parseAdsbdbResponse(
-	data: any,
-	a: Aircraft,
-	operationalCallsign: string,
-	routeCallsign: string,
-): ParsedInfo {
+function parseAdsbdbResponse(data: any, a: Aircraft, operationalCallsign: string, routeCallsign: string): ParsedInfo {
 	const response = data?.response || {};
 	const route = response.flightroute || null;
 	const aircraft = response.aircraft || null;
 
-	const airlineName = route?.airline
-		? clean(route.airline.name)
-		: guessAirlineName(operationalCallsign);
+	const airlineName = route?.airline ? clean(route.airline.name) : guessAirlineName(operationalCallsign);
 
-	const airlineIata = route?.airline
-		? clean(route.airline.iata)
-		: guessAirlineIata(operationalCallsign);
+	const airlineIata = route?.airline ? clean(route.airline.iata) : guessAirlineIata(operationalCallsign);
 
-	const airlineIcao = route?.airline
-		? clean(route.airline.icao)
-		: guessAirlineIcao(operationalCallsign);
+	const airlineIcao = route?.airline ? clean(route.airline.icao) : guessAirlineIcao(operationalCallsign);
 
 	const aircraftType = aircraft ? clean(aircraft.type) : a.type || '';
-	const aircraftModel =
-		(aircraft ? clean(aircraft.model) : '') ||
-		aircraftType ||
-		a.aircraftModel ||
-		'';
+	const aircraftModel = (aircraft ? clean(aircraft.model) : '') || aircraftType || a.aircraftModel || '';
 	const registration = aircraft ? clean(aircraft.registration) : a.registration || '';
-const logoKey =
-	airlineIcao ||
-	guessAirlineIcao(operationalCallsign);
+	const logoKey = airlineIcao || guessAirlineIcao(operationalCallsign);
 
-const logoUrl = logoKey
-	? `https://raw.githubusercontent.com/Jxck-S/airline-logos/refs/heads/main/radarbox_banners/${logoKey}.png`
-	: '';
+	const logoUrl = logoKey
+		? `https://raw.githubusercontent.com/Jxck-S/airline-logos/refs/heads/main/radarbox_banners/${logoKey}.png`
+		: '';
 
-const logoFallbackUrl = logoKey
-	? `https://raw.githubusercontent.com/Jxck-S/airline-logos/refs/heads/main/fr24_banners/${logoKey}.png`
-	: '';
+	const logoFallbackUrl = logoKey
+		? `https://raw.githubusercontent.com/Jxck-S/airline-logos/refs/heads/main/fr24_banners/${logoKey}.png`
+		: '';
 	return {
 		operationalCallsign,
 		routeCallsign,
@@ -365,31 +301,33 @@ const logoFallbackUrl = logoKey
 	};
 }
 
-function parseAdsbdbRouteFallback(
-	data: any,
-	mode: string,
-	config: JetFrameConfig,
-): RouteResult | null {
+function parseAdsbdbRouteFallback(data: any, mode: string, config: JetFrameConfig): RouteResult | null {
 	const response = data?.response || {};
 	const route = response.flightroute || null;
 
-	if (!route) return null;
+	if (!route) {
+		return null;
+	}
 
-	const originIata = route.origin
-		? clean(route.origin.iata_code).toUpperCase()
-		: '';
+	const originIata = route.origin ? clean(route.origin.iata_code).toUpperCase() : '';
 
-	const destIata = route.destination
-		? clean(route.destination.iata_code).toUpperCase()
-		: '';
+	const destIata = route.destination ? clean(route.destination.iata_code).toUpperCase() : '';
 
 	const callsign = clean(route.callsign || route.flight_number || '').toUpperCase();
 
-	if (!isIataCode(originIata) || !isIataCode(destIata)) return null;
-	if (originIata === destIata) return null;
+	if (!isIataCode(originIata) || !isIataCode(destIata)) {
+		return null;
+	}
+	if (originIata === destIata) {
+		return null;
+	}
 
-	if (mode === 'TAKEOFF' && originIata !== config.airport.iata) return null;
-	if (mode === 'LANDING' && destIata !== config.airport.iata) return null;
+	if (mode === 'TAKEOFF' && originIata !== config.airport.iata) {
+		return null;
+	}
+	if (mode === 'LANDING' && destIata !== config.airport.iata) {
+		return null;
+	}
 
 	return {
 		routeCallsign: callsign,
@@ -397,7 +335,6 @@ function parseAdsbdbRouteFallback(
 		destIata,
 	};
 }
-
 
 /************************************************************
  * HexDB Route
@@ -413,7 +350,9 @@ async function resolveRouteViaHexDb(
 ): Promise<RouteResult | null> {
 	const op = clean(operationalCallsign).toUpperCase();
 
-	if (!op) return null;
+	if (!op) {
+		return null;
+	}
 
 	const now = Date.now();
 	const cached = hexdbRouteCache[op];
@@ -503,14 +442,12 @@ async function resolveRouteViaHexDb(
 	}
 }
 
-async function iataFromIcao(
-	adapter: any,
-	config: JetFrameConfig,
-	icao: string,
-): Promise<string> {
+async function iataFromIcao(adapter: any, config: JetFrameConfig, icao: string): Promise<string> {
 	icao = clean(icao).toUpperCase();
 
-	if (!icao) return '';
+	if (!icao) {
+		return '';
+	}
 
 	// schnelle lokale Hauptairport-Abkürzung
 	if (icao === clean(config.airport.icao).toUpperCase()) {
@@ -531,17 +468,13 @@ async function iataFromIcao(
 			return '';
 		}
 
-		const found = airports.find((a: any) =>
-			clean(a.icao || a.ICAO).toUpperCase() === icao
-		);
+		const found = airports.find((a: any) => clean(a.icao || a.ICAO).toUpperCase() === icao);
 
-		if (!found) return '';
+		if (!found) {
+			return '';
+		}
 
-		return clean(
-			found.iata ||
-			found.IATA ||
-			'',
-		).toUpperCase();
+		return clean(found.iata || found.IATA || '').toUpperCase();
 	} catch {
 		return '';
 	}
@@ -551,13 +484,9 @@ function mergeHexAndFlighteraRoute(
 	hexRoute: RouteResult | null,
 	flighteraRoute: RouteResult | null,
 ): RouteResult | null {
-	const flighteraComplete =
-		!!flighteraRoute?.originIata &&
-		!!flighteraRoute?.destIata;
+	const flighteraComplete = !!flighteraRoute?.originIata && !!flighteraRoute?.destIata;
 
-	const hexComplete =
-		!!hexRoute?.originIata &&
-		!!hexRoute?.destIata;
+	const hexComplete = !!hexRoute?.originIata && !!hexRoute?.destIata;
 
 	// Wichtig:
 	// Wenn Flightera eine vollständige LIVE-Zeile hat,
@@ -592,7 +521,6 @@ function isIcaoCode(code: string): boolean {
 	return /^[A-Z]{4}$/.test(code);
 }
 
-
 /************************************************************
  * Flightera
  ************************************************************/
@@ -609,7 +537,9 @@ async function resolveRouteViaFlighteraPlane(
 	const reg = clean(registration).toUpperCase();
 	const op = clean(operationalCallsign).toUpperCase();
 
-	if (!reg || !op) return null;
+	if (!reg || !op) {
+		return null;
+	}
 
 	const cacheKey = `${reg}|${op}`;
 	const now = Date.now();
@@ -633,14 +563,7 @@ async function resolveRouteViaFlighteraPlane(
 			const html = normalizeHtml(htmlRaw);
 			const text = htmlToText(html);
 
-			const parsed = parseFlighteraPlaneRoute(
-				html,
-				text,
-				op,
-				mode,
-				config,
-				logDebug,
-			);
+			const parsed = parseFlighteraPlaneRoute(html, text, op, mode, config, logDebug);
 
 			if (parsed?.originIata && parsed?.destIata) {
 				flighteraPlaneRouteCache[cacheKey] = {
@@ -649,7 +572,8 @@ async function resolveRouteViaFlighteraPlane(
 				};
 
 				logDebug(
-					`Flightera Plane Route parsed: ${op} | ${parsed.originIata} → ${parsed.destIata} | routeCallsign=${parsed.routeCallsign || '?'} | live=${parsed.isLive ? 'ja' : 'nein'}`);
+					`Flightera Plane Route parsed: ${op} | ${parsed.originIata} → ${parsed.destIata} | routeCallsign=${parsed.routeCallsign || '?'} | live=${parsed.isLive ? 'ja' : 'nein'}`,
+				);
 
 				return parsed;
 			}
@@ -677,23 +601,13 @@ function parseFlighteraPlaneRoute(
 ): RouteResult | null {
 	const op = clean(operationalCallsign).toUpperCase();
 
-	const rows = extractFlighteraRowsStrict(
-		html,
-		text,
-		op,
-		mode,
-		config,
-		logDebug,
-	);
+	const rows = extractFlighteraRowsStrict(html, text, op, mode, config, logDebug);
 
 	const picked = pickBestFlighteraRow(rows, op, mode, config, logDebug);
 
 	if (picked) {
 		return {
-			routeCallsign:
-				/[A-Z]/.test(picked.routeCallsign || '')
-					? picked.routeCallsign
-					: op,
+			routeCallsign: /[A-Z]/.test(picked.routeCallsign || '') ? picked.routeCallsign : op,
 			originIata: picked.originIata,
 			destIata: picked.destIata,
 			isLive: !!picked.isLive,
@@ -718,7 +632,9 @@ function extractFlighteraRowsStrict(
 	function addBlock(raw: string, source: string, index: number): void {
 		const plain = htmlToText(raw);
 
-		if (!plain || plain.length < 25) return;
+		if (!plain || plain.length < 25) {
+			return;
+		}
 
 		blocks.push({
 			text: plain.replace(/\s+/g, ' ').trim(),
@@ -729,13 +645,15 @@ function extractFlighteraRowsStrict(
 
 	let m: RegExpExecArray | null;
 
-	const trRegex = /<tr[\s\S]*?<\/tr>/ig;
+	const trRegex = /<tr[\s\S]*?<\/tr>/gi;
 
 	while ((m = trRegex.exec(String(html || ''))) !== null) {
 		addBlock(m[0], 'tr', m.index);
 	}
 
-	const fullText = String(text || '').replace(/\s+/g, ' ').trim();
+	const fullText = String(text || '')
+		.replace(/\s+/g, ' ')
+		.trim();
 	const upperText = fullText.toUpperCase();
 	const op = clean(operationalCallsign).toUpperCase();
 	const opIndex = upperText.indexOf(op);
@@ -762,7 +680,7 @@ function extractFlighteraRowsStrict(
 		}
 	}
 
-	const liveRegex = /\bLIVE\b/ig;
+	const liveRegex = /\bLIVE\b/gi;
 	let liveCount = 0;
 
 	while ((m = liveRegex.exec(fullText)) !== null && liveCount < 5) {
@@ -775,16 +693,11 @@ function extractFlighteraRowsStrict(
 	}
 
 	for (const b of blocks) {
-		const row = parseFlighteraSingleRow(
-			b.text,
-			operationalCallsign,
-			mode,
-			b.source,
-			b.index,
-			config,
-		);
+		const row = parseFlighteraSingleRow(b.text, operationalCallsign, mode, b.source, b.index, config);
 
-		if (row) rows.push(row);
+		if (row) {
+			rows.push(row);
+		}
 	}
 
 	const unique: FlighteraRow[] = [];
@@ -817,7 +730,9 @@ function parseFlighteraSingleRow(
 	index: number,
 	config: JetFrameConfig,
 ): FlighteraRow | null {
-	const text = String(rowText || '').replace(/\s+/g, ' ').trim();
+	const text = String(rowText || '')
+		.replace(/\s+/g, ' ')
+		.trim();
 	const upper = text.toUpperCase();
 	const op = clean(operationalCallsign).toUpperCase();
 	const iataLike = operationalToLikelyIataCallsign(op);
@@ -831,20 +746,23 @@ function parseFlighteraSingleRow(
 
 	const callRegex = /\b([A-Z]{2,3}\d{1,4}[A-Z]?)\b/g;
 
-// LIVE Tabellenzeilen enthalten oft:
-// EN8760 DLA7WL
-// LH54 DLH1KN
-// -> erstes = Marketing
-// -> zweites = operational
+	// LIVE Tabellenzeilen enthalten oft:
+	// EN8760 DLA7WL
+	// LH54 DLH1KN
+	// -> erstes = Marketing
+	// -> zweites = operational
 
-const livePairRegex =
-	/\b([A-Z]{2,3}\d{1,4}[A-Z]?)\s+([A-Z]{3}\d+[A-Z]{0,2})\b/g;
+	const livePairRegex = /\b([A-Z]{2,3}\d{1,4}[A-Z]?)\s+([A-Z]{3}\d+[A-Z]{0,2})\b/g;
 
 	while ((cm = callRegex.exec(upper)) !== null) {
 		const cs = clean(cm[1]).toUpperCase();
 
-		if (!looksLikeMarketingCallsign(cs)) continue;
-		if (!calls.includes(cs)) calls.push(cs);
+		if (!looksLikeMarketingCallsign(cs)) {
+			continue;
+		}
+		if (!calls.includes(cs)) {
+			calls.push(cs);
+		}
 	}
 
 	let routeCallsign = '';
@@ -871,8 +789,7 @@ const livePairRegex =
 		if (calls.includes(iataLike)) {
 			routeCallsign = iataLike;
 		} else if (calls.length) {
-			routeCallsign =
-				calls.find(cs => /[A-Z]/.test(cs)) || '';
+			routeCallsign = calls.find(cs => /[A-Z]/.test(cs)) || '';
 		} else if (containsOp) {
 			routeCallsign = op;
 		}
@@ -890,7 +807,9 @@ const livePairRegex =
 	while ((m = pairRegex.exec(text)) !== null) {
 		const code = clean(m[2]).toUpperCase();
 
-		if (isIataCode(code)) airportPairs.push(code);
+		if (isIataCode(code)) {
+			airportPairs.push(code);
+		}
 	}
 
 	let originIata = '';
@@ -920,12 +839,22 @@ const livePairRegex =
 	originIata = clean(originIata).toUpperCase();
 	destIata = clean(destIata).toUpperCase();
 
-	if (!originIata || !destIata) return null;
-	if (!isIataCode(originIata) || !isIataCode(destIata)) return null;
-	if (originIata === destIata) return null;
+	if (!originIata || !destIata) {
+		return null;
+	}
+	if (!isIataCode(originIata) || !isIataCode(destIata)) {
+		return null;
+	}
+	if (originIata === destIata) {
+		return null;
+	}
 
-	if (mode === 'TAKEOFF' && originIata !== config.airport.iata) return null;
-	if (mode === 'LANDING' && destIata !== config.airport.iata) return null;
+	if (mode === 'TAKEOFF' && originIata !== config.airport.iata) {
+		return null;
+	}
+	if (mode === 'LANDING' && destIata !== config.airport.iata) {
+		return null;
+	}
 
 	return {
 		routeCallsign,
@@ -947,7 +876,9 @@ function pickBestFlighteraRow(
 	config: JetFrameConfig,
 	logDebug: (msg: string, level?: number) => void,
 ): FlighteraRow | null {
-	if (!rows.length) return null;
+	if (!rows.length) {
+		return null;
+	}
 
 	const op = clean(operationalCallsign).toUpperCase();
 	const iataLike = operationalToLikelyIataCallsign(op);
@@ -962,16 +893,24 @@ function pickBestFlighteraRow(
 	};
 
 	const liveExact = rows.filter(r => r.isLive && r.containsOp);
-	if (liveExact.length) return scoreAndSort(liveExact, 50000);
+	if (liveExact.length) {
+		return scoreAndSort(liveExact, 50000);
+	}
 
 	const liveMarketing = rows.filter(r => r.isLive && r.containsIataLike);
-	if (liveMarketing.length) return scoreAndSort(liveMarketing, 40000);
+	if (liveMarketing.length) {
+		return scoreAndSort(liveMarketing, 40000);
+	}
 
 	const liveRows = rows.filter(r => r.isLive);
-	if (liveRows.length) return scoreAndSort(liveRows, 30000);
+	if (liveRows.length) {
+		return scoreAndSort(liveRows, 30000);
+	}
 
 	const exact = rows.filter(r => r.containsOp || r.containsIataLike);
-	if (exact.length) return scoreAndSort(exact, 10000);
+	if (exact.length) {
+		return scoreAndSort(exact, 10000);
+	}
 
 	logDebug(`Flightera: keine passende Live/Callsign-Zeile für ${op}`);
 	return null;
@@ -986,22 +925,30 @@ function scoreFlighteraRow(
 ): number {
 	let score = 0;
 
-	if (r.isLive) score += 10000;
-	if (r.containsOp) score += 5000;
-	if (r.containsIataLike) score += 2500;
+	if (r.isLive) {
+		score += 10000;
+	}
+	if (r.containsOp) {
+		score += 5000;
+	}
+	if (r.containsIataLike) {
+		score += 2500;
+	}
 
-	if (r.routeCallsign && iataLike && r.routeCallsign === iataLike) score += 1500;
+	if (r.routeCallsign && iataLike && r.routeCallsign === iataLike) {
+		score += 1500;
+	}
 
-	if (
-		r.routeCallsign &&
-		iataLike &&
-		r.routeCallsign.startsWith(iataLike.substring(0))
-	) {
+	if (r.routeCallsign && iataLike && r.routeCallsign.startsWith(iataLike.substring(0))) {
 		score += 400;
 	}
 
-	if (mode === 'TAKEOFF' && r.originIata === config.airport.iata) score += 1000;
-	if (mode === 'LANDING' && r.destIata === config.airport.iata) score += 1000;
+	if (mode === 'TAKEOFF' && r.originIata === config.airport.iata) {
+		score += 1000;
+	}
+	if (mode === 'LANDING' && r.destIata === config.airport.iata) {
+		score += 1000;
+	}
 
 	score -= Math.min(r.index || 0, 200000) / 1000;
 
@@ -1022,7 +969,9 @@ async function resolveRouteViaFr24Live(
 ): Promise<(RouteResult & { imageUrl?: string }) | null> {
 	const op = clean(operationalCallsign).toUpperCase();
 
-	if (!op) return null;
+	if (!op) {
+		return null;
+	}
 
 	const now = Date.now();
 	const cached = fr24LiveRouteCache[op];
@@ -1044,14 +993,15 @@ async function resolveRouteViaFr24Live(
 		const imageUrl = pickBestFr24Image(collectFr24Images(html));
 		const parsed = parseFr24LiveRoute(html, text, op, mode, config);
 
-		const result: RouteResult & { imageUrl?: string } =
-			parsed || {
-				routeCallsign: '',
-				originIata: '',
-				destIata: '',
-			};
+		const result: RouteResult & { imageUrl?: string } = parsed || {
+			routeCallsign: '',
+			originIata: '',
+			destIata: '',
+		};
 
-		if (imageUrl) result.imageUrl = imageUrl;
+		if (imageUrl) {
+			result.imageUrl = imageUrl;
+		}
 
 		fr24LiveRouteCache[op] = {
 			ts: now,
@@ -1080,7 +1030,9 @@ function parseFr24LiveRoute(
 	const op = clean(operationalCallsign).toUpperCase();
 	const iataLike = operationalToLikelyIataCallsign(op);
 
-	const fullText = String(text || '').replace(/\s+/g, ' ').trim();
+	const fullText = String(text || '')
+		.replace(/\s+/g, ' ')
+		.trim();
 	const upper = fullText.toUpperCase();
 
 	let scope = fullText;
@@ -1104,7 +1056,9 @@ function parseFr24LiveRoute(
 	}
 
 	const jsonRoute = parseJsonLikeRouteFromHtml(html, op, mode, config);
-	if (jsonRoute) return jsonRoute;
+	if (jsonRoute) {
+		return jsonRoute;
+	}
 
 	return null;
 }
@@ -1115,7 +1069,9 @@ function parseRouteFromAirportPairs(
 	mode: string,
 	config: JetFrameConfig,
 ): RouteResult | null {
-	const text = String(scope || '').replace(/\s+/g, ' ').trim();
+	const text = String(scope || '')
+		.replace(/\s+/g, ' ')
+		.trim();
 
 	const pairs: string[] = [];
 	let m: RegExpExecArray | null;
@@ -1125,10 +1081,14 @@ function parseRouteFromAirportPairs(
 	while ((m = pairRegex.exec(text)) !== null) {
 		const code = clean(m[2]).toUpperCase();
 
-		if (isIataCode(code)) pairs.push(code);
+		if (isIataCode(code)) {
+			pairs.push(code);
+		}
 	}
 
-	if (pairs.length < 2) return null;
+	if (pairs.length < 2) {
+		return null;
+	}
 
 	let originIata = '';
 	let destIata = '';
@@ -1155,11 +1115,19 @@ function parseRouteFromAirportPairs(
 	originIata = clean(originIata).toUpperCase();
 	destIata = clean(destIata).toUpperCase();
 
-	if (!isIataCode(originIata) || !isIataCode(destIata)) return null;
-	if (originIata === destIata) return null;
+	if (!isIataCode(originIata) || !isIataCode(destIata)) {
+		return null;
+	}
+	if (originIata === destIata) {
+		return null;
+	}
 
-	if (mode === 'TAKEOFF' && originIata !== config.airport.iata) return null;
-	if (mode === 'LANDING' && destIata !== config.airport.iata) return null;
+	if (mode === 'TAKEOFF' && originIata !== config.airport.iata) {
+		return null;
+	}
+	if (mode === 'LANDING' && destIata !== config.airport.iata) {
+		return null;
+	}
 
 	return {
 		routeCallsign: findBestMarketingCallsign(text, operationalCallsign),
@@ -1195,7 +1163,9 @@ function parseJsonLikeRouteFromHtml(
 		}
 	}
 
-	if (iataHits.length < 2) return null;
+	if (iataHits.length < 2) {
+		return null;
+	}
 
 	let originIata = '';
 	let destIata = '';
@@ -1219,14 +1189,15 @@ function parseJsonLikeRouteFromHtml(
 		destIata = iataHits[1];
 	}
 
-	if (!isIataCode(originIata) || !isIataCode(destIata)) return null;
-	if (originIata === destIata) return null;
+	if (!isIataCode(originIata) || !isIataCode(destIata)) {
+		return null;
+	}
+	if (originIata === destIata) {
+		return null;
+	}
 
 	return {
-		routeCallsign: findBestMarketingCallsign(
-			htmlToText(html),
-			operationalCallsign,
-		),
+		routeCallsign: findBestMarketingCallsign(htmlToText(html), operationalCallsign),
 		originIata,
 		destIata,
 	};
@@ -1236,6 +1207,9 @@ function parseJsonLikeRouteFromHtml(
  * FR24 Bild
  ************************************************************/
 
+/**
+ *
+ */
 export async function resolveImageViaFr24Aircraft(
 	registration: string,
 	operationalCallsign: string,
@@ -1246,7 +1220,9 @@ export async function resolveImageViaFr24Aircraft(
 	const reg = clean(registration).toLowerCase();
 	const op = clean(operationalCallsign).toUpperCase();
 
-	if (!reg) return '';
+	if (!reg) {
+		return '';
+	}
 
 	const now = Date.now();
 	const cached = fr24AircraftCache[reg];
@@ -1293,13 +1269,9 @@ async function applyAirportNamesFromJson(
 	parsed: ParsedInfo,
 	logWarn: (msg: string) => void,
 ): Promise<ParsedInfo> {
-	const originName = parsed.originIata
-		? await cityNameFromIata(adapter, config, parsed.originIata, logWarn)
-		: '';
+	const originName = parsed.originIata ? await cityNameFromIata(adapter, config, parsed.originIata, logWarn) : '';
 
-	const destName = parsed.destIata
-		? await cityNameFromIata(adapter, config, parsed.destIata, logWarn)
-		: '';
+	const destName = parsed.destIata ? await cityNameFromIata(adapter, config, parsed.destIata, logWarn) : '';
 
 	parsed.originName = originName;
 	parsed.destName = destName;
@@ -1331,7 +1303,9 @@ async function cityNameFromIata(
 	const useGermanNames = lang.toLowerCase().startsWith('de');
 	const code = clean(iata).toUpperCase();
 
-	if (!code) return '';
+	if (!code) {
+		return '';
+	}
 
 	try {
 		const st = await adapter.getForeignStateAsync(config.airportJsonDp);
@@ -1347,56 +1321,41 @@ async function cityNameFromIata(
 			return code;
 		}
 
-		const found = airports.find((a: any) =>
-			clean(a.iata || a.IATA).toUpperCase() === code
-		);
+		const found = airports.find((a: any) => clean(a.iata || a.IATA).toUpperCase() === code);
 
-		if (!found) return code;
+		if (!found) {
+			return code;
+		}
 
 		// municipality bevorzugen:
 		// IAD => Washington statt Dulles
 		// CDG => Paris statt Roissy
 
-		const cityDe =
-			clean(found.city_DE);
+		const cityDe = clean(found.city_DE);
 
-		const municipality =
-			clean(found.municipality);
+		const municipality = clean(found.municipality);
 
-		const city =
-			clean(found.city);
+		const city = clean(found.city);
 
-		const airport =
-			clean(found.airport || found.name);
+		const airport = clean(found.airport || found.name);
 
-		if (
-			useGermanNames &&
-			cityDe &&
-			cityDe.length >= 3
-		) {
+		if (useGermanNames && cityDe && cityDe.length >= 3) {
 			return cityDe;
 		}
 
-		if (
-			municipality &&
-			municipality.length >= 3 &&
-			!/airport|flug|intl|international/i.test(municipality)
-		) {
+		if (municipality && municipality.length >= 3 && !/airport|flug|intl|international/i.test(municipality)) {
 			return municipality;
 		}
 
-		if (
-			city &&
-			city.length >= 3
-		) {
+		if (city && city.length >= 3) {
 			return city;
 		}
 
 		if (airport) {
 			return airport
-				.replace(/international airport/ig, '')
-				.replace(/international/ig, '')
-				.replace(/airport/ig, '')
+				.replace(/international airport/gi, '')
+				.replace(/international/gi, '')
+				.replace(/airport/gi, '')
 				.replace(/\s+/g, ' ')
 				.trim();
 		}
@@ -1408,30 +1367,17 @@ async function cityNameFromIata(
 	}
 }
 
-
-async function getSystemLanguage(
-	adapter: any,
-): Promise<string> {
+async function getSystemLanguage(adapter: any): Promise<string> {
 	try {
-		const obj = await adapter.getForeignObjectAsync(
-			'system.config',
-		);
+		const obj = await adapter.getForeignObjectAsync('system.config');
 
-		return String(
-			obj?.common?.language ||
-			obj?.native?.language ||
-			'',
-		).trim();
+		return String(obj?.common?.language || obj?.native?.language || '').trim();
 	} catch {
 		return '';
 	}
 }
 
-function makeUnknownAirportRoute(
-	mode: string,
-	parsed: ParsedInfo,
-	config: JetFrameConfig,
-): ParsedInfo {
+function makeUnknownAirportRoute(mode: string, parsed: ParsedInfo, config: JetFrameConfig): ParsedInfo {
 	const A = config.airport.iata;
 
 	if (mode === 'TAKEOFF') {
@@ -1488,10 +1434,18 @@ function collectFr24Images(html: string): string[] {
 	function add(url: string): void {
 		url = normalizeImageUrl(url);
 
-		if (!url) return;
-		if (!/\.(jpg|jpeg|webp|png)(\?|$)/i.test(url)) return;
-		if (found.includes(url)) return;
-		if (/logo|icon|sprite|avatar|upgrade|plans|app-store|google-play/i.test(url)) return;
+		if (!url) {
+			return;
+		}
+		if (!/\.(jpg|jpeg|webp|png)(\?|$)/i.test(url)) {
+			return;
+		}
+		if (found.includes(url)) {
+			return;
+		}
+		if (/logo|icon|sprite|avatar|upgrade|plans|app-store|google-play/i.test(url)) {
+			return;
+		}
 
 		found.push(url);
 	}
@@ -1499,11 +1453,11 @@ function collectFr24Images(html: string): string[] {
 	let m: RegExpExecArray | null;
 
 	const regexes = [
-		/<img[^>]+src=["']([^"']+)["'][^>]*alt=["'][^"']*(?:aircraft|plane|photo|picture)[^"']*["']/ig,
-		/<img[^>]+alt=["'][^"']*(?:aircraft|plane|photo|picture)[^"']*["'][^>]+src=["']([^"']+)["']/ig,
-		/https?:\/\/[^"'<> ]+\.(?:jpg|jpeg|webp|png)(?:\?[^"'<> ]*)?/ig,
-		/src=["']([^"']+\.(?:jpg|jpeg|webp|png)(?:\?[^"']*)?)["']/ig,
-		/content=["']([^"']+\.(?:jpg|jpeg|webp|png)(?:\?[^"']*)?)["']/ig,
+		/<img[^>]+src=["']([^"']+)["'][^>]*alt=["'][^"']*(?:aircraft|plane|photo|picture)[^"']*["']/gi,
+		/<img[^>]+alt=["'][^"']*(?:aircraft|plane|photo|picture)[^"']*["'][^>]+src=["']([^"']+)["']/gi,
+		/https?:\/\/[^"'<> ]+\.(?:jpg|jpeg|webp|png)(?:\?[^"'<> ]*)?/gi,
+		/src=["']([^"']+\.(?:jpg|jpeg|webp|png)(?:\?[^"']*)?)["']/gi,
+		/content=["']([^"']+\.(?:jpg|jpeg|webp|png)(?:\?[^"']*)?)["']/gi,
 	];
 
 	for (const re of regexes) {
@@ -1516,7 +1470,9 @@ function collectFr24Images(html: string): string[] {
 }
 
 function pickBestFr24Image(images: string[]): string {
-	if (!images.length) return '';
+	if (!images.length) {
+		return '';
+	}
 
 	return images.sort((a, b) => scoreFr24Image(b) - scoreFr24Image(a))[0];
 }
@@ -1526,16 +1482,34 @@ function scoreFr24Image(url: string): number {
 
 	let score = 0;
 
-	if (url.includes('fr24')) score += 60;
-	if (url.includes('cdn')) score += 50;
-	if (url.includes('aircraft')) score += 50;
-	if (url.includes('large')) score += 40;
-	if (url.includes('full')) score += 40;
-	if (url.includes('photo')) score += 20;
+	if (url.includes('fr24')) {
+		score += 60;
+	}
+	if (url.includes('cdn')) {
+		score += 50;
+	}
+	if (url.includes('aircraft')) {
+		score += 50;
+	}
+	if (url.includes('large')) {
+		score += 40;
+	}
+	if (url.includes('full')) {
+		score += 40;
+	}
+	if (url.includes('photo')) {
+		score += 20;
+	}
 
-	if (url.includes('thumb')) score -= 80;
-	if (url.includes('small')) score -= 50;
-	if (url.includes('logo') || url.includes('icon')) score -= 100;
+	if (url.includes('thumb')) {
+		score -= 80;
+	}
+	if (url.includes('small')) {
+		score -= 50;
+	}
+	if (url.includes('logo') || url.includes('icon')) {
+		score -= 100;
+	}
 
 	return score;
 }
@@ -1545,15 +1519,9 @@ function scoreFr24Image(url: string): number {
  ************************************************************/
 
 function buildSpecialInfo(a: Partial<Aircraft>): Partial<Aircraft> {
-	const model = String(
-		a.aircraftModel ||
-		a.aircraftType ||
-		a.type ||
-	'').toUpperCase();
+	const model = String(a.aircraftModel || a.aircraftType || a.type || '').toUpperCase();
 
-	const callsign = String(
-		a.callsign || '',
-	).toUpperCase();
+	const callsign = String(a.callsign || '').toUpperCase();
 
 	const tags: string[] = [];
 	let score = 0;
@@ -1562,18 +1530,18 @@ function buildSpecialInfo(a: Partial<Aircraft>): Partial<Aircraft> {
 	// A380
 	// --------------------------------------------------
 
-if (/A38/i.test(model)) {
-	tags.push('Airbus A380');
-	score += 10;
-}
+	if (/A38/i.test(model)) {
+		tags.push('Airbus A380');
+		score += 10;
+	}
 	// --------------------------------------------------
 	// B747 / Jumbo
 	// --------------------------------------------------
 
 	if (/B74/i.test(model)) {
-	tags.push('Boeing 747');
-	score += 8;
-}
+		tags.push('Boeing 747');
+		score += 8;
+	}
 
 	// --------------------------------------------------
 	// Beluga
@@ -1597,28 +1565,14 @@ if (/A38/i.test(model)) {
 	// Regierungs-/Militärflug
 	// --------------------------------------------------
 
-	if (
-		containsAny(
-			callsign,
-			[
-				'GAF',
-				'GOV',
-				'BAF',
-				'NAF',
-				'RCH',
-				'IAM',
-			],
-		)
-	) {
+	if (containsAny(callsign, ['GAF', 'GOV', 'BAF', 'NAF', 'RCH', 'IAM'])) {
 		tags.push('Regierungs-/Militärflug');
 		score += 8;
 	}
 
 	return {
 		isSpecial: score >= 8,
-		specialText: tags.length
-			? tags.join(', ')
-			: '',
+		specialText: tags.length ? tags.join(', ') : '',
 	};
 }
 
@@ -1661,28 +1615,72 @@ function guessAirlineIcao(callsign: string): string {
 function guessAirlineName(callsign: string): string {
 	callsign = clean(callsign).toUpperCase();
 
-	if (callsign.startsWith('DLH')) return 'Lufthansa';
-	if (callsign.startsWith('CFG')) return 'Condor';
-	if (callsign.startsWith('CPA')) return 'Cathay Pacific';
-	if (callsign.startsWith('KAL')) return 'Korean Air Cargo';
-	if (callsign.startsWith('GEC')) return 'Lufthansa Cargo';
-	if (callsign.startsWith('BOX')) return 'AeroLogic';
-	if (callsign.startsWith('EWG')) return 'Eurowings';
-	if (callsign.startsWith('RYR')) return 'Ryanair';
-	if (callsign.startsWith('EZY')) return 'easyJet';
-	if (callsign.startsWith('BAW')) return 'British Airways';
-	if (callsign.startsWith('KLM')) return 'KLM';
-	if (callsign.startsWith('AFR')) return 'Air France';
-	if (callsign.startsWith('SWR')) return 'SWISS';
-	if (callsign.startsWith('AUA')) return 'Austrian';
-	if (callsign.startsWith('SIA')) return 'Singapore Airlines';
-	if (callsign.startsWith('THY')) return 'Turkish Airlines';
-	if (callsign.startsWith('UAE')) return 'Emirates';
-	if (callsign.startsWith('QTR')) return 'Qatar Airways';
-	if (callsign.startsWith('CCA')) return 'Air China';
-	if (callsign.startsWith('ROT')) return 'TAROM';
-	if (callsign.startsWith('SAS')) return 'SAS';
-	if (callsign.startsWith('SEH')) return 'Sky Express';
+	if (callsign.startsWith('DLH')) {
+		return 'Lufthansa';
+	}
+	if (callsign.startsWith('CFG')) {
+		return 'Condor';
+	}
+	if (callsign.startsWith('CPA')) {
+		return 'Cathay Pacific';
+	}
+	if (callsign.startsWith('KAL')) {
+		return 'Korean Air Cargo';
+	}
+	if (callsign.startsWith('GEC')) {
+		return 'Lufthansa Cargo';
+	}
+	if (callsign.startsWith('BOX')) {
+		return 'AeroLogic';
+	}
+	if (callsign.startsWith('EWG')) {
+		return 'Eurowings';
+	}
+	if (callsign.startsWith('RYR')) {
+		return 'Ryanair';
+	}
+	if (callsign.startsWith('EZY')) {
+		return 'easyJet';
+	}
+	if (callsign.startsWith('BAW')) {
+		return 'British Airways';
+	}
+	if (callsign.startsWith('KLM')) {
+		return 'KLM';
+	}
+	if (callsign.startsWith('AFR')) {
+		return 'Air France';
+	}
+	if (callsign.startsWith('SWR')) {
+		return 'SWISS';
+	}
+	if (callsign.startsWith('AUA')) {
+		return 'Austrian';
+	}
+	if (callsign.startsWith('SIA')) {
+		return 'Singapore Airlines';
+	}
+	if (callsign.startsWith('THY')) {
+		return 'Turkish Airlines';
+	}
+	if (callsign.startsWith('UAE')) {
+		return 'Emirates';
+	}
+	if (callsign.startsWith('QTR')) {
+		return 'Qatar Airways';
+	}
+	if (callsign.startsWith('CCA')) {
+		return 'Air China';
+	}
+	if (callsign.startsWith('ROT')) {
+		return 'TAROM';
+	}
+	if (callsign.startsWith('SAS')) {
+		return 'SAS';
+	}
+	if (callsign.startsWith('SEH')) {
+		return 'Sky Express';
+	}
 
 	return '';
 }
@@ -1739,7 +1737,9 @@ function findBestMarketingCallsign(text: string, operationalCallsign: string): s
 	const iataLike = operationalToLikelyIataCallsign(op);
 	const upper = String(text || '').toUpperCase();
 
-	if (iataLike && upper.includes(iataLike)) return iataLike;
+	if (iataLike && upper.includes(iataLike)) {
+		return iataLike;
+	}
 
 	const calls: string[] = [];
 	let m: RegExpExecArray | null;
@@ -1749,8 +1749,12 @@ function findBestMarketingCallsign(text: string, operationalCallsign: string): s
 	while ((m = re.exec(upper)) !== null) {
 		const cs = clean(m[1]).toUpperCase();
 
-		if (!looksLikeMarketingCallsign(cs)) continue;
-		if (!calls.includes(cs)) calls.push(cs);
+		if (!looksLikeMarketingCallsign(cs)) {
+			continue;
+		}
+		if (!calls.includes(cs)) {
+			calls.push(cs);
+		}
 	}
 
 	return calls.length ? calls[0] : '';
@@ -1759,8 +1763,12 @@ function findBestMarketingCallsign(text: string, operationalCallsign: string): s
 function looksLikeMarketingCallsign(cs: string): boolean {
 	cs = clean(cs).toUpperCase();
 
-	if (!/^[A-Z0-9]{2}\d{1,4}[A-Z]?$/.test(cs)) return false;
-	if (/^[A-Z]{3}\d/.test(cs)) return false;
+	if (!/^[A-Z0-9]{2}\d{1,4}[A-Z]?$/.test(cs)) {
+		return false;
+	}
+	if (/^[A-Z]{3}\d/.test(cs)) {
+		return false;
+	}
 
 	return true;
 }
@@ -1768,15 +1776,58 @@ function looksLikeMarketingCallsign(cs: string): boolean {
 function isIataCode(code: string): boolean {
 	code = clean(code).toUpperCase();
 
-	if (!/^[A-Z]{3}$/.test(code)) return false;
+	if (!/^[A-Z]{3}$/.test(code)) {
+		return false;
+	}
 
 	const bad = [
-		'THE', 'AND', 'FOR', 'YOU', 'ARE', 'NOT', 'YES', 'NEW',
-		'OLD', 'AIR', 'API', 'APP', 'MAP', 'UTC', 'ETA', 'STD',
-		'STA', 'ATD', 'ATA', 'IMG', 'PNG', 'JPG', 'WEB', 'CSS',
-		'DIV', 'SVG', 'WWW', 'TOP', 'VAR', 'REL', 'ORG', 'USE',
-		'DAY', 'PER', 'MMM', 'MAY', 'BTN', 'HEX', 'NET', 'SRC',
-		'PAN', 'COL', 'VON', 'NACH', 'ABF', 'ANK', 'LIVE',
+		'THE',
+		'AND',
+		'FOR',
+		'YOU',
+		'ARE',
+		'NOT',
+		'YES',
+		'NEW',
+		'OLD',
+		'AIR',
+		'API',
+		'APP',
+		'MAP',
+		'UTC',
+		'ETA',
+		'STD',
+		'STA',
+		'ATD',
+		'ATA',
+		'IMG',
+		'PNG',
+		'JPG',
+		'WEB',
+		'CSS',
+		'DIV',
+		'SVG',
+		'WWW',
+		'TOP',
+		'VAR',
+		'REL',
+		'ORG',
+		'USE',
+		'DAY',
+		'PER',
+		'MMM',
+		'MAY',
+		'BTN',
+		'HEX',
+		'NET',
+		'SRC',
+		'PAN',
+		'COL',
+		'VON',
+		'NACH',
+		'ABF',
+		'ANK',
+		'LIVE',
 	];
 
 	return !bad.includes(code);
@@ -1836,9 +1887,15 @@ function clean(v: unknown): string {
 }
 
 function errorText(e: unknown): string {
-	if (!e) return 'unbekannter Fehler';
-	if (typeof e === 'string') return e;
-	if (e instanceof Error) return e.message;
+	if (!e) {
+		return 'unbekannter Fehler';
+	}
+	if (typeof e === 'string') {
+		return e;
+	}
+	if (e instanceof Error) {
+		return e.message;
+	}
 
 	try {
 		return JSON.stringify(e);

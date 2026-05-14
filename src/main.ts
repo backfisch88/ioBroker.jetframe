@@ -1,5 +1,3 @@
-
-
 import * as utils from '@iobroker/adapter-core';
 import * as https from 'https';
 import * as http from 'http';
@@ -11,20 +9,11 @@ import { updateSpecialLiveries } from './lib/specialLiveries';
 import { readConfig } from './lib/config';
 import { fetchAdsb, parseAircraft } from './lib/adsb';
 import { getMatches } from './lib/classify';
-import {
-	ensureStates,
-	writeFlight,
-	clearFlight,
-} from './lib/states';
+import { ensureStates, writeFlight, clearFlight } from './lib/states';
 
-import {
-	ensureImageDirs,
-	saveImages,
-} from './lib/images';
+import { ensureImageDirs, saveImages } from './lib/images';
 
-import {
-	enrichFlightInfo,
-} from './lib/flightInfo';
+import { enrichFlightInfo } from './lib/flightInfo';
 
 class Jetframe extends utils.Adapter {
 	private timer: NodeJS.Timeout | null = null;
@@ -44,51 +33,35 @@ class Jetframe extends utils.Adapter {
 		this.on('unload', this.onUnload.bind(this));
 	}
 
-private async onReady(): Promise<void> {
-	this.log.info('JetFrame Adapter gestartet');
-	await copyStaticFiles(this);
+	private async onReady(): Promise<void> {
+		this.log.info('JetFrame Adapter gestartet');
+		await copyStaticFiles(this);
 
-	try {
-		const config = readConfig(this);
+		try {
+			const config = readConfig(this);
 
-		await ensureStates(this, config);
-		this.log.debug('[JetFrame] States OK');
+			await ensureStates(this, config);
+			this.log.debug('[JetFrame] States OK');
 
-		await ensureImageDirs(
-			this,
-			this.logDebug.bind(this),
-			this.logWarn.bind(this),
-		);
-		this.log.debug('[JetFrame] Images OK');
+			await ensureImageDirs(this, this.logDebug.bind(this), this.logWarn.bind(this));
+			this.log.debug('[JetFrame] Images OK');
 
-		updateAirportJson(
-			this,
-			this.logDebug.bind(this),
-			this.logWarn.bind(this),
-		).catch(e => {
-			this.logWarn(`Airport DB Update Fehler: ${this.errorText(e)}`);
-		});
-		updateSpecialLiveries(
-	this,
-	this.logDebug.bind(this),
-	this.logWarn.bind(this),
-).catch(e => {
-	this.logWarn(
-		`Special-Liveries DB Update Fehler: ${this.errorText(e)}`,
-	);
-});
+			updateAirportJson(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch(e => {
+				this.logWarn(`Airport DB Update Fehler: ${this.errorText(e)}`);
+			});
+			updateSpecialLiveries(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch(e => {
+				this.logWarn(`Special-Liveries DB Update Fehler: ${this.errorText(e)}`);
+			});
 
-		this.log.debug('[JetFrame] Starte Loop');
+			this.log.debug('[JetFrame] Starte Loop');
 
-		this.loop().catch(e => {
-			this.logError(`Loop Start Fehler: ${this.errorText(e)}`);
-		});
-	} catch (e) {
-		this.logError(`onReady Fehler: ${this.errorText(e)}`);
+			this.loop().catch(e => {
+				this.logError(`Loop Start Fehler: ${this.errorText(e)}`);
+			});
+		} catch (e) {
+			this.logError(`onReady Fehler: ${this.errorText(e)}`);
+		}
 	}
-}
-
-		
 
 	private async loop(): Promise<void> {
 		try {
@@ -97,11 +70,7 @@ private async onReady(): Promise<void> {
 			const config = readConfig(this);
 
 			if (!config.enabled) {
-				await this.setForeignStateAsync(
-					`${config.dpRoot}.status`,
-					'disabled',
-					true,
-				);
+				await this.setForeignStateAsync(`${config.dpRoot}.status`, 'disabled', true);
 
 				this.scheduleNext(config.searchPollSeconds);
 				return;
@@ -125,49 +94,25 @@ private async onReady(): Promise<void> {
 
 		this.log.debug('Search Loop gestartet');
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.status`,
-			'searching',
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.status`, 'searching', true);
 
-const data = await fetchAdsb(
-	config,
-	this.httpJsonRaw.bind(this),
-	this.logWarn.bind(this),
-);
+		const data = await fetchAdsb(config, this.httpJsonRaw.bind(this), this.logWarn.bind(this));
 
-this.log.debug('[JetFrame] ADSB Fetch OK');
+		this.log.debug('[JetFrame] ADSB Fetch OK');
 
 		const aircraft = parseAircraft(data);
-this.log.debug(`[JetFrame] ADSB parsed: ${aircraft.length}`);
-		this.log.debug(
-			`Aircraft parsed: ${aircraft.length}`);
+		this.log.debug(`[JetFrame] ADSB parsed: ${aircraft.length}`);
+		this.log.debug(`Aircraft parsed: ${aircraft.length}`);
 
-		const matches = getMatches(
-			config,
-			aircraft,
-		);
+		const matches = getMatches(config, aircraft);
 
 		this.log.debug(`Matches gefunden: ${matches.length}`);
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.lastUpdate`,
-			new Date().toISOString(),
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.lastUpdate`, new Date().toISOString(), true);
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.allCount`,
-			aircraft.length,
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.allCount`, aircraft.length, true);
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.matchCount`,
-			matches.length,
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.matchCount`, matches.length, true);
 
 		if (!matches.length) {
 			await this.setForeignStateAsync(
@@ -180,7 +125,9 @@ this.log.debug(`[JetFrame] ADSB parsed: ${aircraft.length}`);
 			return;
 		}
 
-		this.log.debug(`Best Match: ${(matches[0].callsign || matches[0].hex || '?')} | alt=${matches[0].altFt}ft | mode=${matches[0].mode}`);
+		this.log.debug(
+			`Best Match: ${matches[0].callsign || matches[0].hex || '?'} | alt=${matches[0].altFt}ft | mode=${matches[0].mode}`,
+		);
 
 		await this.startNewFlight(matches[0]);
 	}
@@ -190,49 +137,23 @@ this.log.debug(`[JetFrame] ADSB parsed: ${aircraft.length}`);
 
 		const elapsed = (Date.now() - this.liveStarted) / 1000;
 
-		const data = await fetchAdsb(
-	config,
-	this.httpJsonRaw.bind(this),
-	this.logWarn.bind(this),
-);
+		const data = await fetchAdsb(config, this.httpJsonRaw.bind(this), this.logWarn.bind(this));
 
 		const aircraft = parseAircraft(data);
 
-		const matches = getMatches(
-			config,
-			aircraft,
-		);
+		const matches = getMatches(config, aircraft);
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.lastUpdate`,
-			new Date().toISOString(),
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.lastUpdate`, new Date().toISOString(), true);
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.allCount`,
-			aircraft.length,
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.allCount`, aircraft.length, true);
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.matchCount`,
-			matches.length,
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.matchCount`, matches.length, true);
 
-		const live = this.findCurrentLive(
-			matches,
-			this.liveTarget,
-		);
+		const live = this.findCurrentLive(matches, this.liveTarget);
 
 		const bestNow = matches[0];
 
-		if (
-			bestNow &&
-			!live &&
-			this.isDifferentAircraft(bestNow, this.liveTarget)
-		) {
+		if (bestNow && !live && this.isDifferentAircraft(bestNow, this.liveTarget)) {
 			this.log.info(`Neues Flugzeug erkannt, schalte um: ${bestNow.callsign || bestNow.hex}`);
 
 			await this.startNewFlight(bestNow);
@@ -244,13 +165,9 @@ this.log.debug(`[JetFrame] ADSB parsed: ${aircraft.length}`);
 			this.liveStarted = 0;
 			this.liveInfo = null;
 
-await clearFlight(this, `${config.dpRoot}.current`);
+			await clearFlight(this, `${config.dpRoot}.current`);
 
-			await this.setForeignStateAsync(
-				`${config.dpRoot}.status`,
-				'cleared',
-				true,
-			);
+			await this.setForeignStateAsync(`${config.dpRoot}.status`, 'cleared', true);
 
 			this.scheduleNext(config.searchPollSeconds);
 			return;
@@ -264,11 +181,7 @@ await clearFlight(this, `${config.dpRoot}.current`);
 
 			await clearFlight(this, `${config.dpRoot}.current`);
 
-			await this.setForeignStateAsync(
-				`${config.dpRoot}.status`,
-				'lost',
-				true,
-			);
+			await this.setForeignStateAsync(`${config.dpRoot}.status`, 'lost', true);
 
 			this.scheduleNext(config.searchPollSeconds);
 			return;
@@ -276,43 +189,39 @@ await clearFlight(this, `${config.dpRoot}.current`);
 
 		const bases = [`${config.dpRoot}.current`];
 
-if (this.liveTarget?.mode === 'OVERFLIGHT') {
-	bases.push(`${config.dpRoot}.overflight`);
-} else {
-	bases.push(`${config.dpRoot}.airport`);
-}
+		if (this.liveTarget?.mode === 'OVERFLIGHT') {
+			bases.push(`${config.dpRoot}.overflight`);
+		} else {
+			bases.push(`${config.dpRoot}.airport`);
+		}
 
-const enrichedLive: Aircraft = {
-	...(this.liveInfo || {}),
-	...live,
+		const enrichedLive: Aircraft = {
+			...(this.liveInfo || {}),
+			...live,
 
-	// Diese Werte kommen nur aus saveImages()/enrichFlightInfo
-	// und dürfen vom Live-ADS-B-Update nicht wieder leer überschrieben werden.
-	localLogoUrl: this.liveInfo?.localLogoUrl || live.localLogoUrl || '',
-	localImageUrl: this.liveInfo?.localImageUrl || live.localImageUrl || '',
-	finalImageUrl: this.liveInfo?.finalImageUrl || live.finalImageUrl || '',
-	logoUrl: this.liveInfo?.logoUrl || live.logoUrl || '',
-	routeCallsign: this.liveInfo?.routeCallsign || live.routeCallsign || live.callsign || '',
-	aircraftModel: this.liveInfo?.aircraftModel || live.aircraftModel || live.aircraftType || live.type || '',
-};
+			// Diese Werte kommen nur aus saveImages()/enrichFlightInfo
+			// und dürfen vom Live-ADS-B-Update nicht wieder leer überschrieben werden.
+			localLogoUrl: this.liveInfo?.localLogoUrl || live.localLogoUrl || '',
+			localImageUrl: this.liveInfo?.localImageUrl || live.localImageUrl || '',
+			finalImageUrl: this.liveInfo?.finalImageUrl || live.finalImageUrl || '',
+			logoUrl: this.liveInfo?.logoUrl || live.logoUrl || '',
+			routeCallsign: this.liveInfo?.routeCallsign || live.routeCallsign || live.callsign || '',
+			aircraftModel: this.liveInfo?.aircraftModel || live.aircraftModel || live.aircraftType || live.type || '',
+		};
 
-this.liveInfo = {
-	...enrichedLive,
-};
+		this.liveInfo = {
+			...enrichedLive,
+		};
 
-this.liveInfo = {
-	...enrichedLive,
-};
+		this.liveInfo = {
+			...enrichedLive,
+		};
 
-for (const base of bases) {
-	await writeFlight(this, base, enrichedLive);
-}
+		for (const base of bases) {
+			await writeFlight(this, base, enrichedLive);
+		}
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.status`,
-			'live',
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.status`, 'live', true);
 
 		this.scheduleNext(config.livePollSeconds);
 	}
@@ -323,11 +232,7 @@ for (const base of bases) {
 		const startKey = this.flightKey(rawMatch);
 		const now = Date.now();
 
-		if (
-			startKey &&
-			startKey === this.lastStartKey &&
-			now - this.lastStartTs < 15000
-		) {
+		if (startKey && startKey === this.lastStartKey && now - this.lastStartTs < 15000) {
 			this.log.debug(`Gleicher Flug wurde gerade erst gestartet → ignoriere: ${startKey}`);
 
 			this.scheduleNext(config.livePollSeconds);
@@ -349,82 +254,66 @@ for (const base of bases) {
 			this.logWarn.bind(this),
 		);
 
-		this.log.info(`Neuer Flug: callsign=${best.callsign || ''} route=${best.originIata || '?'} → ${best.destIata || '?'} | ${best.originName || '?'} → ${best.destName || '?'}`);
+		this.log.info(
+			`Neuer Flug: callsign=${best.callsign || ''} route=${best.originIata || '?'} → ${best.destIata || '?'} | ${best.originName || '?'} → ${best.destName || '?'}`,
+		);
 
 		this.liveTarget = {
-	hex: best.hex,
-	callsign: best.callsign,
-	mode: best.mode,
-};
+			hex: best.hex,
+			callsign: best.callsign,
+			mode: best.mode,
+		};
 
-this.liveInfo = {
-	...best,
-};
+		this.liveInfo = {
+			...best,
+		};
 
-this.liveStarted = Date.now();
+		this.liveStarted = Date.now();
 
-		await writeFlight(
-			this,
-			`${config.dpRoot}.current`,
-			best,
-		);
+		await writeFlight(this, `${config.dpRoot}.current`, best);
 
 		if (best.mode === 'OVERFLIGHT') {
-			await writeFlight(
-				this,
-				`${config.dpRoot}.overflight`,
-				best,
-			);
+			await writeFlight(this, `${config.dpRoot}.overflight`, best);
 		} else {
-			await writeFlight(
-				this,
-				`${config.dpRoot}.airport`,
-				best,
-			);
+			await writeFlight(this, `${config.dpRoot}.airport`, best);
 		}
 
-		await saveImages(
-			this,
-			config,
-			best,
-			this.logDebug.bind(this),
-			this.logWarn.bind(this),
-		);
+		await saveImages(this, config, best, this.logDebug.bind(this), this.logWarn.bind(this));
 
-		await this.setForeignStateAsync(
-			`${config.dpRoot}.status`,
-			'live',
-			true,
-		);
+		await this.setForeignStateAsync(`${config.dpRoot}.status`, 'live', true);
 
 		this.scheduleNext(config.livePollSeconds);
 	}
 
-	private findCurrentLive(
-		matches: Aircraft[],
-		target: Partial<Aircraft> | null,
-	): Aircraft | null {
-		if (!matches.length || !target) return null;
+	private findCurrentLive(matches: Aircraft[], target: Partial<Aircraft> | null): Aircraft | null {
+		if (!matches.length || !target) {
+			return null;
+		}
 
-		return matches.find(a => {
-			const aHex = this.clean(a.hex).toLowerCase();
-			const tHex = this.clean(target.hex).toLowerCase();
+		return (
+			matches.find(a => {
+				const aHex = this.clean(a.hex).toLowerCase();
+				const tHex = this.clean(target.hex).toLowerCase();
 
-			const aCall = this.clean(a.callsign).toUpperCase();
-			const tCall = this.clean(target.callsign).toUpperCase();
+				const aCall = this.clean(a.callsign).toUpperCase();
+				const tCall = this.clean(target.callsign).toUpperCase();
 
-			if (aHex && tHex && aHex === tHex) return true;
-			if (aCall && tCall && aCall === tCall) return true;
+				if (aHex && tHex && aHex === tHex) {
+					return true;
+				}
+				if (aCall && tCall && aCall === tCall) {
+					return true;
+				}
 
-			return false;
-		}) || null;
+				return false;
+			}) || null
+		);
 	}
 
-	private isDifferentAircraft(
-		a: Aircraft | null | undefined,
-		target: Partial<Aircraft> | null,
-	): boolean {
-		if (!a || !target) return false;
+	private isDifferentAircraft(a: Aircraft | null | undefined, target: Partial<Aircraft> | null): boolean {
+		if (!a || !target) {
+			return false;
+		}
 
 		const aHex = this.clean(a.hex).toLowerCase();
 		const tHex = this.clean(target.hex).toLowerCase();
@@ -432,11 +321,19 @@ this.liveStarted = Date.now();
 		const aCall = this.clean(a.callsign).toUpperCase();
 		const tCall = this.clean(target.callsign).toUpperCase();
 
-		if (aCall && tCall && aCall === tCall) return false;
-		if (aHex && tHex && aHex === tHex) return false;
+		if (aCall && tCall && aCall === tCall) {
+			return false;
+		}
+		if (aHex && tHex && aHex === tHex) {
+			return false;
+		}
 
-		if (aCall && tCall) return aCall !== tCall;
-		if (aHex && tHex) return aHex !== tHex;
+		if (aCall && tCall) {
+			return aCall !== tCall;
+		}
+		if (aHex && tHex) {
+			return aHex !== tHex;
+		}
 
 		return false;
 	}
@@ -445,17 +342,18 @@ this.liveStarted = Date.now();
 		const hex = this.clean(a.hex).toLowerCase();
 		const cs = this.clean(a.callsign).toUpperCase();
 
-		if (cs) return `CS:${cs}`;
-		if (hex) return `HEX:${hex}`;
+		if (cs) {
+			return `CS:${cs}`;
+		}
+		if (hex) {
+			return `HEX:${hex}`;
+		}
 
 		return '';
 	}
 
 	private scheduleNext(seconds: number): void {
-		this.timer = setTimeout(
-			() => this.loop(),
-			seconds * 1000,
-		);
+		this.timer = setTimeout(() => this.loop(), seconds * 1000);
 	}
 
 	private clearTimer(): void {
@@ -466,16 +364,13 @@ this.liveStarted = Date.now();
 	}
 
 	private async httpJson(url: string): Promise<any> {
-		const res = await this.httpRequest(
-			url,
-			{
-				timeout: 12000,
-				headers: {
-					'User-Agent': 'Mozilla/5.0',
-					Accept: 'application/json,text/plain,*/*',
-				},
+		const res = await this.httpRequest(url, {
+			timeout: 12000,
+			headers: {
+				'User-Agent': 'Mozilla/5.0',
+				Accept: 'application/json,text/plain,*/*',
 			},
-		);
+		});
 
 		if (typeof res === 'string') {
 			return JSON.parse(res);
@@ -485,16 +380,13 @@ this.liveStarted = Date.now();
 	}
 
 	private async httpJsonRaw(url: string): Promise<any> {
-		const res = await this.httpRequest(
-			url,
-			{
-				timeout: 20000,
-				headers: {
-					'User-Agent': 'Mozilla/5.0',
-					Accept: 'application/json,text/plain,*/*',
-				},
+		const res = await this.httpRequest(url, {
+			timeout: 20000,
+			headers: {
+				'User-Agent': 'Mozilla/5.0',
+				Accept: 'application/json,text/plain,*/*',
 			},
-		);
+		});
 
 		if (typeof res === 'string') {
 			const text = res.trim();
@@ -510,23 +402,18 @@ this.liveStarted = Date.now();
 	}
 
 	private async httpText(url: string): Promise<string> {
-		const res = await this.httpRequest(
-			url,
-			{
-				timeout: 15000,
-				headers: {
-					'User-Agent':
-						'Mozilla/5.0 AppleWebKit/605.1.15 Safari/604.1',
+		const res = await this.httpRequest(url, {
+			timeout: 15000,
+			headers: {
+				'User-Agent': 'Mozilla/5.0 AppleWebKit/605.1.15 Safari/604.1',
 
-					Accept:
-						'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 
-					'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+				'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
 
-					Referer: 'https://www.google.com/',
-				},
+				Referer: 'https://www.google.com/',
 			},
-		);
+		});
 
 		return String(res || '');
 	}
@@ -539,9 +426,7 @@ this.liveStarted = Date.now();
 		} = {},
 	): Promise<string> {
 		return new Promise((resolve, reject) => {
-			const client = url.startsWith('https')
-				? https
-				: http;
+			const client = url.startsWith('https') ? https : http;
 
 			const req = client.get(
 				url,
@@ -557,31 +442,14 @@ this.liveStarted = Date.now();
 					});
 
 					res.on('end', () => {
-						if (
-							res.statusCode &&
-							res.statusCode >= 300 &&
-							res.statusCode < 400 &&
-							res.headers.location
-						) {
-							this.httpRequest(
-								res.headers.location,
-								options,
-							)
-								.then(resolve)
-								.catch(reject);
+						if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+							this.httpRequest(res.headers.location, options).then(resolve).catch(reject);
 
 							return;
 						}
 
-						if (
-							res.statusCode &&
-							res.statusCode >= 400
-						) {
-							reject(
-								new Error(
-									`HTTP ${res.statusCode} bei ${url}`,
-								),
-							);
+						if (res.statusCode && res.statusCode >= 400) {
+							reject(new Error(`HTTP ${res.statusCode} bei ${url}`));
 
 							return;
 						}
@@ -593,16 +461,9 @@ this.liveStarted = Date.now();
 
 			req.on('error', reject);
 
-			req.setTimeout(
-				options.timeout || 15000,
-				() => {
-					req.destroy(
-						new Error(
-							`timeout of ${options.timeout || 15000}ms exceeded`,
-						),
-					);
-				},
-			);
+			req.setTimeout(options.timeout || 15000, () => {
+				req.destroy(new Error(`timeout of ${options.timeout || 15000}ms exceeded`));
+			});
 		});
 	}
 
@@ -613,31 +474,26 @@ this.liveStarted = Date.now();
 			const obj = await this.getObjectAsync(id);
 
 			if (!obj) {
-				await this.setObjectAsync(
-					id,
-					{
-						type: 'meta',
-						common: {
-							name: 'JetFrame Files',
-							type: 'meta.user',
-						},
-						native: {},
+				await this.setObjectAsync(id, {
+					type: 'meta',
+					common: {
+						name: 'JetFrame Files',
+						type: 'meta.user',
 					},
-				);
+					native: {},
+				});
 
 				this.log.info('Meta-Objekt für Dateien erstellt');
 			}
 		} catch (e) {
-			this.log.error(
-				`Meta-Objekt Fehler: ${this.errorText(e)}`,
-			);
+			this.log.error(`Meta-Objekt Fehler: ${this.errorText(e)}`);
 		}
 	}
 
 	private logDebug(msg: string): void {
-	const config = readConfig(this);
-this.log.debug(`[JetFrame] ${msg}`);
-}
+		const config = readConfig(this);
+		this.log.debug(`[JetFrame] ${msg}`);
+	}
 
 	private logWarn(msg: string): void {
 		this.log.warn(`[JetFrame] ⚠️ ${msg}`);
@@ -652,9 +508,15 @@ this.log.debug(`[JetFrame] ${msg}`);
 	}
 
 	private errorText(e: unknown): string {
-		if (!e) return 'unbekannter Fehler';
-		if (typeof e === 'string') return e;
-		if (e instanceof Error) return e.message;
+		if (!e) {
+			return 'unbekannter Fehler';
+		}
+		if (typeof e === 'string') {
+			return e;
+		}
+		if (e instanceof Error) {
+			return e.message;
+		}
 
 		try {
 			return JSON.stringify(e);
@@ -674,9 +536,7 @@ this.log.debug(`[JetFrame] ${msg}`);
 }
 
 if (require.main !== module) {
-	module.exports = (
-		options: Partial<utils.AdapterOptions> | undefined,
-	) => new Jetframe(options);
+	module.exports = (options: Partial<utils.AdapterOptions> | undefined) => new Jetframe(options);
 } else {
 	(() => new Jetframe())();
 }

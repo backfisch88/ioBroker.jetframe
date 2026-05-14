@@ -4,20 +4,10 @@
 	"adapterName": "jetframe",
 	"title": "JetFrame",
 	"description": "Flight tracking and visualization for window-based aircraft detection",
-	"keywords": [
-		"flight",
-		"adsb",
-		"aircraft",
-		"tracking",
-		"fr24"
-	],
-	"contributors": [
-		"backfisch"
-	],
+	"keywords": ["flight", "adsb", "aircraft", "tracking", "fr24"],
+	"contributors": ["backfisch"],
 	"expert": "yes",
-	"features": [
-		"adapter"
-	],
+	"features": ["adapter"],
 	"adminFeatures": [],
 	"type": "visualization",
 	"startMode": "daemon",
@@ -27,9 +17,7 @@
 	"language": "TypeScript",
 	"nodeVersion": "22",
 	"adminUi": "html",
-	"tools": [
-		"ESLint"
-	],
+	"tools": ["ESLint"],
 	"eslintConfig": "official",
 	"i18n": "words.js",
 	"releaseScript": "yes",

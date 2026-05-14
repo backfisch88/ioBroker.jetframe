@@ -1,11 +1,11 @@
 {
-  "jetframe adapter settings": "jetframe的适配器设置",
-  "option1": "选项1",
-  "option2": "选项2",
-  "speechMode": "Sprachausgabe",
-  "speechModeBrowser": "Browser intern",
-  "speechModeExternal": "Extern per Datenpunkt",
-  "speechModeBoth": "Browser + extern",
-  "speechModeOff": "Aus",
-  "speechTemplate": "Ansage-Template"
+	"jetframe adapter settings": "jetframe的适配器设置",
+	"option1": "选项1",
+	"option2": "选项2",
+	"speechMode": "Sprachausgabe",
+	"speechModeBrowser": "Browser intern",
+	"speechModeExternal": "Extern per Datenpunkt",
+	"speechModeBoth": "Browser + extern",
+	"speechModeOff": "Aus",
+	"speechTemplate": "Ansage-Template"
 }

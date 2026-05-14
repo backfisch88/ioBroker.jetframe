@@ -5,9 +5,7 @@
 		"node": true,
 		"mocha": true
 	},
-	"extends": [
-		"eslint:recommended"
-	],
+	"extends": ["eslint:recommended"],
 	"rules": {
 		"indent": [
 			"error",
@@ -35,9 +33,6 @@
 				"allowTemplateLiterals": true
 			}
 		],
-		"semi": [
-			"error",
-			"always"
-		]
+		"semi": ["error", "always"]
 	}
 }

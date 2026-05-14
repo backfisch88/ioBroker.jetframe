@@ -5,11 +5,7 @@ type NativeConfig = Record<string, any>;
 function cfgStr(native: NativeConfig, key: string, def: string): string {
 	const v = native[key];
 
-	return v !== undefined &&
-		v !== null &&
-		String(v).trim() !== ''
-		? String(v).trim()
-		: def;
+	return v !== undefined && v !== null && String(v).trim() !== '' ? String(v).trim() : def;
 }
 
 function cfgNum(native: NativeConfig, key: string, def: number): number {
@@ -20,12 +16,19 @@ function cfgNum(native: NativeConfig, key: string, def: number): number {
 function cfgBool(native: NativeConfig, key: string, def: boolean): boolean {
 	const v = native[key];
 
-	if (v === true || v === 'true') return true;
-	if (v === false || v === 'false') return false;
+	if (v === true || v === 'true') {
+		return true;
+	}
+	if (v === false || v === 'false') {
+		return false;
+	}
 
 	return def;
 }
 
+/**
+ *
+ */
 export function readConfig(adapter: any): JetFrameConfig {
 	const native = adapter.config as NativeConfig;
 
@@ -70,11 +73,7 @@ export function readConfig(adapter: any): JetFrameConfig {
 
 		speechEnabled: cfgBool(native, 'speechEnabled', true),
 
-		speechMode: cfgStr(
-			native,
-			'speechMode',
-			'browser',
-		) as 'browser' | 'external' | 'both' | 'off',
+		speechMode: cfgStr(native, 'speechMode', 'browser') as 'browser' | 'external' | 'both' | 'off',
 		speechTemplate: cfgStr(
 			native,
 			'speechTemplate',
@@ -83,6 +82,5 @@ export function readConfig(adapter: any): JetFrameConfig {
 
 		dpRoot: adapter.namespace,
 		airportJsonDp: `${adapter.namespace}.airportjson`,
-
 	};
 }

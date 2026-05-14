@@ -7,16 +7,22 @@ function clean(v: unknown): string {
 }
 
 function toNumber(v: unknown): number | null {
-	if (v === null || v === undefined || v === '') return null;
+	if (v === null || v === undefined || v === '') {
+		return null;
+	}
 	const n = Number(v);
 	return Number.isFinite(n) ? n : null;
 }
 
 function parseAltitude(v: unknown): number {
-	if (v === null || v === undefined) return 0;
+	if (v === null || v === undefined) {
+		return 0;
+	}
 
 	if (typeof v === 'string') {
-		if (v.toLowerCase() === 'ground') return 0;
+		if (v.toLowerCase() === 'ground') {
+			return 0;
+		}
 		const n = Number(v);
 		return Number.isFinite(n) ? n : 0;
 	}
@@ -25,6 +31,12 @@ function parseAltitude(v: unknown): number {
 	return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ *
+ * @param config
+ * @param httpJsonRaw
+ * @param logWarn
+ */
 export async function fetchAdsb(
 	config: JetFrameConfig,
 	httpJsonRaw: HttpJsonRaw,
@@ -50,23 +62,21 @@ export async function fetchAdsb(
 			}
 		}
 
-		const arr = Array.isArray(body?.aircraft)
-			? body.aircraft
-			: Array.isArray(body?.ac)
-				? body.ac
-				: [];
+		const arr = Array.isArray(body?.aircraft) ? body.aircraft : Array.isArray(body?.ac) ? body.ac : [];
 
 		for (const item of arr) {
 			const key = clean(
 				item.hex ||
-				item.icao ||
-				item.flight ||
-				item.call ||
-				item.callsign ||
-				`${item.lat}_${item.lon}_${item.alt_baro || item.alt_geom || ''}`,
+					item.icao ||
+					item.flight ||
+					item.call ||
+					item.callsign ||
+					`${item.lat}_${item.lon}_${item.alt_baro || item.alt_geom || ''}`,
 			).toLowerCase();
 
-			if (!key) continue;
+			if (!key) {
+				continue;
+			}
 
 			aircraftByKey[key] = item;
 		}
@@ -77,57 +87,28 @@ export async function fetchAdsb(
 	};
 }
 
-function buildAdsbUrls(
-	config: JetFrameConfig,
-): string[] {
+function buildAdsbUrls(config: JetFrameConfig): string[] {
 	const anyConfig = config as any;
 
-	const customUrl = clean(
-		anyConfig.adsbCustomUrl ||
-		anyConfig.customAdsbUrl ||
-		'',
-	);
+	const customUrl = clean(anyConfig.adsbCustomUrl || anyConfig.customAdsbUrl || '');
 
 	if (customUrl) {
-		return [
-			replaceAdsbUrlTokens(customUrl, config),
-		];
+		return [replaceAdsbUrlTokens(customUrl, config)];
 	}
 
-	const airportLat = Number(
-		anyConfig.airport?.lat ??
-		anyConfig.airportLat ??
-		config.homeLat,
-	);
+	const airportLat = Number(anyConfig.airport?.lat ?? anyConfig.airportLat ?? config.homeLat);
 
-	const airportLon = Number(
-		anyConfig.airport?.lon ??
-		anyConfig.airportLon ??
-		config.homeLon,
-	);
+	const airportLon = Number(anyConfig.airport?.lon ?? anyConfig.airportLon ?? config.homeLon);
 
-	const airportRadiusNm = Math.max(
-		Number(anyConfig.radiusNm || 0),
-		1,
-	);
+	const airportRadiusNm = Math.max(Number(anyConfig.radiusNm || 0), 1);
 
-	const urls = [
-		`https://api.adsb.lol/v2/lat/${airportLat}/lon/${airportLon}/dist/${airportRadiusNm}`,
-	];
+	const urls = [`https://api.adsb.lol/v2/lat/${airportLat}/lon/${airportLon}/dist/${airportRadiusNm}`];
 
-	if (
-		anyConfig.overflightEnabled ||
-		anyConfig.overflightOnly
-	) {
-		const homeRadiusNm = Math.max(
-			Number(anyConfig.overflightMaxDistanceNm || 0),
-			1,
-		);
+	if (anyConfig.overflightEnabled || anyConfig.overflightOnly) {
+		const homeRadiusNm = Math.max(Number(anyConfig.overflightMaxDistanceNm || 0), 1);
 
 		const homeUrl =
-			`https://api.adsb.lol/v2/lat/${config.homeLat}` +
-			`/lon/${config.homeLon}` +
-			`/dist/${homeRadiusNm}`;
+			`https://api.adsb.lol/v2/lat/${config.homeLat}` + `/lon/${config.homeLon}` + `/dist/${homeRadiusNm}`;
 
 		if (!urls.includes(homeUrl)) {
 			urls.push(homeUrl);
@@ -137,31 +118,16 @@ function buildAdsbUrls(
 	return urls;
 }
 
-function replaceAdsbUrlTokens(
-	url: string,
-	config: JetFrameConfig,
-): string {
+function replaceAdsbUrlTokens(url: string, config: JetFrameConfig): string {
 	const anyConfig = config as any;
 
-	const airportLat = String(
-		anyConfig.airport?.lat ??
-		anyConfig.airportLat ??
-		config.homeLat,
-	);
+	const airportLat = String(anyConfig.airport?.lat ?? anyConfig.airportLat ?? config.homeLat);
 
-	const airportLon = String(
-		anyConfig.airport?.lon ??
-		anyConfig.airportLon ??
-		config.homeLon,
-	);
+	const airportLon = String(anyConfig.airport?.lon ?? anyConfig.airportLon ?? config.homeLon);
 
-	const airportRadiusNm = String(
-		anyConfig.radiusNm || 15,
-	);
+	const airportRadiusNm = String(anyConfig.radiusNm || 15);
 
-	const overflightRadiusNm = String(
-		anyConfig.overflightMaxDistanceNm || airportRadiusNm,
-	);
+	const overflightRadiusNm = String(anyConfig.overflightMaxDistanceNm || airportRadiusNm);
 
 	return String(url || '')
 		.replace(/\{homeLat\}/g, String(config.homeLat))
@@ -173,40 +139,44 @@ function replaceAdsbUrlTokens(
 		.replace(/\{overflightRadiusNm\}/g, overflightRadiusNm);
 }
 
-
+/**
+ *
+ * @param body
+ */
 export function parseAircraft(body: any): Aircraft[] {
-	if (!body) return [];
+	if (!body) {
+		return [];
+	}
 
-	const arr = Array.isArray(body.aircraft)
-		? body.aircraft
-		: Array.isArray(body.ac)
-			? body.ac
-			: [];
+	const arr = Array.isArray(body.aircraft) ? body.aircraft : Array.isArray(body.ac) ? body.ac : [];
 
 	return arr
-		.map((a: any): Aircraft => ({
-			hex: clean(a.hex || ''),
-			callsign: clean(a.flight || a.call || a.callsign || ''),
-			type: clean(a.t || a.type || ''),
-			registration: clean(a.r || a.reg || ''),
+		.map(
+			(a: any): Aircraft => ({
+				hex: clean(a.hex || ''),
+				callsign: clean(a.flight || a.call || a.callsign || ''),
+				type: clean(a.t || a.type || ''),
+				registration: clean(a.r || a.reg || ''),
 
-			lat: toNumber(a.lat) ?? 0,
-			lon: toNumber(a.lon) ?? 0,
+				lat: toNumber(a.lat) ?? 0,
+				lon: toNumber(a.lon) ?? 0,
 
-			altFt: parseAltitude(a.alt_baro || a.alt_geom || a.altitude),
-			speedKt: toNumber(a.gs || a.spd || a.speed) ?? 0,
-			trackDeg: toNumber(a.track || a.trak || a.heading) ?? 0,
-			verticalRate: toNumber(a.baro_rate || a.geom_rate || a.vsi) ?? 0,
+				altFt: parseAltitude(a.alt_baro || a.alt_geom || a.altitude),
+				speedKt: toNumber(a.gs || a.spd || a.speed) ?? 0,
+				trackDeg: toNumber(a.track || a.trak || a.heading) ?? 0,
+				verticalRate: toNumber(a.baro_rate || a.geom_rate || a.vsi) ?? 0,
 
-			seenSec: toNumber(a.seen || a.seen_pos || 0) ?? 999,
-		}))
-		.filter((a: Aircraft) =>
-			Number.isFinite(a.lat) &&
-			Number.isFinite(a.lon) &&
-			a.lat !== 0 &&
-			a.lon !== 0 &&
-			Number.isFinite(a.seenSec) &&
-			a.seenSec <= 90
+				seenSec: toNumber(a.seen || a.seen_pos || 0) ?? 999,
+			}),
+		)
+		.filter(
+			(a: Aircraft) =>
+				Number.isFinite(a.lat) &&
+				Number.isFinite(a.lon) &&
+				a.lat !== 0 &&
+				a.lon !== 0 &&
+				Number.isFinite(a.seenSec) &&
+				a.seenSec <= 90,
 		);
 }
 
@@ -217,9 +187,15 @@ function sleep(ms: number): Promise<void> {
 }
 
 function errorText(e: unknown): string {
-	if (!e) return 'unbekannter Fehler';
-	if (typeof e === 'string') return e;
-	if (e instanceof Error) return e.message;
+	if (!e) {
+		return 'unbekannter Fehler';
+	}
+	if (typeof e === 'string') {
+		return e;
+	}
+	if (e instanceof Error) {
+		return e.message;
+	}
 
 	try {
 		return JSON.stringify(e);

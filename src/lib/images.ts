@@ -5,32 +5,31 @@ import * as http from 'http';
 
 import type { Aircraft, JetFrameConfig } from './types';
 
-
 const IMAGE_CACHE = {
 	jetDir: 'img/jet',
 	logoDir: 'img/logos',
 };
 
+/**
+ *
+ */
 export async function ensureImageDirs(
 	adapter: any,
 	logDebug: (msg: string, level?: number) => void,
 	logWarn: (msg: string) => void,
 ): Promise<void> {
 	try {
-		await adapter.writeFileAsync(
-			'jetframe.admin',
-			'.keep',
-			Buffer.from(''),
-		);
+		await adapter.writeFileAsync('jetframe.admin', '.keep', Buffer.from(''));
 
 		logDebug('jetframe.admin Datei-Storage bereit');
 	} catch (e) {
-		logWarn(
-			`jetframe.admin Storage Fehler: ${errorText(e)}`,
-		);
+		logWarn(`jetframe.admin Storage Fehler: ${errorText(e)}`);
 	}
 }
 
+/**
+ *
+ */
 export async function saveImages(
 	adapter: any,
 	config: JetFrameConfig,
@@ -38,19 +37,9 @@ export async function saveImages(
 	logDebug: (msg: string, level?: number) => void,
 	logWarn: (msg: string) => void,
 ): Promise<void> {
-	const logoUrl = await cacheLogoIfNeeded(
-		adapter,
-		a,
-		logDebug,
-		logWarn,
-	);
+	const logoUrl = await cacheLogoIfNeeded(adapter, a, logDebug, logWarn);
 
-	const jetUrl = await cacheJetIfNeeded(
-		adapter,
-		a,
-		logDebug,
-		logWarn,
-	);
+	const jetUrl = await cacheJetIfNeeded(adapter, a, logDebug, logWarn);
 
 	a.localLogoUrl = logoUrl;
 	a.localImageUrl = jetUrl;
@@ -65,23 +54,11 @@ export async function saveImages(
 	}
 
 	for (const base of bases) {
-		await adapter.setForeignStateAsync(
-			`${base}.localLogoUrl`,
-			logoUrl,
-			true,
-		);
+		await adapter.setForeignStateAsync(`${base}.localLogoUrl`, logoUrl, true);
 
-		await adapter.setForeignStateAsync(
-			`${base}.localImageUrl`,
-			jetUrl,
-			true,
-		);
+		await adapter.setForeignStateAsync(`${base}.localImageUrl`, jetUrl, true);
 
-		await adapter.setForeignStateAsync(
-			`${base}.finalImageUrl`,
-			jetUrl || logoUrl || '',
-			true,
-		);
+		await adapter.setForeignStateAsync(`${base}.finalImageUrl`, jetUrl || logoUrl || '', true);
 	}
 }
 
@@ -95,20 +72,14 @@ async function cacheLogoIfNeeded(
 		return '';
 	}
 
-	const logoKey = String(
-		a.airlineIcao ||
-		a.airlineIata ||
-		a.callsign ||
-		'logo',
-	).toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 8);
+	const logoKey = String(a.airlineIcao || a.airlineIata || a.callsign || 'logo')
+		.toUpperCase()
+		.replace(/[^A-Z0-9]/g, '')
+		.substring(0, 8);
 
 	const fileBase = safeFileName(logoKey);
 
-	const existing = await findExistingImage(
-		adapter,
-		IMAGE_CACHE.logoDir,
-		fileBase,
-	);
+	const existing = await findExistingImage(adapter, IMAGE_CACHE.logoDir, fileBase);
 
 	if (existing) {
 		logDebug(`Logo Cache hit: ${existing.url}`);
@@ -118,21 +89,13 @@ async function cacheLogoIfNeeded(
 	try {
 		logDebug(`Logo Download: ${a.logoUrl}`);
 
-		const buffer = await downloadImageBuffer(
-			a.logoUrl,
-			false,
-		);
+		const buffer = await downloadImageBuffer(a.logoUrl, false);
 
 		const ext = detectImageExt(buffer);
 
-		const relPath =
-			`${IMAGE_CACHE.logoDir}/${fileBase}.${ext}`;
+		const relPath = `${IMAGE_CACHE.logoDir}/${fileBase}.${ext}`;
 
-		await adapter.writeFileAsync(
-			'jetframe.admin',
-			relPath,
-			buffer,
-		);
+		await adapter.writeFileAsync('jetframe.admin', relPath, buffer);
 
 		const url = publicUrl(relPath);
 
@@ -140,9 +103,7 @@ async function cacheLogoIfNeeded(
 
 		return url;
 	} catch (e) {
-		logWarn(
-			`Logo Download/Speichern Fehler: ${errorText(e)}`,
-		);
+		logWarn(`Logo Download/Speichern Fehler: ${errorText(e)}`);
 
 		return '';
 	}
@@ -176,19 +137,11 @@ async function cacheJetIfNeeded(
 	logDebug: (msg: string, level?: number) => void,
 	logWarn: (msg: string) => void,
 ): Promise<string> {
-	const key =
-		a.registration ||
-		a.callsign ||
-		a.hex ||
-		'unknown';
+	const key = a.registration || a.callsign || a.hex || 'unknown';
 
 	const fileBase = safeFileName(key);
 
-	const existing = await findExistingImage(
-		adapter,
-		IMAGE_CACHE.jetDir,
-		fileBase,
-	);
+	const existing = await findExistingImage(adapter, IMAGE_CACHE.jetDir, fileBase);
 
 	if (existing) {
 		logDebug(`Jet Cache hit: ${existing.url}`);
@@ -201,21 +154,13 @@ async function cacheJetIfNeeded(
 		try {
 			logDebug(`Jet Bild Download (HexDB): ${hexUrl}`);
 
-			const buffer = await downloadImageBuffer(
-				hexUrl,
-				false,
-			);
+			const buffer = await downloadImageBuffer(hexUrl, false);
 
 			const ext = detectImageExt(buffer);
 
-			const relPath =
-				`${IMAGE_CACHE.jetDir}/${fileBase}.${ext}`;
+			const relPath = `${IMAGE_CACHE.jetDir}/${fileBase}.${ext}`;
 
-			await adapter.writeFileAsync(
-				'jetframe.admin',
-				relPath,
-				buffer,
-			);
+			await adapter.writeFileAsync('jetframe.admin', relPath, buffer);
 
 			const url = publicUrl(relPath);
 
@@ -223,25 +168,14 @@ async function cacheJetIfNeeded(
 
 			return url;
 		} catch (e) {
-			logDebug(
-				`Jet Bild HexDB nicht nutzbar: ${errorText(e)}`,
-			);
+			logDebug(`Jet Bild HexDB nicht nutzbar: ${errorText(e)}`);
 		}
 	}
 
-	let fr24Url =
-		String(
-			(a as any).fr24ImageUrl ||
-			a.jetphotosImageUrl ||
-			'',
-		).trim();
+	let fr24Url = String((a as any).fr24ImageUrl || a.jetphotosImageUrl || '').trim();
 
 	if (!fr24Url) {
-		fr24Url = await resolveFr24AircraftImageFromPage(
-			a,
-			logDebug,
-			logWarn,
-		);
+		fr24Url = await resolveFr24AircraftImageFromPage(a, logDebug, logWarn);
 	}
 
 	if (!fr24Url) {
@@ -251,21 +185,13 @@ async function cacheJetIfNeeded(
 	try {
 		logDebug(`Jet Bild Download (FR24 Fallback): ${fr24Url}`);
 
-		const buffer = await downloadImageBuffer(
-			fr24Url,
-			true,
-		);
+		const buffer = await downloadImageBuffer(fr24Url, true);
 
 		const ext = detectImageExt(buffer);
 
-		const relPath =
-			`${IMAGE_CACHE.jetDir}/${fileBase}.${ext}`;
+		const relPath = `${IMAGE_CACHE.jetDir}/${fileBase}.${ext}`;
 
-		await adapter.writeFileAsync(
-			'jetframe.admin',
-			relPath,
-			buffer,
-		);
+		await adapter.writeFileAsync('jetframe.admin', relPath, buffer);
 
 		const url = publicUrl(relPath);
 
@@ -273,37 +199,20 @@ async function cacheJetIfNeeded(
 
 		return url;
 	} catch (e) {
-		logWarn(
-			`FR24 Bild Download/Speichern Fehler: ${errorText(e)}`,
-		);
+		logWarn(`FR24 Bild Download/Speichern Fehler: ${errorText(e)}`);
 
 		return '';
 	}
 }
 
-
-async function findExistingImage(
-	adapter: any,
-	relDir: string,
-	fileBase: string,
-): Promise<{ url: string } | null> {
-	const exts = [
-		'jpg',
-		'jpeg',
-		'png',
-		'webp',
-		'avif',
-	];
+async function findExistingImage(adapter: any, relDir: string, fileBase: string): Promise<{ url: string } | null> {
+	const exts = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
 
 	for (const ext of exts) {
-		const relPath =
-			`${relDir}/${fileBase}.${ext}`;
+		const relPath = `${relDir}/${fileBase}.${ext}`;
 
 		try {
-			const file = await adapter.readFileAsync(
-				'jetframe.admin',
-				relPath,
-			);
+			const file = await adapter.readFileAsync('jetframe.admin', relPath);
 
 			if (file?.file) {
 				return {
@@ -318,9 +227,6 @@ async function findExistingImage(
 	return null;
 }
 
-
-
-
 async function resolveFr24AircraftImageFromPage(
 	a: Aircraft,
 	logDebug: (msg: string, level?: number) => void,
@@ -334,8 +240,7 @@ async function resolveFr24AircraftImageFromPage(
 		return '';
 	}
 
-	const url =
-		`https://www.flightradar24.com/data/aircraft/${encodeURIComponent(reg)}`;
+	const url = `https://www.flightradar24.com/data/aircraft/${encodeURIComponent(reg)}`;
 
 	try {
 		logDebug(`FR24 Aircraft Page Anfrage: ${url}`);
@@ -345,16 +250,13 @@ async function resolveFr24AircraftImageFromPage(
 				url,
 				{
 					headers: {
-						'User-Agent':
-							'Mozilla/5.0 AppleWebKit/605.1.15 Safari/604.1',
+						'User-Agent': 'Mozilla/5.0 AppleWebKit/605.1.15 Safari/604.1',
 					},
 					timeout: 20000,
 				},
 				res => {
 					if (res.statusCode !== 200) {
-						reject(
-							new Error(`HTTP ${res.statusCode}`),
-						);
+						reject(new Error(`HTTP ${res.statusCode}`));
 
 						return;
 					}
@@ -362,78 +264,48 @@ async function resolveFr24AircraftImageFromPage(
 					const chunks: Buffer[] = [];
 
 					res.on('data', chunk => {
-						chunks.push(
-							Buffer.isBuffer(chunk)
-								? chunk
-								: Buffer.from(chunk),
-						);
+						chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
 					});
 
 					res.on('end', () => {
-						resolve(
-							Buffer.concat(chunks).toString('utf8'),
-						);
+						resolve(Buffer.concat(chunks).toString('utf8'));
 					});
 				},
 			);
 
 			req.on('timeout', () => {
-				req.destroy(
-					new Error('FR24 Timeout'),
-				);
+				req.destroy(new Error('FR24 Timeout'));
 			});
 
 			req.on('error', reject);
 		});
 
-		const matches = [
-			...html.matchAll(
-				/https:\/\/cdn\.jetphotos\.com\/[^"' ]+\.(jpg|jpeg|png|webp)/ig,
-			),
-		];
+		const matches = [...html.matchAll(/https:\/\/cdn\.jetphotos\.com\/[^"' ]+\.(jpg|jpeg|png|webp)/gi)];
 
 		if (!matches.length) {
-			logDebug(
-				`FR24 Aircraft kein Bild gefunden: ${reg}`,
-			);
+			logDebug(`FR24 Aircraft kein Bild gefunden: ${reg}`);
 
 			return '';
 		}
 
 		const imageUrl = String(matches[0][0] || '').trim();
 
-		logDebug(
-			`FR24 Aircraft Bild gefunden: ${imageUrl}`,
-		);
+		logDebug(`FR24 Aircraft Bild gefunden: ${imageUrl}`);
 
 		return imageUrl;
 	} catch (e) {
-		logWarn(
-			`FR24 Aircraft Fehler: ${errorText(e)}`,
-		);
+		logWarn(`FR24 Aircraft Fehler: ${errorText(e)}`);
 
 		return '';
 	}
 }
 
-
 function looksLikeImageBuffer(buf: Buffer): boolean {
-	if (
-		buf.length >= 3 &&
-		buf[0] === 0xff &&
-		buf[1] === 0xd8 &&
-		buf[2] === 0xff
-	) {
+	if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
 		return true;
 	}
 
-	if (
-		buf.length >= 8 &&
-		buf[0] === 0x89 &&
-		buf[1] === 0x50 &&
-		buf[2] === 0x4e &&
-		buf[3] === 0x47
-	) {
+	if (buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
 		return true;
 	}
 
@@ -454,23 +326,12 @@ function looksLikeImageBuffer(buf: Buffer): boolean {
 
 function detectImageExt(buf: Buffer): string {
 	// JPG
-	if (
-		buf.length >= 3 &&
-		buf[0] === 0xff &&
-		buf[1] === 0xd8 &&
-		buf[2] === 0xff
-	) {
+	if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
 		return 'jpg';
 	}
 
 	// PNG
-	if (
-		buf.length >= 8 &&
-		buf[0] === 0x89 &&
-		buf[1] === 0x50 &&
-		buf[2] === 0x4e &&
-		buf[3] === 0x47
-	) {
+	if (buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
 		return 'png';
 	}
 
@@ -484,9 +345,7 @@ function detectImageExt(buf: Buffer): string {
 	}
 
 	// AVIF
-	if (
-		buf.includes(Buffer.from('ftypavif'))
-	) {
+	if (buf.includes(Buffer.from('ftypavif'))) {
 		return 'avif';
 	}
 
@@ -503,37 +362,24 @@ function safeFileName(name: string): string {
 		.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
-function downloadImageBuffer(
-	url: string,
-	useReferer: boolean,
-	redirects = 0,
-): Promise<Buffer> {
+function downloadImageBuffer(url: string, useReferer: boolean, redirects = 0): Promise<Buffer> {
 	return new Promise((resolve, reject) => {
 		if (redirects > 5) {
-			reject(
-				new Error(
-					'Zu viele Redirects beim Bilddownload',
-				),
-			);
+			reject(new Error('Zu viele Redirects beim Bilddownload'));
 
 			return;
 		}
 
-		const client = url.startsWith('https')
-			? https
-			: http;
+		const client = url.startsWith('https') ? https : http;
 
 		const headers: Record<string, string> = {
-			'User-Agent':
-				'Mozilla/5.0 AppleWebKit/605.1.15 Safari/604.1',
+			'User-Agent': 'Mozilla/5.0 AppleWebKit/605.1.15 Safari/604.1',
 
-			Accept:
-				'image/avif,image/webp,image/apng,image/png,image/jpeg,image/*,*/*;q=0.8',
+			Accept: 'image/avif,image/webp,image/apng,image/png,image/jpeg,image/*,*/*;q=0.8',
 		};
 
 		if (useReferer) {
-			headers.Referer =
-				'https://www.flightradar24.com/';
+			headers.Referer = 'https://www.flightradar24.com/';
 		}
 
 		const req = client.get(
@@ -543,25 +389,12 @@ function downloadImageBuffer(
 				timeout: 20000,
 			},
 			res => {
-				if (
-					res.statusCode &&
-					res.statusCode >= 300 &&
-					res.statusCode < 400 &&
-					res.headers.location
-				) {
-					const nextUrl =
-						res.headers.location.startsWith('http')
-							? res.headers.location
-							: new URL(
-									res.headers.location,
-									url,
-								).toString();
+				if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+					const nextUrl = res.headers.location.startsWith('http')
+						? res.headers.location
+						: new URL(res.headers.location, url).toString();
 
-					downloadImageBuffer(
-						nextUrl,
-						useReferer,
-						redirects + 1,
-					)
+					downloadImageBuffer(nextUrl, useReferer, redirects + 1)
 						.then(resolve)
 						.catch(reject);
 
@@ -569,11 +402,7 @@ function downloadImageBuffer(
 				}
 
 				if (res.statusCode !== 200) {
-					reject(
-						new Error(
-							`HTTP ${res.statusCode}`,
-						),
-					);
+					reject(new Error(`HTTP ${res.statusCode}`));
 
 					return;
 				}
@@ -581,42 +410,24 @@ function downloadImageBuffer(
 				const chunks: Buffer[] = [];
 
 				res.on('data', chunk => {
-					chunks.push(
-						Buffer.isBuffer(chunk)
-							? chunk
-							: Buffer.from(chunk),
-					);
+					chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
 				});
 
 				res.on('end', () => {
-					const buffer =
-						Buffer.concat(chunks);
+					const buffer = Buffer.concat(chunks);
 
 					if (!buffer.length) {
-						reject(
-							new Error(
-								'Leeres Bild erhalten',
-							),
-						);
+						reject(new Error('Leeres Bild erhalten'));
 
 						return;
 					}
 
-					const contentType =
-						String(res.headers['content-type'] || '').toLowerCase();
+					const contentType = String(res.headers['content-type'] || '').toLowerCase();
 
-					const text =
-						buffer.toString('utf8').trim();
+					const text = buffer.toString('utf8').trim();
 
-					if (
-						!contentType.startsWith('image/') &&
-						/^https?:\/\//i.test(text)
-					) {
-						downloadImageBuffer(
-							text,
-							useReferer,
-							redirects + 1,
-						)
+					if (!contentType.startsWith('image/') && /^https?:\/\//i.test(text)) {
+						downloadImageBuffer(text, useReferer, redirects + 1)
 							.then(resolve)
 							.catch(reject);
 
@@ -624,11 +435,7 @@ function downloadImageBuffer(
 					}
 
 					if (!looksLikeImageBuffer(buffer)) {
-						reject(
-							new Error(
-								'Antwort ist kein Bild',
-							),
-						);
+						reject(new Error('Antwort ist kein Bild'));
 
 						return;
 					}
@@ -639,11 +446,7 @@ function downloadImageBuffer(
 		);
 
 		req.on('timeout', () => {
-			req.destroy(
-				new Error(
-					'Bild Download Timeout',
-				),
-			);
+			req.destroy(new Error('Bild Download Timeout'));
 		});
 
 		req.on('error', reject);

@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ *
+ */
 export async function copyStaticFiles(adapter: any): Promise<void> {
 	const sourceDir = path.resolve(__dirname, '../../admin');
 
@@ -16,17 +19,19 @@ export async function copyStaticFiles(adapter: any): Promise<void> {
 	adapter.log.debug('[JetFrame] Static files copied to ioBroker files');
 }
 
-async function copyRecursiveToIoBrokerFiles(
-	adapter: any,
-	srcDir: string,
-	relDir: string,
-): Promise<void> {
+async function copyRecursiveToIoBrokerFiles(adapter: any, srcDir: string, relDir: string): Promise<void> {
 	const entries = fs.readdirSync(srcDir, { withFileTypes: true });
 
 	for (const entry of entries) {
-		if (entry.name === 'src') continue;
-		if (entry.name.endsWith('.ts')) continue;
-		if (entry.name === 'tsconfig.json') continue;
+		if (entry.name === 'src') {
+			continue;
+		}
+		if (entry.name.endsWith('.ts')) {
+			continue;
+		}
+		if (entry.name === 'tsconfig.json') {
+			continue;
+		}
 
 		const srcPath = path.join(srcDir, entry.name);
 		const relPath = relDir ? `${relDir}/${entry.name}` : entry.name;
@@ -38,11 +43,7 @@ async function copyRecursiveToIoBrokerFiles(
 
 		const buffer = fs.readFileSync(srcPath);
 
-		await adapter.writeFileAsync(
-			'jetframe.admin',
-			relPath,
-			buffer,
-		);
+		await adapter.writeFileAsync('jetframe.admin', relPath, buffer);
 
 		adapter.log.debug(`[JetFrame] Static written: jetframe.admin/${relPath}`);
 	}

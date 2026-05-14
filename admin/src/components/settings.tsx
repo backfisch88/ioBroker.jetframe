@@ -49,20 +49,24 @@ class Settings extends React.Component<SettingsProps, SettingsState> {
 		);
 	}
 
-	renderSelect(
-		title: AdminWord,
-		attr: string,
-		options: { value: string; title: AdminWord }[],
-	): React.JSX.Element {
+	renderSelect(title: AdminWord, attr: string, options: { value: string; title: AdminWord }[]): React.JSX.Element {
 		return (
 			<FormControl className={`${this.props.classes.input} ${this.props.classes.controlElement}`}>
 				<Select
 					value={this.props.native[attr] || 'browser'}
 					onChange={e => this.props.onChange(attr, e.target.value)}
-					input={<Input name={attr} id={`${attr}-helper`} />}
+					input={
+						<Input
+							name={attr}
+							id={`${attr}-helper`}
+						/>
+					}
 				>
 					{options.map(item => (
-						<MenuItem key={item.value} value={item.value}>
+						<MenuItem
+							key={item.value}
+							value={item.value}
+						>
 							{I18n.t(item.title)}
 						</MenuItem>
 					))}

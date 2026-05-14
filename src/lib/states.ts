@@ -3,6 +3,9 @@ import { round } from './geo';
 
 const LAST_SPEECH_TRIGGER: Record<string, string> = {};
 
+/**
+ *
+ */
 export async function ensureState(
 	adapter: any,
 	id: string,
@@ -29,17 +32,13 @@ export async function ensureState(
 	}
 }
 
-export async function ensureBaseStates(
-	adapter: any,
-	config: JetFrameConfig,
-): Promise<void> {
+/**
+ *
+ */
+export async function ensureBaseStates(adapter: any, config: JetFrameConfig): Promise<void> {
 	await ensureState(adapter, `${config.dpRoot}.enabled`, config.enabled !== false, 'boolean', 'switch');
 
-	await adapter.setForeignStateAsync(
-		`${config.dpRoot}.enabled`,
-		config.enabled !== false,
-		true,
-	);
+	await adapter.setForeignStateAsync(`${config.dpRoot}.enabled`, config.enabled !== false, true);
 	await ensureState(adapter, `${config.dpRoot}.status`, 'init', 'string', 'text');
 	await ensureState(adapter, `${config.dpRoot}.lastUpdate`, '', 'string', 'text');
 	await ensureState(adapter, `${config.dpRoot}.allCount`, 0, 'number', 'value');
@@ -88,7 +87,8 @@ export async function ensureBaseStates(
 	}
 	await adapter.setForeignStateAsync(
 		`${config.dpRoot}.speechTemplate`,
-		config.speechTemplate || '{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.',
+		config.speechTemplate ||
+			'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.',
 		true,
 	);
 
@@ -97,10 +97,10 @@ export async function ensureBaseStates(
 	await ensureFlightStates(adapter, `${config.dpRoot}.overflight`);
 }
 
-export async function ensureFlightStates(
-	adapter: any,
-	base: string,
-): Promise<void> {
+/**
+ *
+ */
+export async function ensureFlightStates(adapter: any, base: string): Promise<void> {
 	const strings = [
 		'.text',
 		'.callsign',
@@ -206,26 +206,32 @@ function cleanRouteCallsign(a: Aircraft): string {
 		.trim()
 		.toUpperCase();
 
-	if (!v) return '';
-	if (v === own) return '';
-	if (/^\d+$/.test(v)) return '';
-	if (!/[A-Z]/.test(v)) return '';
-	if (v.length < 4 || v.length > 8) return '';
+	if (!v) {
+		return '';
+	}
+	if (v === own) {
+		return '';
+	}
+	if (/^\d+$/.test(v)) {
+		return '';
+	}
+	if (!/[A-Z]/.test(v)) {
+		return '';
+	}
+	if (v.length < 4 || v.length > 8) {
+		return '';
+	}
 
 	return v;
 }
 
-export async function writeFlight(
-	adapter: any,
-	base: string,
-	a: Aircraft,
-): Promise<void> {
-	const routeCallsign =
-		String(
-			a.routeCallsign ||
-			a.callsign ||
-			'',
-		).trim().toUpperCase();
+/**
+ *
+ */
+export async function writeFlight(adapter: any, base: string, a: Aircraft): Promise<void> {
+	const routeCallsign = String(a.routeCallsign || a.callsign || '')
+		.trim()
+		.toUpperCase();
 	const display = buildDisplayInfo(a);
 	display.speechText = await buildSpeechTextForWrite(adapter, base, a, display);
 
@@ -233,11 +239,7 @@ export async function writeFlight(
 
 	await adapter.setForeignStateAsync(`${base}.callsign`, a.callsign || '', true);
 
-	await adapter.setForeignStateAsync(
-		`${base}.operationalCallsign`,
-		a.operationalCallsign || a.callsign || '',
-		true,
-	);
+	await adapter.setForeignStateAsync(`${base}.operationalCallsign`, a.operationalCallsign || a.callsign || '', true);
 
 	await adapter.setForeignStateAsync(`${base}.routeCallsign`, routeCallsign, true);
 	await adapter.setForeignStateAsync(`${base}.hex`, a.hex || '', true);
@@ -286,17 +288,9 @@ export async function writeFlight(
 	await adapter.setForeignStateAsync(`${base}.jetphotosUrl`, a.jetphotosUrl || '', true);
 	await adapter.setForeignStateAsync(`${base}.jetphotosImageUrl`, a.jetphotosImageUrl || '', true);
 
-	const localLogoUrl = await keepExistingStringState(
-		adapter,
-		`${base}.localLogoUrl`,
-		a.localLogoUrl,
-	);
+	const localLogoUrl = await keepExistingStringState(adapter, `${base}.localLogoUrl`, a.localLogoUrl);
 
-	const localImageUrl = await keepExistingStringState(
-		adapter,
-		`${base}.localImageUrl`,
-		a.localImageUrl,
-	);
+	const localImageUrl = await keepExistingStringState(adapter, `${base}.localImageUrl`, a.localImageUrl);
 
 	const finalImageUrl = await keepExistingStringState(
 		adapter,
@@ -318,8 +312,16 @@ export async function writeFlight(
 	await adapter.setForeignStateAsync(`${base}.bearingHomeDeg`, round(a.bearingHomeDeg || 0, 1), true);
 	await adapter.setForeignStateAsync(`${base}.windowDiffDeg`, round(a.windowDiffDeg || 0, 1), true);
 
-	await adapter.setForeignStateAsync(`${base}.bearingAircraftToAirportDeg`, round(a.bearingAircraftToAirportDeg || 0, 1), true);
-	await adapter.setForeignStateAsync(`${base}.bearingAirportToAircraftDeg`, round(a.bearingAirportToAircraftDeg || 0, 1), true);
+	await adapter.setForeignStateAsync(
+		`${base}.bearingAircraftToAirportDeg`,
+		round(a.bearingAircraftToAirportDeg || 0, 1),
+		true,
+	);
+	await adapter.setForeignStateAsync(
+		`${base}.bearingAirportToAircraftDeg`,
+		round(a.bearingAirportToAircraftDeg || 0, 1),
+		true,
+	);
 	await adapter.setForeignStateAsync(`${base}.landingTrackDiffDeg`, round(a.landingTrackDiffDeg || 0, 1), true);
 	await adapter.setForeignStateAsync(`${base}.takeoffTrackDiffDeg`, round(a.takeoffTrackDiffDeg || 0, 1), true);
 	await adapter.setForeignStateAsync(`${base}.airportTrackDiffDeg`, round(a.airportTrackDiffDeg || 0, 1), true);
@@ -337,10 +339,10 @@ export async function writeFlight(
 	await maybeTriggerSpeech(adapter, base, a, display.speechText);
 }
 
-export async function clearFlight(
-	adapter: any,
-	base: string,
-): Promise<void> {
+/**
+ *
+ */
+export async function clearFlight(adapter: any, base: string): Promise<void> {
 	const strings = [
 		'.text',
 		'.callsign',
@@ -438,21 +440,13 @@ export async function clearFlight(
 }
 
 function buildDisplayInfo(a: Aircraft): Record<string, string> {
-	const originDisplayName =
-		cityOnly(a.originName) ||
-		String(a.originIata || '').trim() ||
-		'—';
+	const originDisplayName = cityOnly(a.originName) || String(a.originIata || '').trim() || '—';
 
-	const destDisplayName =
-		cityOnly(a.destName) ||
-		String(a.destIata || '').trim() ||
-		'—';
+	const destDisplayName = cityOnly(a.destName) || String(a.destIata || '').trim() || '—';
 
-	const routeDisplayText =
-		`${originDisplayName} → ${destDisplayName}`;
+	const routeDisplayText = `${originDisplayName} → ${destDisplayName}`;
 
-	const routeCodesText =
-		`${a.originIata || '—'} → ${a.destIata || '—'}`;
+	const routeCodesText = `${a.originIata || '—'} → ${a.destIata || '—'}`;
 
 	const modeVisText = modeVisTextFromFlight(a, originDisplayName, destDisplayName);
 
@@ -460,13 +454,7 @@ function buildDisplayInfo(a: Aircraft): Record<string, string> {
 
 	const aircraft = aircraftDisplayInfo(a);
 
-	const specialDisplayText =
-		String(
-			a.specialLiveryVisText ||
-			a.specialLiveryFull ||
-			a.specialText ||
-			'',
-		).trim();
+	const specialDisplayText = String(a.specialLiveryVisText || a.specialLiveryFull || a.specialText || '').trim();
 
 	const speechText = buildSpeechText(a, {
 		originDisplayName,
@@ -501,11 +489,7 @@ function buildDisplayInfo(a: Aircraft): Record<string, string> {
 	};
 }
 
-function modeVisTextFromFlight(
-	a: Aircraft,
-	originDisplayName: string,
-	destDisplayName: string,
-): string {
+function modeVisTextFromFlight(a: Aircraft, originDisplayName: string, destDisplayName: string): string {
 	const mode = String(a.mode || '').toUpperCase();
 
 	if (mode === 'TAKEOFF') {
@@ -571,23 +555,15 @@ function aircraftDisplayInfo(a: Aircraft): {
 	aircraftTypeText: string;
 	aircraftSize: string;
 } {
-	const raw = String(
-		a.aircraftModel ||
-		a.aircraftType ||
-		a.type ||
-		'',
-	).trim();
+	const raw = String(a.aircraftModel || a.aircraftType || a.type || '').trim();
 
-	const type = String(
-		a.aircraftType ||
-		a.type ||
-		'',
-	).trim().toUpperCase();
+	const type = String(a.aircraftType || a.type || '')
+		.trim()
+		.toUpperCase();
 
-	const model = String(
-		a.aircraftModel ||
-		'',
-	).trim().toUpperCase();
+	const model = String(a.aircraftModel || '')
+		.trim()
+		.toUpperCase();
 
 	const all = `${type} ${model} ${raw}`.toUpperCase();
 
@@ -653,57 +629,59 @@ function aircraftDisplayInfo(a: Aircraft): {
 		}
 	}
 
-	let aircraftSize = aircraftSizeLabel(all);
+	const aircraftSize = aircraftSizeLabel(all);
 
+	const manufacturerLogoBase = '/jetframe.admin/img/manufacturer/';
 
-const manufacturerLogoBase = '/jetframe.admin/img/manufacturer/';
+	let manufacturerLogoUrl = '';
 
-let manufacturerLogoUrl = '';
-
-if (manufacturer === 'Airbus') {
-	manufacturerLogoUrl = `${manufacturerLogoBase}airbus.png`;
-} else if (manufacturer === 'Boeing') {
-	manufacturerLogoUrl = `${manufacturerLogoBase}boeing.png`;
-} else if (manufacturer === 'Embraer') {
-	manufacturerLogoUrl = `${manufacturerLogoBase}embraer.png`;
-} else if (manufacturer === 'ATR') {
-	manufacturerLogoUrl = `${manufacturerLogoBase}atr.png`;
-} else if (manufacturer === 'Dassault') {
-	manufacturerLogoUrl = `${manufacturerLogoBase}dassault.png`;
-} else if (manufacturer === 'Lockheed') {
-	manufacturerLogoUrl = `${manufacturerLogoBase}lockheed.png`;
-} else if (manufacturer === 'Honda') {
-	manufacturerLogoUrl = `${manufacturerLogoBase}honda.png`;
-} else if (manufacturer === 'Bombardier') {
-	manufacturerLogoUrl = `${manufacturerLogoBase}bombardier.png`;
-}
-
+	if (manufacturer === 'Airbus') {
+		manufacturerLogoUrl = `${manufacturerLogoBase}airbus.png`;
+	} else if (manufacturer === 'Boeing') {
+		manufacturerLogoUrl = `${manufacturerLogoBase}boeing.png`;
+	} else if (manufacturer === 'Embraer') {
+		manufacturerLogoUrl = `${manufacturerLogoBase}embraer.png`;
+	} else if (manufacturer === 'ATR') {
+		manufacturerLogoUrl = `${manufacturerLogoBase}atr.png`;
+	} else if (manufacturer === 'Dassault') {
+		manufacturerLogoUrl = `${manufacturerLogoBase}dassault.png`;
+	} else if (manufacturer === 'Lockheed') {
+		manufacturerLogoUrl = `${manufacturerLogoBase}lockheed.png`;
+	} else if (manufacturer === 'Honda') {
+		manufacturerLogoUrl = `${manufacturerLogoBase}honda.png`;
+	} else if (manufacturer === 'Bombardier') {
+		manufacturerLogoUrl = `${manufacturerLogoBase}bombardier.png`;
+	}
 
 	return {
-	manufacturer,
-	manufacturerLogoText,
-	manufacturerLogoUrl,
-	aircraftTypeText,
-	aircraftSize,
-};
+		manufacturer,
+		manufacturerLogoText,
+		manufacturerLogoUrl,
+		aircraftTypeText,
+		aircraftSize,
+	};
 }
 
-
-
-function aircraftSizeLabel(
-	allText: string,
-): string {
+function aircraftSizeLabel(allText: string): string {
 	const all = String(allText || '')
 		.toUpperCase()
 		.replace(/[\s_-]/g, '');
 
 	// Superjumbo / Jumbo
-	if (/A38|A380|A388/.test(all)) return 'Superjumbo';
-	if (/B74|B747|B741|B742|B743|B744|B748/.test(all)) return 'Jumbo';
+	if (/A38|A380|A388/.test(all)) {
+		return 'Superjumbo';
+	}
+	if (/B74|B747|B741|B742|B743|B744|B748/.test(all)) {
+		return 'Jumbo';
+	}
 
 	// Heavy Cargo / Military Transport
-	if (/AN124|AN225|C5M|GALAXY|C17|C17A|GLOBEMASTER/.test(all)) return 'Heavy Cargo';
-	if (/A400|A400M|C130|HERCULES|KC135|KC46|E3|E7/.test(all)) return 'Military';
+	if (/AN124|AN225|C5M|GALAXY|C17|C17A|GLOBEMASTER/.test(all)) {
+		return 'Heavy Cargo';
+	}
+	if (/A400|A400M|C130|HERCULES|KC135|KC46|E3|E7/.test(all)) {
+		return 'Military';
+	}
 
 	// Widebody
 	if (
@@ -758,22 +736,20 @@ function aircraftSizeLabel(
 	}
 
 	// General Aviation
-	if (
-		/C172|C182|C206|C208|PA28|PA34|BE20|BE9L|PC12|DA40|DA42/.test(all)
-	) {
+	if (/C172|C182|C206|C208|PA28|PA34|BE20|BE9L|PC12|DA40|DA42/.test(all)) {
 		return 'General Aviation';
 	}
 
 	// Helicopter
-	if (
-		/EC135|EC145|H135|H145|H160|AW109|AW139|AW169|AW189|S76|S92|UH60|CH47|MI8|KA32/.test(all)
-	) {
+	if (/EC135|EC145|H135|H145|H160|AW109|AW139|AW169|AW189|S76|S92|UH60|CH47|MI8|KA32/.test(all)) {
 		return 'Helicopter';
 	}
 
 	// Military Jet / Bomber
 	if (
-		/F14|F15|F16|F18|F22|F35|EUROFIGHTER|TYPHOON|RAFALE|GRIPEN|MIRAGE|SU27|SU30|SU35|MIG29|B1|B2|B52|TU95|TU160/.test(all)
+		/F14|F15|F16|F18|F22|F35|EUROFIGHTER|TYPHOON|RAFALE|GRIPEN|MIRAGE|SU27|SU30|SU35|MIG29|B1|B2|B52|TU95|TU160/.test(
+			all,
+		)
 	) {
 		return 'Military';
 	}
@@ -781,18 +757,12 @@ function aircraftSizeLabel(
 	return 'Unknown';
 }
 
-function buildSpeechText(
-	a: Aircraft,
-	display: Record<string, string>,
-): string {
+function buildSpeechText(a: Aircraft, display: Record<string, string>): string {
 	const mode = String(a.mode || '').toUpperCase();
 
 	let modeSpeechText = 'Flug';
 	let routeDirectionText = 'von';
-	let routeOtherAirport =
-		display.originDisplayName ||
-		display.destDisplayName ||
-		'';
+	let routeOtherAirport = display.originDisplayName || display.destDisplayName || '';
 
 	if (mode === 'LANDING') {
 		modeSpeechText = 'Landung';
@@ -812,8 +782,7 @@ function buildSpeechText(
 		routeOtherAirport = display.routeDisplayText || '';
 	}
 
-	const bestCallsign =
-		String(a.routeCallsign || a.callsign || '').trim();
+	const bestCallsign = String(a.routeCallsign || a.callsign || '').trim();
 
 	const template =
 		'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuß. {windowPositionSpeechText}.';
@@ -850,12 +819,7 @@ function buildSpeechText(
 		.trim();
 }
 
-async function maybeTriggerSpeech(
-	adapter: any,
-	base: string,
-	a: Aircraft,
-	speechText: string,
-): Promise<void> {
+async function maybeTriggerSpeech(adapter: any, base: string, a: Aircraft, speechText: string): Promise<void> {
 	if (!base.endsWith('.current')) {
 		return;
 	}
@@ -895,8 +859,6 @@ async function maybeTriggerSpeech(
 	}, 500);
 }
 
-
-
 async function buildSpeechTextForWrite(
 	adapter: any,
 	base: string,
@@ -918,19 +880,12 @@ async function buildSpeechTextForWrite(
 	return buildSpeechTextFromTemplate(a, display, template);
 }
 
-function buildSpeechTextFromTemplate(
-	a: Aircraft,
-	display: Record<string, string>,
-	template: string,
-): string {
+function buildSpeechTextFromTemplate(a: Aircraft, display: Record<string, string>, template: string): string {
 	const mode = String(a.mode || '').toUpperCase();
 
 	let modeSpeechText = 'Flug';
 	let routeDirectionText = 'von';
-	let routeOtherAirport =
-		display.originDisplayName ||
-		display.destDisplayName ||
-		'';
+	let routeOtherAirport = display.originDisplayName || display.destDisplayName || '';
 
 	if (mode === 'LANDING') {
 		modeSpeechText = 'Landung';
@@ -950,8 +905,7 @@ function buildSpeechTextFromTemplate(
 		routeOtherAirport = display.routeDisplayText || '';
 	}
 
-	const bestCallsign =
-		String(a.routeCallsign || a.callsign || '').trim();
+	const bestCallsign = String(a.routeCallsign || a.callsign || '').trim();
 
 	const values: Record<string, string> = {
 		modeSpeechText,
@@ -985,7 +939,6 @@ function buildSpeechTextFromTemplate(
 		.trim();
 }
 
-
 function cityOnly(name: unknown): string {
 	const v = String(name || '')
 		.replace(/\bAirport\b/gi, '')
@@ -997,19 +950,18 @@ function cityOnly(name: unknown): string {
 		.replace(/\s+/g, ' ')
 		.trim();
 
-	if (v === 'Frankfurt am') return 'Frankfurt';
+	if (v === 'Frankfurt am') {
+		return 'Frankfurt';
+	}
 
 	return v;
 }
 
 function buildMessage(a: Aircraft): string {
 	const lines: string[] = [];
-	const routeCallsign =
-		String(
-			a.routeCallsign ||
-			a.callsign ||
-			'',
-		).trim().toUpperCase();
+	const routeCallsign = String(a.routeCallsign || a.callsign || '')
+		.trim()
+		.toUpperCase();
 
 	lines.push('✈️ JetFrame');
 	lines.push('');
@@ -1055,40 +1007,36 @@ function buildMessage(a: Aircraft): string {
 	lines.push(`Steigrate: ${Math.round(a.verticalRate || 0)} ft/min`);
 	lines.push(`Kurs: ${Math.round(a.trackDeg || 0)}°`);
 
-	const specialDisplayText =
-	a.specialLiveryVisText ||
-	a.specialLiveryFull ||
-	a.specialText ||
-	'';
+	const specialDisplayText = a.specialLiveryVisText || a.specialLiveryFull || a.specialText || '';
 
-if (specialDisplayText) {
-	lines.push('');
-	lines.push(
-		`${a.isSpecial ? '⭐ Besonderheit: ' : 'ℹ️ Info: '}${specialDisplayText}`,
-	);
-}
+	if (specialDisplayText) {
+		lines.push('');
+		lines.push(`${a.isSpecial ? '⭐ Besonderheit: ' : 'ℹ️ Info: '}${specialDisplayText}`);
+	}
 	return lines.join('\n');
 }
 
 function modeText(mode: string): string {
-	if (mode === 'LANDING') return 'Landung';
-	if (mode === 'TAKEOFF') return 'Start';
-	if (mode === 'OVERFLIGHT') return 'Überflug';
+	if (mode === 'LANDING') {
+		return 'Landung';
+	}
+	if (mode === 'TAKEOFF') {
+		return 'Start';
+	}
+	if (mode === 'OVERFLIGHT') {
+		return 'Überflug';
+	}
 	return 'Flug';
 }
 
-export async function ensureStates(
-	adapter: any,
-	config: JetFrameConfig,
-): Promise<void> {
+/**
+ *
+ */
+export async function ensureStates(adapter: any, config: JetFrameConfig): Promise<void> {
 	await ensureBaseStates(adapter, config);
 }
 
-async function keepExistingStringState(
-	adapter: any,
-	id: string,
-	value: unknown,
-): Promise<string> {
+async function keepExistingStringState(adapter: any, id: string, value: unknown): Promise<string> {
 	const next = String(value || '').trim();
 
 	if (next) {

@@ -1,1155 +1,1468 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-	<meta charset="utf-8" />
-	<title>JetFrame</title>
+	<head>
+		<meta charset="utf-8" />
+		<title>JetFrame</title>
 
-	<link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
-	<link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css" />
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+		<link
+			rel="stylesheet"
+			type="text/css"
+			href="../../css/adapter.css"
+		/>
+		<link
+			rel="stylesheet"
+			type="text/css"
+			href="../../lib/css/materialize.css"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+		/>
 
-	<script src="../../lib/js/jquery-3.2.1.min.js">
+		<script src="../../lib/js/jquery-3.2.1.min.js"></script>
+		<script src="../../socket.io/socket.io.js"></script>
+		<script src="../../js/translate.js"></script>
+		<script src="../../lib/js/materialize.js"></script>
+		<script src="../../js/adapter-settings.js"></script>
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+		<style>
+			html,
+			body {
+				height: 100%;
+				margin: 0;
+				padding: 0;
+				background: #1f1f1f;
+				overflow: hidden;
+			}
+			.adapter-container {
+				height: calc(100vh - 70px);
+				overflow-y: auto;
+				overflow-x: hidden;
+				padding: 14px 14px 140px 14px !important;
+				-webkit-overflow-scrolling: touch;
+			}
+			.desktop-layout {
+				display: grid;
+				grid-template-columns: 1fr 600px;
+				gap: 16px;
+				align-items: start;
+			}
+			.left-column,
+			.right-column {
+				display: flex;
+				flex-direction: column;
+				gap: 16px;
+			}
+			.jetframe-card {
+				background: #fff;
+				border-radius: 18px;
+				padding: 18px;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+				margin-bottom: 16px;
+			}
+			.desktop-layout .jetframe-card {
+				margin-bottom: 0;
+			}
+			.jetframe-card,
+			.jetframe-card div,
+			.jetframe-card span,
+			.jetframe-card label,
+			.jetframe-card input {
+				color: black !important;
+				-webkit-text-fill-color: black !important;
+			}
+			.jetframe-title {
+				font-size: 24px;
+				font-weight: 800;
+				margin-bottom: 12px;
+			}
+			.jetframe-hint {
+				font-size: 15px;
+				line-height: 1.45;
+			}
+			#map {
+				width: 100%;
+				height: 62vh;
+				min-height: 360px;
+				max-height: 620px;
+				border-radius: 16px;
+				overflow: hidden;
+				background: #ddd;
+				margin-top: 10px;
+			}
+			.map-info {
+				margin-top: 12px;
+				font-size: 14px;
+				line-height: 1.5;
+			}
+			.grid-2 {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 12px;
+			}
+			.input-field input,
+			.input-field label {
+				color: black !important;
+				-webkit-text-fill-color: black !important;
+			}
+			.fw-search-row {
+				display: flex;
+				gap: 10px;
+				margin-bottom: 18px;
+			}
+			.fw-search-row input {
+				flex: 1;
+				height: 42px !important;
+				border-radius: 10px !important;
+				border: 1px solid #ccc !important;
+				padding: 0 10px !important;
+				background: white !important;
+			}
+			.fw-search-row button {
+				border: none;
+				border-radius: 10px;
+				padding: 0 14px;
+				font-weight: 700;
+				background: #2196f3;
+				color: white !important;
+				-webkit-text-fill-color: white !important;
+			}
+			.range-field label {
+				display: block;
+				font-weight: 700;
+				margin-bottom: 4px;
+			}
 
-</script>
-	<script src="../../socket.io/socket.io.js"></script>
-	<script src="../../js/translate.js"></script>
-	<script src="../../lib/js/materialize.js"></script>
-	<script src="../../js/adapter-settings.js"></script>
-	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+			.jetframe-card textarea.value {
+				background: #ffffff !important;
+				color: #111111 !important;
+				-webkit-text-fill-color: #111111 !important;
+				border: 1px solid #bdbdbd !important;
+				border-radius: 14px !important;
+				padding: 14px !important;
+				min-height: 150px !important;
+				font-size: 15px !important;
+				line-height: 1.45 !important;
+				box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.12);
+			}
 
-	<style>
-		html, body { height: 100%; margin: 0; padding: 0; background: #1f1f1f; overflow: hidden; }
-		.adapter-container { height: calc(100vh - 70px); overflow-y: auto; overflow-x: hidden; padding: 14px 14px 140px 14px !important; -webkit-overflow-scrolling: touch; }
-		.desktop-layout { display: grid; grid-template-columns: 1fr 600px; gap: 16px; align-items: start; }
-		.left-column, .right-column { display: flex; flex-direction: column; gap: 16px; }
-		.jetframe-card { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,.18); margin-bottom: 16px; }
-		.desktop-layout .jetframe-card { margin-bottom: 0; }
-		.jetframe-card, .jetframe-card div, .jetframe-card span, .jetframe-card label, .jetframe-card input { color: black !important; -webkit-text-fill-color: black !important; }
-		.jetframe-title { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
-		.jetframe-hint { font-size: 15px; line-height: 1.45; }
-		#map { width: 100%; height: 62vh; min-height: 360px; max-height: 620px; border-radius: 16px; overflow: hidden; background: #ddd; margin-top: 10px; }
-		.map-info { margin-top: 12px; font-size: 14px; line-height: 1.5; }
-		.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-		.input-field input, .input-field label { color: black !important; -webkit-text-fill-color: black !important; }
-		.fw-search-row { display: flex; gap: 10px; margin-bottom: 18px; }
-		.fw-search-row input { flex: 1; height: 42px !important; border-radius: 10px !important; border: 1px solid #ccc !important; padding: 0 10px !important; background: white !important; }
-		.fw-search-row button { border: none; border-radius: 10px; padding: 0 14px; font-weight: 700; background: #2196f3; color: white !important; -webkit-text-fill-color: white !important; }
-		.range-field label { display: block; font-weight: 700; margin-bottom: 4px; }
+			.jetframe-card textarea.value:focus {
+				border-color: #2196f3 !important;
+				box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.18) !important;
+			}
 
-		.jetframe-card textarea.value {
-			background: #ffffff !important;
-			color: #111111 !important;
-			-webkit-text-fill-color: #111111 !important;
-			border: 1px solid #bdbdbd !important;
-			border-radius: 14px !important;
-			padding: 14px !important;
-			min-height: 150px !important;
-			font-size: 15px !important;
-			line-height: 1.45 !important;
-			box-shadow: inset 0 1px 4px rgba(0,0,0,.12);
-		}
+			.dropdown-content {
+				background: #ffffff !important;
+			}
 
-		.jetframe-card textarea.value:focus {
-			border-color: #2196f3 !important;
-			box-shadow: 0 0 0 2px rgba(33,150,243,.18) !important;
-		}
+			.dropdown-content li > span {
+				color: #111111 !important;
+				-webkit-text-fill-color: #111111 !important;
+				font-size: 18px !important;
+			}
 
-		.dropdown-content {
-			background: #ffffff !important;
-		}
+			.select-wrapper input.select-dropdown {
+				background: #ffffff !important;
+				color: #111111 !important;
+				-webkit-text-fill-color: #111111 !important;
+				border-bottom: 1px solid #999 !important;
+				font-size: 17px !important;
+			}
 
-		.dropdown-content li > span {
-			color: #111111 !important;
-			-webkit-text-fill-color: #111111 !important;
-			font-size: 18px !important;
-		}
+			.speech-token {
+				display: inline-block;
+				margin: 5px 5px 0 0;
+				padding: 7px 11px;
+				border-radius: 999px;
+				background: #e3f2fd;
+				color: #0d47a1 !important;
+				-webkit-text-fill-color: #0d47a1 !important;
+				font-weight: 700;
+				cursor: pointer;
+				user-select: none;
+			}
 
-		.select-wrapper input.select-dropdown {
-			background: #ffffff !important;
-			color: #111111 !important;
-			-webkit-text-fill-color: #111111 !important;
-			border-bottom: 1px solid #999 !important;
-			font-size: 17px !important;
-		}
+			.speech-preview {
+				margin-top: 12px;
+				padding: 12px;
+				border-radius: 14px;
+				background: #f5f5f5;
+				border: 1px solid #e0e0e0;
+				font-family: monospace;
+				font-size: 14px;
+				line-height: 1.45;
+				white-space: pre-wrap;
+			}
 
-		.speech-token {
-			display: inline-block;
-			margin: 5px 5px 0 0;
-			padding: 7px 11px;
-			border-radius: 999px;
-			background: #e3f2fd;
-			color: #0d47a1 !important;
-			-webkit-text-fill-color: #0d47a1 !important;
-			font-weight: 700;
-			cursor: pointer;
-			user-select: none;
-		}
+			@media (max-width: 1100px) {
+				.desktop-layout {
+					grid-template-columns: 1fr;
+				}
+				.right-column {
+					order: 0;
+				}
+				.left-column {
+					order: 1;
+				}
+				#map {
+					height: 360px;
+					min-height: unset;
+					max-height: unset;
+				}
+			}
 
-		.speech-preview {
-			margin-top: 12px;
-			padding: 12px;
-			border-radius: 14px;
-			background: #f5f5f5;
-			border: 1px solid #e0e0e0;
-			font-family: monospace;
-			font-size: 14px;
-			line-height: 1.45;
-			white-space: pre-wrap;
-		}
+			@media (max-width: 700px) {
+				.grid-2 {
+					grid-template-columns: 1fr;
+				}
+				#map {
+					width: 100%;
+					height: 70vh;
+					min-height: 360px;
+					max-height: 850px;
+					border-radius: 16px;
+					overflow: hidden;
+					background: #ddd;
+					margin-top: 10px;
+				}
+			}
+		</style>
 
-		@media (max-width: 1100px) {
-			.desktop-layout { grid-template-columns: 1fr; }
-			.right-column { order: 0; }
-			.left-column { order: 1; }
-			#map { height: 360px; min-height: unset; max-height: unset; }
-		}
+		<script>
+			let map,
+				homeMarker,
+				airportMarker,
+				lineLayer,
+				coneLayer,
+				overflightCircle,
+				airportScanCircle,
+				homeScanCircle;
+			let AIRPORTS = [];
+			let airportSuggestionMap = {};
+			let homeSuggestionMap = {};
+			let homeSuggestTimer = null;
+			let adminOnChange = null;
 
-		@media (max-width: 700px) {
-			.grid-2 { grid-template-columns: 1fr; }
-			#map { width: 100%; height: 70vh; min-height: 360px; max-height: 850px; border-radius: 16px; overflow: hidden; background: #ddd; margin-top: 10px; }
-		}
-	</style>
+			const defaults = {
+				enabled: true,
+				airportIata: 'FRA',
+				airportName: 'Frankfurt',
+				airportLat: 50.035686,
+				airportLon: 8.562813,
+				homeLat: 50.08637,
+				homeLon: 8.69163,
+				windowBearingDeg: 184,
+				windowFovDeg: 120,
+				maxHomeDistanceNm: 3.5,
+				radiusNm: 15,
+				adsbCustomUrl: '',
+				minAltitudeFt: 1000,
+				maxAltitudeFt: 5000,
+				autoRunwayTrackToleranceDeg: 65,
+				minClimbRate: 60,
+				minSinkRate: -60,
+				searchPollSeconds: 20,
+				livePollSeconds: 5,
+				liveMaxSeconds: 120,
+				overflightEnabled: false,
+				overflightMaxDistanceNm: 1.2,
+				overflightMinAltitudeFt: 4000,
+				overflightMaxAltitudeFt: 45000,
+				overflightRequiresWindow: false,
 
-	<script>
-		let map, homeMarker, airportMarker, lineLayer, coneLayer, overflightCircle, airportScanCircle, homeScanCircle;
-		let AIRPORTS = [];
-		let airportSuggestionMap = {};
-		let homeSuggestionMap = {};
-		let homeSuggestTimer = null;
-		let adminOnChange = null;
-
-		const defaults = {
-			enabled: true,
-			airportIata: 'FRA',
-			airportName: 'Frankfurt',
-			airportLat: 50.035686,
-			airportLon: 8.562813,
-			homeLat: 50.08637,
-			homeLon: 8.69163,
-			windowBearingDeg: 184,
-			windowFovDeg: 120,
-			maxHomeDistanceNm: 3.5,
-			radiusNm: 15,
-			adsbCustomUrl: '',
-			minAltitudeFt: 1000,
-			maxAltitudeFt: 5000,
-			autoRunwayTrackToleranceDeg: 65,
-			minClimbRate: 60,
-			minSinkRate: -60,
-			searchPollSeconds: 20,
-			livePollSeconds: 5,
-			liveMaxSeconds: 120,
-			overflightEnabled: false,
-			overflightMaxDistanceNm: 1.2,
-			overflightMinAltitudeFt: 4000,
-			overflightMaxAltitudeFt: 45000,
-			overflightRequiresWindow: false,
-
-			speechMode: 'browser',
-			speechTemplate: '{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.',
-
-		};
-
-		function markChanged() {
-			if (adminOnChange) adminOnChange();
-		}
-
-		function insertSpeechToken(token) {
-			const el = document.getElementById('speechTemplate');
-			if (!el) return;
-
-			const value = el.value || '';
-			const start = el.selectionStart || value.length;
-			const end = el.selectionEnd || value.length;
-			const insert = '{' + token + '}';
-
-			el.value = value.substring(0, start) + insert + value.substring(end);
-			el.focus();
-			el.selectionStart = el.selectionEnd = start + insert.length;
-
-			$(el).trigger('input');
-			updateSpeechPreview();
-			M.updateTextFields();
-			markChanged();
-		}
-
-		function setDefaultSpeechTemplate() {
-			$('#speechTemplate').val('{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.');
-			updateSpeechPreview();
-			M.updateTextFields();
-			markChanged();
-		}
-
-		function updateSpeechPreview() {
-			const tpl = String($('#speechTemplate').val() || '');
-			const values = {
-				modeSpeechText: 'Landung',
-				airlineName: 'Lufthansa',
-				bestCallsign: 'LH0815',
-				routeDirectionText: 'aus',
-				routeOtherAirport: 'Istanbul',
-				altitudeFt: '4000',
-				windowPositionSpeechText: 'links vom Küchenfenster',
-				aircraftTypeText: 'Airbus A321',
-				registration: 'D-AISO',
-				speedKt: '165'
+				speechMode: 'browser',
+				speechTemplate:
+					'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.',
 			};
 
-			const text = tpl
-				.replace(/\{([a-zA-Z0-9_]+)\}/g, function (_m, key) {
-					return values[key] || '';
-				})
-				.replace(/\s+/g, ' ')
-				.replace(/\s+\./g, '.')
-				.trim();
-
-			$('#speechPreviewText').text(text || 'Noch kein Ansage-Text gesetzt.');
-		}
-
-		function n(id, def) {
-			const raw = String($('#' + id).val() || '').replace(',', '.');
-			const v = Number(raw);
-			return Number.isFinite(v) ? v : def;
-		}
-
-		function s(id, def) {
-			const v = String($('#' + id).val() || '').trim();
-			return v || def;
-		}
-
-		function degToRad(d) { return d * Math.PI / 180; }
-		function radToDeg(r) { return r * 180 / Math.PI; }
-		function norm(d) { return ((Number(d) % 360) + 360) % 360; }
-
-		function bearingDeg(lat1, lon1, lat2, lon2) {
-			const p1 = degToRad(lat1), p2 = degToRad(lat2), l1 = degToRad(lon1), l2 = degToRad(lon2);
-			const y = Math.sin(l2 - l1) * Math.cos(p2);
-			const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(l2 - l1);
-			return norm(radToDeg(Math.atan2(y, x)));
-		}
-
-		function angleDiff(a, b) {
-			let d = Math.abs(norm(a) - norm(b));
-			return d > 180 ? 360 - d : d;
-		}
-
-		function destPoint(lat, lon, bearing, nm) {
-			const R = 3440.065;
-			const d = nm / R;
-			const b = degToRad(bearing);
-			const lat1 = degToRad(lat);
-			const lon1 = degToRad(lon);
-
-			const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(b));
-			const lon2 = lon1 + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
-
-			return [radToDeg(lat2), radToDeg(lon2)];
-		}
-
-		function conePoints(lat, lon, bearing, fov, nm) {
-			const pts = [[lat, lon]];
-			const start = bearing - fov / 2;
-			const end = bearing + fov / 2;
-
-			for (let i = 0; i <= 28; i++) {
-				pts.push(destPoint(lat, lon, start + (end - start) * (i / 28), nm));
+			function markChanged() {
+				if (adminOnChange) adminOnChange();
 			}
 
-			pts.push([lat, lon]);
-			return pts;
-		}
+			function insertSpeechToken(token) {
+				const el = document.getElementById('speechTemplate');
+				if (!el) return;
 
-		function initMap() {
-			if (map || typeof L === 'undefined') return;
+				const value = el.value || '';
+				const start = el.selectionStart || value.length;
+				const end = el.selectionEnd || value.length;
+				const insert = '{' + token + '}';
 
-			map = L.map('map').setView([defaults.homeLat, defaults.homeLon], 11);
+				el.value = value.substring(0, start) + insert + value.substring(end);
+				el.focus();
+				el.selectionStart = el.selectionEnd = start + insert.length;
 
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				maxZoom: 19,
-				attribution: '&copy; OpenStreetMap'
-			}).addTo(map);
-
-			// ADSB Overlay Pane ohne Maus-Events
-			if (!map.getPane('adsbPane')) {
-				map.createPane('adsbPane');
-				map.getPane('adsbPane').style.pointerEvents = 'none';
-				map.getPane('adsbPane').style.zIndex = 350;
+				$(el).trigger('input');
+				updateSpeechPreview();
+				M.updateTextFields();
+				markChanged();
 			}
-		}
 
-		function updateLabels() {
-			$('#windowBearingDegValue').html(n('windowBearingDeg', 184) + '&deg;');
-			$('#windowFovDegValue').html(n('windowFovDeg', 120) + '&deg;');
-			$('#maxHomeDistanceNmValue').html(n('maxHomeDistanceNm', 3.5) + ' NM');
-			$('#overflightMaxDistanceNmValue').html(n('overflightMaxDistanceNm', 1.2) + ' NM');
-		}
+			function setDefaultSpeechTemplate() {
+				$('#speechTemplate').val(
+					'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.',
+				);
+				updateSpeechPreview();
+				M.updateTextFields();
+				markChanged();
+			}
 
-		function updateMap() {
-			initMap();
-			updateLabels();
+			function updateSpeechPreview() {
+				const tpl = String($('#speechTemplate').val() || '');
+				const values = {
+					modeSpeechText: 'Landung',
+					airlineName: 'Lufthansa',
+					bestCallsign: 'LH0815',
+					routeDirectionText: 'aus',
+					routeOtherAirport: 'Istanbul',
+					altitudeFt: '4000',
+					windowPositionSpeechText: 'links vom Küchenfenster',
+					aircraftTypeText: 'Airbus A321',
+					registration: 'D-AISO',
+					speedKt: '165',
+				};
 
-			if (!map) return;
+				const text = tpl
+					.replace(/\{([a-zA-Z0-9_]+)\}/g, function (_m, key) {
+						return values[key] || '';
+					})
+					.replace(/\s+/g, ' ')
+					.replace(/\s+\./g, '.')
+					.trim();
 
-			const hLat = n('homeLat', defaults.homeLat);
-			const hLon = n('homeLon', defaults.homeLon);
-			const aLat = n('airportLat', defaults.airportLat);
-			const aLon = n('airportLon', defaults.airportLon);
-			const bearing = n('windowBearingDeg', defaults.windowBearingDeg);
-			const fov = n('windowFovDeg', defaults.windowFovDeg);
-			const dist = n('maxHomeDistanceNm', defaults.maxHomeDistanceNm);
-			const overflightEnabled = $('#overflightEnabled').prop('checked');
-			const overflightNm = n('overflightMaxDistanceNm', 1.2);
-			const iata = s('airportIata', 'FRA').toUpperCase();
+				$('#speechPreviewText').text(text || 'Noch kein Ansage-Text gesetzt.');
+			}
 
-			[homeMarker, airportMarker, lineLayer, coneLayer, overflightCircle, airportScanCircle, homeScanCircle].forEach(l => {
-				if (l) map.removeLayer(l);
-			});
+			function n(id, def) {
+				const raw = String($('#' + id).val() || '').replace(',', '.');
+				const v = Number(raw);
+				return Number.isFinite(v) ? v : def;
+			}
 
-			overflightCircle = null;
-			airportScanCircle = null;
-			homeScanCircle = null;
+			function s(id, def) {
+				const v = String($('#' + id).val() || '').trim();
+				return v || def;
+			}
 
-			homeMarker = L.marker([hLat, hLon]).addTo(map).bindPopup('Zuhause');
-			airportMarker = L.marker([aLat, aLon]).addTo(map).bindPopup(iata);
-			const adsbAirportNm = n('radiusNm', 15);
+			function degToRad(d) {
+				return (d * Math.PI) / 180;
+			}
+			function radToDeg(r) {
+				return (r * 180) / Math.PI;
+			}
+			function norm(d) {
+				return ((Number(d) % 360) + 360) % 360;
+			}
 
-// ADSB Scan rund um Flughafen
-airportScanCircle = L.circle([aLat, aLon], {
-	pane: 'adsbPane',
-	radius: adsbAirportNm * 1852,
-	color: '#1565c0',
-	fillColor: '#1565c0',
-	fillOpacity: 0.04,
-	weight: 2,
-	dashArray: '8,8',
-	interactive: false
-}).addTo(map);
+			function bearingDeg(lat1, lon1, lat2, lon2) {
+				const p1 = degToRad(lat1),
+					p2 = degToRad(lat2),
+					l1 = degToRad(lon1),
+					l2 = degToRad(lon2);
+				const y = Math.sin(l2 - l1) * Math.cos(p2);
+				const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(l2 - l1);
+				return norm(radToDeg(Math.atan2(y, x)));
+			}
 
-airportScanCircle.bindPopup(
-	'🔵 ADSB Flughafen-Scan: ' + adsbAirportNm + ' NM'
-);
+			function angleDiff(a, b) {
+				let d = Math.abs(norm(a) - norm(b));
+				return d > 180 ? 360 - d : d;
+			}
 
-// ADSB/Home Scan für Overflight
-if (overflightEnabled) {
+			function destPoint(lat, lon, bearing, nm) {
+				const R = 3440.065;
+				const d = nm / R;
+				const b = degToRad(bearing);
+				const lat1 = degToRad(lat);
+				const lon1 = degToRad(lon);
 
-	homeScanCircle = L.circle([hLat, hLon], {
-		pane: 'adsbPane',
-		radius: overflightNm * 1852,
-		color: '#8e24aa',
-		fillColor: '#8e24aa',
-		fillOpacity: 0.05,
-		weight: 2,
-		dashArray: '4,8',
-		interactive: false
-	}).addTo(map);
+				const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(b));
+				const lon2 =
+					lon1 +
+					Math.atan2(
+						Math.sin(b) * Math.sin(d) * Math.cos(lat1),
+						Math.cos(d) - Math.sin(lat1) * Math.sin(lat2),
+					);
 
-	homeScanCircle.bindPopup(
-		'🟣 ADSB Zuhause/Überflug-Scan: ' +
-		overflightNm + ' NM'
-	);
-}
+				return [radToDeg(lat2), radToDeg(lon2)];
+			}
 
-			lineLayer = L.polyline([[hLat, hLon], [aLat, aLon]], {
-				color: '#555',
-				weight: 2,
-				dashArray: '6,8'
-			}).addTo(map);
+			function conePoints(lat, lon, bearing, fov, nm) {
+				const pts = [[lat, lon]];
+				const start = bearing - fov / 2;
+				const end = bearing + fov / 2;
 
-			const airportBearing = bearingDeg(hLat, hLon, aLat, aLon);
-			const diff = angleDiff(bearing, airportBearing);
-			const inView = diff <= fov / 2;
+				for (let i = 0; i <= 28; i++) {
+					pts.push(destPoint(lat, lon, start + (end - start) * (i / 28), nm));
+				}
 
-			const overflightText = overflightEnabled
-				? '&#128994; &Uuml;berflug-Kreis: <b>' + overflightNm + ' NM</b><br>'
-				: '';
+				pts.push([lat, lon]);
+				return pts;
+			}
 
-			coneLayer = L.polygon(conePoints(hLat, hLon, bearing, fov, dist), {
-				color: inView ? '#1976d2' : '#f57c00',
-				fillColor: inView ? '#2196f3' : '#ff9800',
-				fillOpacity: 0.25,
-				weight: 2,
-				interactive: true
-			}).addTo(map);
+			function initMap() {
+				if (map || typeof L === 'undefined') return;
 
-			coneLayer.bindPopup(
-				'🟦 Sichtfenster<br>' +
-				'Richtung: <b>' + norm(bearing).toFixed(0) + '°</b><br>' +
-				'Bereich: <b>' +
-				norm(bearing - fov / 2).toFixed(0) + '° bis ' +
-				norm(bearing + fov / 2).toFixed(0) + '°</b><br>' +
-				'Distanz: <b>' + dist + ' NM</b>'
-			);
+				map = L.map('map').setView([defaults.homeLat, defaults.homeLon], 11);
 
-			if (airportScanCircle) airportScanCircle.bringToBack();
-			if (homeScanCircle) homeScanCircle.bringToBack();
-			if (overflightCircle) overflightCircle.bringToBack();
-			coneLayer.bringToFront();
-
-			if (overflightEnabled) {
-				overflightCircle = L.circle([hLat, hLon], {
-		pane: 'adsbPane',
-					radius: overflightNm * 1852,
-					color: '#8e24aa',
-					fillColor: '#ba68c8',
-					fillOpacity: 0.12,
-					weight: 2
+				L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+					maxZoom: 19,
+					attribution: '&copy; OpenStreetMap',
 				}).addTo(map);
 
-				// kein Popup, liegt nur als optischer Kreis im Hintergrund
+				// ADSB Overlay Pane ohne Maus-Events
+				if (!map.getPane('adsbPane')) {
+					map.createPane('adsbPane');
+					map.getPane('adsbPane').style.pointerEvents = 'none';
+					map.getPane('adsbPane').style.zIndex = 350;
+				}
 			}
 
-			if (airportScanCircle) airportScanCircle.bringToBack();
-			if (homeScanCircle) homeScanCircle.bringToBack();
-			if (overflightCircle) overflightCircle.bringToBack();
-			if (coneLayer) coneLayer.bringToFront();
-
-			const layers = [homeMarker, airportMarker, coneLayer, airportScanCircle].filter(Boolean);
-
-			if (overflightCircle) layers.push(overflightCircle);
-			if (homeScanCircle) layers.push(homeScanCircle);
-
-			const group = L.featureGroup(layers);
-			map.fitBounds(group.getBounds().pad(0.08));
-
-			$('#mapInfo').html(
-				'&#129695; Fenster: <b>' + norm(bearing).toFixed(0) + '&deg;</b><br>' +
-				'&#128065;&#65039; Sichtbereich: <b>' +
-				norm(bearing - fov / 2).toFixed(0) + '&deg; bis ' +
-				norm(bearing + fov / 2).toFixed(0) + '&deg;</b><br>' +
-				'&#128747; Flughafen von Zuhause: <b>' + airportBearing.toFixed(0) + '&deg;</b><br>' +
-				'🔵 ADSB Flughafen-Scan: <b>' + adsbAirportNm + ' NM</b><br>' +
-				overflightText +
-				(overflightEnabled ? '🟣 ADSB Zuhause/Überflug-Scan: <b>' + overflightNm + ' NM</b><br>' : '') +
-				(inView
-					? '&#9989; Flughafen liegt im Sichtfenster.'
-					: '&#9888;&#65039; Flughafen liegt au&szlig;erhalb vom Sichtfenster.')
-			);
-
-			setTimeout(() => map.invalidateSize(), 150);
-		}
-
-		function normalizeSearchText(text) {
-			return String(text || '')
-				.toLowerCase()
-				.replace(/ä/g, 'ae')
-				.replace(/ö/g, 'oe')
-				.replace(/ü/g, 'ue')
-				.replace(/ß/g, 'ss')
-				.normalize('NFD')
-				.replace(/[\u0300-\u036f]/g, '')
-				.trim();
-		}
-
-		function airportDisplayName(a) {
-			const iata = String(a.iata || a.IATA || '').toUpperCase();
-			const city = String(a.city_DE || a.city || a.municipality || '').trim();
-			const name = String(a.city_DE || a.name || a.airport || '').trim();
-
-			if (city) return iata + ' - ' + city;
-			if (name) return iata + ' - ' + name;
-			return iata;
-		}
-
-		function airportSearchBlob(a) {
-			return [
-				a.iata, a.IATA, a.icao, a.ICAO,
-				a.name, a.airport, a.city, a.municipality, a.country
-			].join(' ');
-		}
-
-		function findLocalAirport(query) {
-			const q = normalizeSearchText(query);
-			if (!q) return null;
-
-			const exact = AIRPORTS.find(a =>
-				normalizeSearchText(a.iata || a.IATA) === q ||
-				normalizeSearchText(a.city_DE || a.city || a.municipality) === q ||
-				normalizeSearchText(a.city_DE || a.name || a.airport) === q ||
-				normalizeSearchText(airportDisplayName(a)) === q
-			);
-
-			if (exact) return exact;
-
-			return AIRPORTS.find(a =>
-				normalizeSearchText(airportSearchBlob(a)).indexOf(q) >= 0 ||
-				normalizeSearchText(airportDisplayName(a)).indexOf(q) >= 0
-			) || null;
-		}
-
-		function fillAirport(a) {
-			if (!a) return;
-
-			const iata = String(a.iata || a.IATA || '').toUpperCase();
-			const name = String(a.city_DE || a.city || a.municipality || a.city_DE || a.name || a.airport || '').trim();
-			const lat = Number(a.lat ?? a.latitude ?? a.latitude_deg);
-			const lon = Number(a.lon ?? a.longitude ?? a.longitude_deg);
-
-			if (!iata || !Number.isFinite(lat) || !Number.isFinite(lon)) {
-				return alert('Flughafen-Daten unvollständig');
+			function updateLabels() {
+				$('#windowBearingDegValue').html(n('windowBearingDeg', 184) + '&deg;');
+				$('#windowFovDegValue').html(n('windowFovDeg', 120) + '&deg;');
+				$('#maxHomeDistanceNmValue').html(n('maxHomeDistanceNm', 3.5) + ' NM');
+				$('#overflightMaxDistanceNmValue').html(n('overflightMaxDistanceNm', 1.2) + ' NM');
 			}
 
-			$('#airportIata').val(iata);
-			$('#airportName').val(name || iata);
-			$('#airportLat').val(lat.toFixed(6));
-			$('#airportLon').val(lon.toFixed(6));
+			function updateMap() {
+				initMap();
+				updateLabels();
 
-			M.updateTextFields();
-			updateMap();
-			markChanged();
-		}
+				if (!map) return;
 
-		function getInstanceId() {
-			const url = String(window.location.href || '');
+				const hLat = n('homeLat', defaults.homeLat);
+				const hLon = n('homeLon', defaults.homeLon);
+				const aLat = n('airportLat', defaults.airportLat);
+				const aLon = n('airportLon', defaults.airportLon);
+				const bearing = n('windowBearingDeg', defaults.windowBearingDeg);
+				const fov = n('windowFovDeg', defaults.windowFovDeg);
+				const dist = n('maxHomeDistanceNm', defaults.maxHomeDistanceNm);
+				const overflightEnabled = $('#overflightEnabled').prop('checked');
+				const overflightNm = n('overflightMaxDistanceNm', 1.2);
+				const iata = s('airportIata', 'FRA').toUpperCase();
 
-			let m = url.match(/[?&#]instance=(\d+)/);
-			if (m) return 'jetframe.' + m[1];
+				[
+					homeMarker,
+					airportMarker,
+					lineLayer,
+					coneLayer,
+					overflightCircle,
+					airportScanCircle,
+					homeScanCircle,
+				].forEach(l => {
+					if (l) map.removeLayer(l);
+				});
 
-			m = url.match(/jetframe\.(\d+)/);
-			if (m) return 'jetframe.' + m[1];
+				overflightCircle = null;
+				airportScanCircle = null;
+				homeScanCircle = null;
 
-			return 'jetframe.0';
-		}
+				homeMarker = L.marker([hLat, hLon]).addTo(map).bindPopup('Zuhause');
+				airportMarker = L.marker([aLat, aLon]).addTo(map).bindPopup(iata);
+				const adsbAirportNm = n('radiusNm', 15);
 
-		function loadAirportJsonFromState() {
-			try {
-				if (typeof socket === 'undefined') {
+				// ADSB Scan rund um Flughafen
+				airportScanCircle = L.circle([aLat, aLon], {
+					pane: 'adsbPane',
+					radius: adsbAirportNm * 1852,
+					color: '#1565c0',
+					fillColor: '#1565c0',
+					fillOpacity: 0.04,
+					weight: 2,
+					dashArray: '8,8',
+					interactive: false,
+				}).addTo(map);
+
+				airportScanCircle.bindPopup('🔵 ADSB Flughafen-Scan: ' + adsbAirportNm + ' NM');
+
+				// ADSB/Home Scan für Overflight
+				if (overflightEnabled) {
+					homeScanCircle = L.circle([hLat, hLon], {
+						pane: 'adsbPane',
+						radius: overflightNm * 1852,
+						color: '#8e24aa',
+						fillColor: '#8e24aa',
+						fillOpacity: 0.05,
+						weight: 2,
+						dashArray: '4,8',
+						interactive: false,
+					}).addTo(map);
+
+					homeScanCircle.bindPopup('🟣 ADSB Zuhause/Überflug-Scan: ' + overflightNm + ' NM');
+				}
+
+				lineLayer = L.polyline(
+					[
+						[hLat, hLon],
+						[aLat, aLon],
+					],
+					{
+						color: '#555',
+						weight: 2,
+						dashArray: '6,8',
+					},
+				).addTo(map);
+
+				const airportBearing = bearingDeg(hLat, hLon, aLat, aLon);
+				const diff = angleDiff(bearing, airportBearing);
+				const inView = diff <= fov / 2;
+
+				const overflightText = overflightEnabled
+					? '&#128994; &Uuml;berflug-Kreis: <b>' + overflightNm + ' NM</b><br>'
+					: '';
+
+				coneLayer = L.polygon(conePoints(hLat, hLon, bearing, fov, dist), {
+					color: inView ? '#1976d2' : '#f57c00',
+					fillColor: inView ? '#2196f3' : '#ff9800',
+					fillOpacity: 0.25,
+					weight: 2,
+					interactive: true,
+				}).addTo(map);
+
+				coneLayer.bindPopup(
+					'🟦 Sichtfenster<br>' +
+						'Richtung: <b>' +
+						norm(bearing).toFixed(0) +
+						'°</b><br>' +
+						'Bereich: <b>' +
+						norm(bearing - fov / 2).toFixed(0) +
+						'° bis ' +
+						norm(bearing + fov / 2).toFixed(0) +
+						'°</b><br>' +
+						'Distanz: <b>' +
+						dist +
+						' NM</b>',
+				);
+
+				if (airportScanCircle) airportScanCircle.bringToBack();
+				if (homeScanCircle) homeScanCircle.bringToBack();
+				if (overflightCircle) overflightCircle.bringToBack();
+				coneLayer.bringToFront();
+
+				if (overflightEnabled) {
+					overflightCircle = L.circle([hLat, hLon], {
+						pane: 'adsbPane',
+						radius: overflightNm * 1852,
+						color: '#8e24aa',
+						fillColor: '#ba68c8',
+						fillOpacity: 0.12,
+						weight: 2,
+					}).addTo(map);
+
+					// kein Popup, liegt nur als optischer Kreis im Hintergrund
+				}
+
+				if (airportScanCircle) airportScanCircle.bringToBack();
+				if (homeScanCircle) homeScanCircle.bringToBack();
+				if (overflightCircle) overflightCircle.bringToBack();
+				if (coneLayer) coneLayer.bringToFront();
+
+				const layers = [homeMarker, airportMarker, coneLayer, airportScanCircle].filter(Boolean);
+
+				if (overflightCircle) layers.push(overflightCircle);
+				if (homeScanCircle) layers.push(homeScanCircle);
+
+				const group = L.featureGroup(layers);
+				map.fitBounds(group.getBounds().pad(0.08));
+
+				$('#mapInfo').html(
+					'&#129695; Fenster: <b>' +
+						norm(bearing).toFixed(0) +
+						'&deg;</b><br>' +
+						'&#128065;&#65039; Sichtbereich: <b>' +
+						norm(bearing - fov / 2).toFixed(0) +
+						'&deg; bis ' +
+						norm(bearing + fov / 2).toFixed(0) +
+						'&deg;</b><br>' +
+						'&#128747; Flughafen von Zuhause: <b>' +
+						airportBearing.toFixed(0) +
+						'&deg;</b><br>' +
+						'🔵 ADSB Flughafen-Scan: <b>' +
+						adsbAirportNm +
+						' NM</b><br>' +
+						overflightText +
+						(overflightEnabled ? '🟣 ADSB Zuhause/Überflug-Scan: <b>' + overflightNm + ' NM</b><br>' : '') +
+						(inView
+							? '&#9989; Flughafen liegt im Sichtfenster.'
+							: '&#9888;&#65039; Flughafen liegt au&szlig;erhalb vom Sichtfenster.'),
+				);
+
+				setTimeout(() => map.invalidateSize(), 150);
+			}
+
+			function normalizeSearchText(text) {
+				return String(text || '')
+					.toLowerCase()
+					.replace(/ä/g, 'ae')
+					.replace(/ö/g, 'oe')
+					.replace(/ü/g, 'ue')
+					.replace(/ß/g, 'ss')
+					.normalize('NFD')
+					.replace(/[\u0300-\u036f]/g, '')
+					.trim();
+			}
+
+			function airportDisplayName(a) {
+				const iata = String(a.iata || a.IATA || '').toUpperCase();
+				const city = String(a.city_DE || a.city || a.municipality || '').trim();
+				const name = String(a.city_DE || a.name || a.airport || '').trim();
+
+				if (city) return iata + ' - ' + city;
+				if (name) return iata + ' - ' + name;
+				return iata;
+			}
+
+			function airportSearchBlob(a) {
+				return [a.iata, a.IATA, a.icao, a.ICAO, a.name, a.airport, a.city, a.municipality, a.country].join(' ');
+			}
+
+			function findLocalAirport(query) {
+				const q = normalizeSearchText(query);
+				if (!q) return null;
+
+				const exact = AIRPORTS.find(
+					a =>
+						normalizeSearchText(a.iata || a.IATA) === q ||
+						normalizeSearchText(a.city_DE || a.city || a.municipality) === q ||
+						normalizeSearchText(a.city_DE || a.name || a.airport) === q ||
+						normalizeSearchText(airportDisplayName(a)) === q,
+				);
+
+				if (exact) return exact;
+
+				return (
+					AIRPORTS.find(
+						a =>
+							normalizeSearchText(airportSearchBlob(a)).indexOf(q) >= 0 ||
+							normalizeSearchText(airportDisplayName(a)).indexOf(q) >= 0,
+					) || null
+				);
+			}
+
+			function fillAirport(a) {
+				if (!a) return;
+
+				const iata = String(a.iata || a.IATA || '').toUpperCase();
+				const name = String(
+					a.city_DE || a.city || a.municipality || a.city_DE || a.name || a.airport || '',
+				).trim();
+				const lat = Number(a.lat ?? a.latitude ?? a.latitude_deg);
+				const lon = Number(a.lon ?? a.longitude ?? a.longitude_deg);
+
+				if (!iata || !Number.isFinite(lat) || !Number.isFinite(lon)) {
+					return alert('Flughafen-Daten unvollständig');
+				}
+
+				$('#airportIata').val(iata);
+				$('#airportName').val(name || iata);
+				$('#airportLat').val(lat.toFixed(6));
+				$('#airportLon').val(lon.toFixed(6));
+
+				M.updateTextFields();
+				updateMap();
+				markChanged();
+			}
+
+			function getInstanceId() {
+				const url = String(window.location.href || '');
+
+				let m = url.match(/[?&#]instance=(\d+)/);
+				if (m) return 'jetframe.' + m[1];
+
+				m = url.match(/jetframe\.(\d+)/);
+				if (m) return 'jetframe.' + m[1];
+
+				return 'jetframe.0';
+			}
+
+			function loadAirportJsonFromState() {
+				try {
+					if (typeof socket === 'undefined') {
+						AIRPORTS = [];
+						return;
+					}
+
+					const id = getInstanceId() + '.airportjson';
+
+					socket.emit('getState', id, function (err, state) {
+						try {
+							const raw = state && state.val ? String(state.val) : '[]';
+							const arr = JSON.parse(raw);
+
+							if (Array.isArray(arr) && arr.length) {
+								AIRPORTS = arr;
+								updateAirportSuggestions();
+								console.log('JetFrame airports loaded:', AIRPORTS.length);
+							} else {
+								AIRPORTS = [];
+								console.warn('JetFrame airportjson leer:', id);
+							}
+						} catch (e) {
+							AIRPORTS = [];
+							console.warn('JetFrame airportjson parse Fehler:', e);
+						}
+					});
+				} catch (e) {
 					AIRPORTS = [];
+				}
+			}
+
+			async function geocode(query, limit) {
+				const url =
+					'https://nominatim.openstreetmap.org/search?' +
+					new URLSearchParams({
+						q: query,
+						format: 'json',
+						addressdetails: 1,
+						limit: limit || 5,
+					});
+
+				const res = await fetch(url, {
+					headers: { Accept: 'application/json' },
+				});
+
+				return await res.json();
+			}
+
+			function updateAirportSuggestions() {
+				const q = $('#airportSearch').val().trim();
+				const list = $('#airportSuggestions');
+
+				airportSuggestionMap = {};
+				list.empty();
+
+				if (q.length < 2) return;
+
+				const qNorm = normalizeSearchText(q);
+
+				AIRPORTS.filter(
+					a =>
+						normalizeSearchText(a.iata || a.IATA).indexOf(qNorm) >= 0 ||
+						normalizeSearchText(a.city_DE || a.city || a.municipality).indexOf(qNorm) >= 0 ||
+						normalizeSearchText(a.city_DE || a.name || a.airport).indexOf(qNorm) >= 0 ||
+						normalizeSearchText(airportDisplayName(a)).indexOf(qNorm) >= 0,
+				)
+					.slice(0, 12)
+					.forEach(a => {
+						const value = airportDisplayName(a);
+						const iata = String(a.iata || a.IATA || '').toUpperCase();
+
+						if (!iata || airportSuggestionMap[value]) return;
+
+						airportSuggestionMap[value] = a;
+						airportSuggestionMap[iata] = a;
+
+						if (a.city) airportSuggestionMap[a.city] = a;
+						if (a.name) airportSuggestionMap[a.name] = a;
+
+						list.append('<option value="' + value.replace(/"/g, '&quot;') + '"></option>');
+					});
+			}
+
+			function updateHomeSuggestions() {
+				const q = $('#homeSearch').val().trim();
+				const list = $('#homeSuggestions');
+
+				homeSuggestionMap = {};
+				list.empty();
+
+				if (q.length < 3) return;
+
+				clearTimeout(homeSuggestTimer);
+
+				homeSuggestTimer = setTimeout(async function () {
+					try {
+						const result = await geocode(q, 6);
+
+						result.forEach(r => {
+							const label = r.display_name;
+							homeSuggestionMap[label] = r;
+							list.append('<option value="' + label.replace(/"/g, '&quot;') + '"></option>');
+						});
+					} catch (e) {}
+				}, 350);
+			}
+
+			async function searchAirport() {
+				const q = $('#airportSearch').val().trim();
+
+				if (!q) return;
+
+				const selected = airportSuggestionMap[q];
+
+				if (selected) {
+					fillAirport(selected);
 					return;
 				}
 
-				const id = getInstanceId() + '.airportjson';
+				const local = findLocalAirport(q);
 
-				socket.emit('getState', id, function (err, state) {
-					try {
-						const raw = state && state.val ? String(state.val) : '[]';
-						const arr = JSON.parse(raw);
+				if (local) {
+					fillAirport(local);
+					return;
+				}
 
-						if (Array.isArray(arr) && arr.length) {
-							AIRPORTS = arr;
-							updateAirportSuggestions();
-							console.log('JetFrame airports loaded:', AIRPORTS.length);
-						} else {
-							AIRPORTS = [];
-							console.warn('JetFrame airportjson leer:', id);
-						}
-					} catch (e) {
-						AIRPORTS = [];
-						console.warn('JetFrame airportjson parse Fehler:', e);
+				alert('Kein Flughafen gefunden');
+			}
+
+			async function searchHome() {
+				const q = $('#homeSearch').val().trim();
+
+				if (!q) return;
+
+				let r = homeSuggestionMap[q];
+
+				if (!r) {
+					const result = await geocode(q, 1);
+
+					if (!result.length) {
+						return alert('Adresse nicht gefunden');
+					}
+
+					r = result[0];
+				}
+
+				$('#homeLat').val(Number(r.lat).toFixed(6));
+				$('#homeLon').val(Number(r.lon).toFixed(6));
+
+				M.updateTextFields();
+				updateMap();
+				markChanged();
+			}
+
+			function load(settings, onChange) {
+				adminOnChange = onChange;
+				settings = Object.assign({}, defaults, settings || {});
+
+				loadAirportJsonFromState();
+
+				$('.value').each(function () {
+					const key = $(this).attr('id');
+
+					if ($(this).attr('type') === 'checkbox') {
+						$(this).prop('checked', !!settings[key]);
+					} else {
+						$(this).val(settings[key]);
+					}
+
+					$(this).on('input change keyup', function () {
+						updateMap();
+						onChange();
+					});
+				});
+
+				$('#airportSearch').on('input keyup', updateAirportSuggestions);
+				$('#homeSearch').on('input keyup', updateHomeSuggestions);
+				$('#speechTemplate').on('input change keyup', updateSpeechPreview);
+
+				$('#airportSearch').on('input change', function () {
+					const val = String($(this).val() || '').trim();
+
+					if (airportSuggestionMap[val]) {
+						fillAirport(airportSuggestionMap[val]);
+						return;
+					}
+
+					const local = findLocalAirport(val);
+
+					if (local && val.length >= 3) {
+						fillAirport(local);
 					}
 				});
-			} catch (e) {
-				AIRPORTS = [];
-			}
-		}
 
-		async function geocode(query, limit) {
-			const url =
-				'https://nominatim.openstreetmap.org/search?' +
-				new URLSearchParams({
-					q: query,
-					format: 'json',
-					addressdetails: 1,
-					limit: limit || 5
+				$('#homeSearch').on('change', function () {
+					const val = $(this).val();
+					const r = homeSuggestionMap[val];
+
+					if (r) {
+						$('#homeLat').val(Number(r.lat).toFixed(6));
+						$('#homeLon').val(Number(r.lon).toFixed(6));
+						M.updateTextFields();
+						updateMap();
+						markChanged();
+					}
 				});
 
-			const res = await fetch(url, {
-				headers: { Accept: 'application/json' }
-			});
+				M.updateTextFields();
 
-			return await res.json();
-		}
-
-		function updateAirportSuggestions() {
-			const q = $('#airportSearch').val().trim();
-			const list = $('#airportSuggestions');
-
-			airportSuggestionMap = {};
-			list.empty();
-
-			if (q.length < 2) return;
-
-			const qNorm = normalizeSearchText(q);
-
-			AIRPORTS
-				.filter(a =>
-					normalizeSearchText(a.iata || a.IATA).indexOf(qNorm) >= 0 ||
-					normalizeSearchText(a.city_DE || a.city || a.municipality).indexOf(qNorm) >= 0 ||
-					normalizeSearchText(a.city_DE || a.name || a.airport).indexOf(qNorm) >= 0 ||
-					normalizeSearchText(airportDisplayName(a)).indexOf(qNorm) >= 0
-				)
-				.slice(0, 12)
-				.forEach(a => {
-					const value = airportDisplayName(a);
-					const iata = String(a.iata || a.IATA || '').toUpperCase();
-
-					if (!iata || airportSuggestionMap[value]) return;
-
-					airportSuggestionMap[value] = a;
-					airportSuggestionMap[iata] = a;
-
-					if (a.city) airportSuggestionMap[a.city] = a;
-					if (a.name) airportSuggestionMap[a.name] = a;
-
-					list.append('<option value="' + value.replace(/"/g, '&quot;') + '"></option>');
-				});
-		}
-
-		function updateHomeSuggestions() {
-			const q = $('#homeSearch').val().trim();
-			const list = $('#homeSuggestions');
-
-			homeSuggestionMap = {};
-			list.empty();
-
-			if (q.length < 3) return;
-
-			clearTimeout(homeSuggestTimer);
-
-			homeSuggestTimer = setTimeout(async function () {
-				try {
-					const result = await geocode(q, 6);
-
-					result.forEach(r => {
-						const label = r.display_name;
-						homeSuggestionMap[label] = r;
-						list.append('<option value="' + label.replace(/"/g, '&quot;') + '"></option>');
-					});
-				} catch (e) {}
-			}, 350);
-		}
-
-		async function searchAirport() {
-			const q = $('#airportSearch').val().trim();
-
-			if (!q) return;
-
-			const selected = airportSuggestionMap[q];
-
-			if (selected) {
-				fillAirport(selected);
-				return;
-			}
-
-			const local = findLocalAirport(q);
-
-			if (local) {
-				fillAirport(local);
-				return;
-			}
-
-			alert('Kein Flughafen gefunden');
-		}
-
-		async function searchHome() {
-			const q = $('#homeSearch').val().trim();
-
-			if (!q) return;
-
-			let r = homeSuggestionMap[q];
-
-			if (!r) {
-				const result = await geocode(q, 1);
-
-				if (!result.length) {
-					return alert('Adresse nicht gefunden');
+				if (M.FormSelect) {
+					M.FormSelect.init(document.querySelectorAll('select'));
 				}
 
-				r = result[0];
-			}
+				updateSpeechPreview();
 
-			$('#homeLat').val(Number(r.lat).toFixed(6));
-			$('#homeLon').val(Number(r.lon).toFixed(6));
-
-			M.updateTextFields();
-			updateMap();
-			markChanged();
-		}
-
-		function load(settings, onChange) {
-			adminOnChange = onChange;
-			settings = Object.assign({}, defaults, settings || {});
-
-			loadAirportJsonFromState();
-
-			$('.value').each(function () {
-				const key = $(this).attr('id');
-
-				if ($(this).attr('type') === 'checkbox') {
-					$(this).prop('checked', !!settings[key]);
-				} else {
-					$(this).val(settings[key]);
-				}
-
-				$(this).on('input change keyup', function () {
+				setTimeout(function () {
 					updateMap();
-					onChange();
-				});
-			});
-
-			$('#airportSearch').on('input keyup', updateAirportSuggestions);
-			$('#homeSearch').on('input keyup', updateHomeSuggestions);
-			$('#speechTemplate').on('input change keyup', updateSpeechPreview);
-
-			$('#airportSearch').on('input change', function () {
-				const val = String($(this).val() || '').trim();
-
-				if (airportSuggestionMap[val]) {
-					fillAirport(airportSuggestionMap[val]);
-					return;
-				}
-
-				const local = findLocalAirport(val);
-
-				if (local && val.length >= 3) {
-					fillAirport(local);
-				}
-			});
-
-			$('#homeSearch').on('change', function () {
-				const val = $(this).val();
-				const r = homeSuggestionMap[val];
-
-				if (r) {
-					$('#homeLat').val(Number(r.lat).toFixed(6));
-					$('#homeLon').val(Number(r.lon).toFixed(6));
-					M.updateTextFields();
-					updateMap();
-					markChanged();
-				}
-			});
-
-			M.updateTextFields();
-
-			if (M.FormSelect) {
-				M.FormSelect.init(document.querySelectorAll('select'));
+					onChange(false);
+				}, 400);
 			}
 
-			updateSpeechPreview();
+			function save(callback) {
+				const obj = {};
 
-			setTimeout(function () {
-				updateMap();
-				onChange(false);
-			}, 400);
-		}
+				$('.value').each(function () {
+					const key = $(this).attr('id');
 
-		function save(callback) {
-			const obj = {};
+					if ($(this).attr('type') === 'checkbox') {
+						obj[key] = $(this).prop('checked');
+					} else if ($(this).attr('type') === 'number' || $(this).attr('type') === 'range') {
+						obj[key] = Number($(this).val());
+					} else {
+						obj[key] = $(this).val();
+					}
+				});
 
-			$('.value').each(function () {
-				const key = $(this).attr('id');
+				callback(obj);
+			}
+		</script>
 
-				if ($(this).attr('type') === 'checkbox') {
-					obj[key] = $(this).prop('checked');
-				} else if ($(this).attr('type') === 'number' || $(this).attr('type') === 'range') {
-					obj[key] = Number($(this).val());
-				} else {
-					obj[key] = $(this).val();
+		<style>
+			@media (min-width: 1000px) {
+				.jetframe-map-card,
+				#mapCard,
+				.map-card {
+					position: sticky !important;
+					top: 24px !important;
+					align-self: flex-start !important;
+					z-index: 5 !important;
 				}
-			});
+			}
+		</style>
 
-			callback(obj);
-		}
-	</script>
+		<style id="jetframe-sticky-final">
+			@media (min-width: 1100px) {
+				.leaflet-container,
+				#map {
+					position: relative !important;
+					top: auto !important;
+				}
 
-<style>
-@media (min-width: 1000px) {
-  .jetframe-map-card,
-  #mapCard,
-  .map-card {
-    position: sticky !important;
-    top: 24px !important;
-    align-self: flex-start !important;
-    z-index: 5 !important;
-  }
-}
-</style>
+				.right-column,
+				.map-column,
+				.sidebar-column {
+					position: sticky !important;
+					top: 18px !important;
+					align-self: start !important;
+					height: fit-content !important;
+				}
+			}
+		</style>
 
+		<style id="jetframe-speech-preview-fix">
+			.speech-preview,
+			#speechPreview,
+			.preview-box,
+			#speechPreviewBox,
+			[id*='preview'],
+			[class*='preview'] {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+				white-space: normal !important;
+				word-break: normal !important;
+				overflow-wrap: anywhere !important;
+				line-height: 1.45 !important;
+			}
 
+			.speech-preview pre,
+			#speechPreview pre,
+			.preview-box pre,
+			#speechPreviewBox pre,
+			[id*='preview'] pre,
+			[class*='preview'] pre {
+				font-family: inherit !important;
+				white-space: normal !important;
+				margin: 0 !important;
+			}
+		</style>
 
+		<style id="jetframe-overflight-only-clean">
+			.jf-overflight-only {
+				margin-top: 18px;
+				margin-bottom: 18px;
+				padding: 0;
+			}
 
-<style id="jetframe-sticky-final">
-@media (min-width: 1100px) {
+			.jf-overflight-only-title {
+				font-size: 16px !important;
+				font-weight: 700 !important;
+				line-height: 1.3 !important;
+				margin-bottom: 8px !important;
+				color: #000 !important;
+				-webkit-text-fill-color: #000 !important;
+			}
 
-  .leaflet-container,
-  #map {
-    position: relative !important;
-    top: auto !important;
-  }
+			.jf-overflight-only .jetframe-hint {
+				margin-top: 8px;
+				font-size: 15px !important;
+				line-height: 1.45 !important;
+				color: #000 !important;
+				-webkit-text-fill-color: #000 !important;
+				opacity: 0.72;
+			}
 
-  .right-column,
-  .map-column,
-  .sidebar-column {
-    position: sticky !important;
-    top: 18px !important;
-    align-self: start !important;
-    height: fit-content !important;
-  }
-}
-</style>
+			.switch label {
+				min-height: 44px;
+				display: inline-flex !important;
+				align-items: center;
+				gap: 12px;
+				cursor: pointer;
+				user-select: none;
+				-webkit-tap-highlight-color: transparent;
+			}
 
+			.switch label .lever {
+				margin: 0 8px !important;
+			}
+		</style>
+	</head>
 
-<style id="jetframe-speech-preview-fix">
-.speech-preview,
-#speechPreview,
-.preview-box,
-#speechPreviewBox,
-[id*="preview"],
-[class*="preview"] {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important;
-  white-space: normal !important;
-  word-break: normal !important;
-  overflow-wrap: anywhere !important;
-  line-height: 1.45 !important;
-}
-
-.speech-preview pre,
-#speechPreview pre,
-.preview-box pre,
-#speechPreviewBox pre,
-[id*="preview"] pre,
-[class*="preview"] pre {
-  font-family: inherit !important;
-  white-space: normal !important;
-  margin: 0 !important;
-}
-</style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<style id="jetframe-overflight-only-clean">
-.jf-overflight-only{
-	margin-top:18px;
-	margin-bottom:18px;
-	padding:0;
-}
-
-.jf-overflight-only-title{
-	font-size:16px !important;
-	font-weight:700 !important;
-	line-height:1.3 !important;
-	margin-bottom:8px !important;
-	color:#000 !important;
-	-webkit-text-fill-color:#000 !important;
-}
-
-.jf-overflight-only .jetframe-hint{
-	margin-top:8px;
-	font-size:15px !important;
-	line-height:1.45 !important;
-	color:#000 !important;
-	-webkit-text-fill-color:#000 !important;
-	opacity:.72;
-}
-
-.switch label{
-	min-height:44px;
-	display:inline-flex !important;
-	align-items:center;
-	gap:12px;
-	cursor:pointer;
-	user-select:none;
-	-webkit-tap-highlight-color:transparent;
-}
-
-.switch label .lever{
-	margin:0 8px !important;
-}
-</style>
-
-</head>
-
-<body>
-<div class="m adapter-container">
-
-	<div class="jetframe-card intro-card">
-		<div class="jetframe-title">&#9992;&#65039; JetFrame</div>
-		<div class="jetframe-hint">Konfiguriere Flughafen, Zuhause und Sichtfenster.</div>
-	</div>
-
-	<div class="desktop-layout">
-
-		<div class="left-column">
-
-			<div class="jetframe-card">
-				<div class="jetframe-title">&#9881;&#65039; Allgemein</div>
-				<div class="switch">
-					<label>
-						Off
-						<input id="enabled" class="value" type="checkbox">
-						<span class="lever"></span>
-						On
-					</label>
-				</div>
+	<body>
+		<div class="m adapter-container">
+			<div class="jetframe-card intro-card">
+				<div class="jetframe-title">&#9992;&#65039; JetFrame</div>
+				<div class="jetframe-hint">Konfiguriere Flughafen, Zuhause und Sichtfenster.</div>
 			</div>
 
-			<div class="jetframe-card">
-				<div class="jetframe-title">&#128266; Sprachausgabe</div>
+			<div class="desktop-layout">
+				<div class="left-column">
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#9881;&#65039; Allgemein</div>
+						<div class="switch">
+							<label>
+								Off
+								<input
+									id="enabled"
+									class="value"
+									type="checkbox"
+								/>
+								<span class="lever"></span>
+								On
+							</label>
+						</div>
+					</div>
 
-				<div class="input-field">
-					<select id="speechMode" class="value">
-						<option value="browser">Browser intern</option>
-						<option value="external">Extern per Datenpunkt</option>
-						<option value="both">Browser + extern</option>
-						<option value="off">Aus</option>
-					</select>
-					<label>Modus</label>
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#128266; Sprachausgabe</div>
+
+						<div class="input-field">
+							<select
+								id="speechMode"
+								class="value"
+							>
+								<option value="browser">Browser intern</option>
+								<option value="external">Extern per Datenpunkt</option>
+								<option value="both">Browser + extern</option>
+								<option value="off">Aus</option>
+							</select>
+							<label>Modus</label>
+						</div>
+
+						<div class="input-field">
+							<textarea
+								id="speechTemplate"
+								class="materialize-textarea value"
+							></textarea>
+							<label for="speechTemplate">Ansage-Text</label>
+						</div>
+
+						<div>
+							<span
+								class="speech-token"
+								onclick="insertSpeechToken('modeSpeechText')"
+								>Start/Landung</span
+							>
+							<span
+								class="speech-token"
+								onclick="insertSpeechToken('airlineName')"
+								>Airline</span
+							>
+							<span
+								class="speech-token"
+								onclick="insertSpeechToken('bestCallsign')"
+								>Callsign</span
+							>
+							<span
+								class="speech-token"
+								onclick="insertSpeechToken('routeDirectionText')"
+								>aus/nach</span
+							>
+							<span
+								class="speech-token"
+								onclick="insertSpeechToken('routeOtherAirport')"
+								>Ort</span
+							>
+							<span
+								class="speech-token"
+								onclick="insertSpeechToken('altitudeFt')"
+								>Höhe</span
+							>
+							<span
+								class="speech-token"
+								onclick="insertSpeechToken('windowPositionSpeechText')"
+								>Fensterposition</span
+							>
+						</div>
+
+						<div style="margin-top: 10px">
+							<button
+								type="button"
+								class="btn-small blue"
+								onclick="setDefaultSpeechTemplate()"
+							>
+								Standardtext setzen
+							</button>
+						</div>
+
+						<div class="speech-preview">
+							<b>Vorschau:</b><br />
+							<span id="speechPreviewText">Noch kein Ansage-Text gesetzt.</span>
+						</div>
+					</div>
+
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#128747; Flughafen</div>
+
+						<div class="fw-search-row">
+							<input
+								id="airportSearch"
+								type="text"
+								list="airportSuggestions"
+								placeholder="FRA / Frankfurt / M&uuml;nchen"
+							/>
+							<datalist id="airportSuggestions"></datalist>
+							<button
+								type="button"
+								onclick="searchAirport()"
+							>
+								Suchen
+							</button>
+						</div>
+
+						<div class="grid-2">
+							<div class="input-field">
+								<input
+									id="airportIata"
+									class="value"
+									type="text"
+								/>
+								<label for="airportIata">IATA</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="airportName"
+									class="value"
+									type="text"
+								/>
+								<label for="airportName">Name</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="airportLat"
+									class="value"
+									type="number"
+									step="0.000001"
+								/>
+								<label for="airportLat">Latitude</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="airportLon"
+									class="value"
+									type="number"
+									step="0.000001"
+								/>
+								<label for="airportLon">Longitude</label>
+							</div>
+						</div>
+					</div>
+
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#127968; Zuhause</div>
+
+						<div class="fw-search-row">
+							<input
+								id="homeSearch"
+								type="text"
+								list="homeSuggestions"
+								placeholder="Adresse / Ort / PLZ"
+							/>
+							<datalist id="homeSuggestions"></datalist>
+							<button
+								type="button"
+								onclick="searchHome()"
+							>
+								Suchen
+							</button>
+						</div>
+
+						<div class="grid-2">
+							<div class="input-field">
+								<input
+									id="homeLat"
+									class="value"
+									type="number"
+									step="0.000001"
+								/>
+								<label for="homeLat">Latitude</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="homeLon"
+									class="value"
+									type="number"
+									step="0.000001"
+								/>
+								<label for="homeLon">Longitude</label>
+							</div>
+						</div>
+					</div>
+
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#129695; Sichtfenster</div>
+
+						<div class="range-field">
+							<label>Fensterrichtung: <span id="windowBearingDegValue"></span></label>
+							<input
+								id="windowBearingDeg"
+								class="value"
+								type="range"
+								min="0"
+								max="359"
+								step="1"
+							/>
+						</div>
+
+						<div class="range-field">
+							<label>Sichtfeld: <span id="windowFovDegValue"></span></label>
+							<input
+								id="windowFovDeg"
+								class="value"
+								type="range"
+								min="10"
+								max="180"
+								step="1"
+							/>
+						</div>
+
+						<div class="range-field">
+							<label>Max Distanz Zuhause: <span id="maxHomeDistanceNmValue"></span></label>
+							<input
+								id="maxHomeDistanceNm"
+								class="value"
+								type="range"
+								min="1"
+								max="30"
+								step="0.5"
+							/>
+						</div>
+					</div>
+
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#128225; Empfang & Filter</div>
+
+						<div class="grid-2">
+							<div class="input-field">
+								<input
+									id="radiusNm"
+									class="value"
+									type="number"
+									step="0.5"
+								/>
+								<label for="radiusNm">ADSB-Scan Flughafen (NM)</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="adsbCustomUrl"
+									class="value"
+									type="text"
+								/>
+								<label for="adsbCustomUrl">Eigene ADSB-URL optional</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="autoRunwayTrackToleranceDeg"
+									class="value"
+									type="number"
+								/>
+								<label for="autoRunwayTrackToleranceDeg">Kurs-Toleranz Grad</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="minAltitudeFt"
+									class="value"
+									type="number"
+								/>
+								<label for="minAltitudeFt">Min Höhe ft</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="maxAltitudeFt"
+									class="value"
+									type="number"
+								/>
+								<label for="maxAltitudeFt">Max Höhe ft</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="minClimbRate"
+									class="value"
+									type="number"
+								/>
+								<label for="minClimbRate">Min Steigen ft/min</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="minSinkRate"
+									class="value"
+									type="number"
+								/>
+								<label for="minSinkRate">Min Sinken ft/min</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="searchPollSeconds"
+									class="value"
+									type="number"
+								/>
+								<label for="searchPollSeconds">Suche alle Sekunden</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="livePollSeconds"
+									class="value"
+									type="number"
+								/>
+								<label for="livePollSeconds">Live alle Sekunden</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="liveMaxSeconds"
+									class="value"
+									type="number"
+								/>
+								<label for="liveMaxSeconds">Live max Sekunden</label>
+							</div>
+						</div>
+					</div>
+
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#128745;&#65039; &Uuml;berflug</div>
+
+						<div class="switch">
+							<label>
+								Aus
+								<input
+									id="overflightEnabled"
+									class="value"
+									type="checkbox"
+								/>
+								<span class="lever"></span>
+								Ein
+							</label>
+						</div>
+
+						<div class="range-field">
+							<label>Max &Uuml;berflug-Distanz: <span id="overflightMaxDistanceNmValue"></span></label>
+							<input
+								id="overflightMaxDistanceNm"
+								class="value"
+								type="range"
+								min="0.2"
+								max="10"
+								step="0.1"
+							/>
+						</div>
+
+						<div class="jf-overflight-only">
+							<div class="jf-overflight-only-title">Nur Überflug-Modus</div>
+
+							<div class="switch">
+								<label>
+									Aus
+									<input
+										id="overflightOnly"
+										class="value"
+										type="checkbox"
+									/>
+									<span class="lever"></span>
+									Ein
+								</label>
+							</div>
+
+							<div class="jetframe-hint">
+								Keine Start-/Landungs-Erkennung. ADS-B Suche läuft nur rund um Zuhause.
+							</div>
+						</div>
+
+						<div
+							class="switch"
+							style="margin-top: 18px; margin-bottom: 12px"
+						>
+							<label>
+								egal
+								<input
+									id="overflightRequiresWindow"
+									class="value"
+									type="checkbox"
+								/>
+								<span class="lever"></span>
+								nur Sichtfenster
+							</label>
+						</div>
+						<div class="jetframe-hint">
+							Wenn aktiv, werden &Uuml;berfl&uuml;ge nur gemeldet, wenn sie auch im konfigurierten
+							Sichtfenster liegen.
+						</div>
+
+						<div class="grid-2">
+							<div class="input-field">
+								<input
+									id="overflightMinAltitudeFt"
+									class="value"
+									type="number"
+								/>
+								<label for="overflightMinAltitudeFt">Min H&ouml;he ft</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="overflightMaxAltitudeFt"
+									class="value"
+									type="number"
+								/>
+								<label for="overflightMaxAltitudeFt">Max H&ouml;he ft</label>
+							</div>
+						</div>
+					</div>
 				</div>
 
-				<div class="input-field">
-					<textarea id="speechTemplate" class="materialize-textarea value"></textarea>
-					<label for="speechTemplate">Ansage-Text</label>
-				</div>
-
-				<div>
-					<span class="speech-token" onclick="insertSpeechToken('modeSpeechText')">Start/Landung</span>
-					<span class="speech-token" onclick="insertSpeechToken('airlineName')">Airline</span>
-					<span class="speech-token" onclick="insertSpeechToken('bestCallsign')">Callsign</span>
-					<span class="speech-token" onclick="insertSpeechToken('routeDirectionText')">aus/nach</span>
-					<span class="speech-token" onclick="insertSpeechToken('routeOtherAirport')">Ort</span>
-					<span class="speech-token" onclick="insertSpeechToken('altitudeFt')">Höhe</span>
-					<span class="speech-token" onclick="insertSpeechToken('windowPositionSpeechText')">Fensterposition</span>
-				</div>
-
-				<div style="margin-top:10px;">
-					<button type="button" class="btn-small blue" onclick="setDefaultSpeechTemplate()">Standardtext setzen</button>
-				</div>
-
-				<div class="speech-preview">
-					<b>Vorschau:</b><br>
-					<span id="speechPreviewText">Noch kein Ansage-Text gesetzt.</span>
-				</div>
-			</div>
-
-			<div class="jetframe-card">
-				<div class="jetframe-title">&#128747; Flughafen</div>
-
-				<div class="fw-search-row">
-					<input id="airportSearch" type="text" list="airportSuggestions" placeholder="FRA / Frankfurt / M&uuml;nchen">
-					<datalist id="airportSuggestions"></datalist>
-					<button type="button" onclick="searchAirport()">Suchen</button>
-				</div>
-
-				<div class="grid-2">
-					<div class="input-field">
-						<input id="airportIata" class="value" type="text">
-						<label for="airportIata">IATA</label>
-					</div>
-
-					<div class="input-field">
-						<input id="airportName" class="value" type="text">
-						<label for="airportName">Name</label>
-					</div>
-
-					<div class="input-field">
-						<input id="airportLat" class="value" type="number" step="0.000001">
-						<label for="airportLat">Latitude</label>
-					</div>
-
-					<div class="input-field">
-						<input id="airportLon" class="value" type="number" step="0.000001">
-						<label for="airportLon">Longitude</label>
+				<div class="right-column">
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#128506;&#65039; Karte & Sichtfenster</div>
+						<div id="map"></div>
+						<div
+							id="mapInfo"
+							class="map-info"
+						></div>
 					</div>
 				</div>
-			</div>
-
-			<div class="jetframe-card">
-				<div class="jetframe-title">&#127968; Zuhause</div>
-
-				<div class="fw-search-row">
-					<input id="homeSearch" type="text" list="homeSuggestions" placeholder="Adresse / Ort / PLZ">
-					<datalist id="homeSuggestions"></datalist>
-					<button type="button" onclick="searchHome()">Suchen</button>
-				</div>
-
-				<div class="grid-2">
-					<div class="input-field">
-						<input id="homeLat" class="value" type="number" step="0.000001">
-						<label for="homeLat">Latitude</label>
-					</div>
-
-					<div class="input-field">
-						<input id="homeLon" class="value" type="number" step="0.000001">
-						<label for="homeLon">Longitude</label>
-					</div>
-				</div>
-			</div>
-
-			<div class="jetframe-card">
-				<div class="jetframe-title">&#129695; Sichtfenster</div>
-
-				<div class="range-field">
-					<label>Fensterrichtung: <span id="windowBearingDegValue"></span></label>
-					<input id="windowBearingDeg" class="value" type="range" min="0" max="359" step="1">
-				</div>
-
-				<div class="range-field">
-					<label>Sichtfeld: <span id="windowFovDegValue"></span></label>
-					<input id="windowFovDeg" class="value" type="range" min="10" max="180" step="1">
-				</div>
-
-				<div class="range-field">
-					<label>Max Distanz Zuhause: <span id="maxHomeDistanceNmValue"></span></label>
-					<input id="maxHomeDistanceNm" class="value" type="range" min="1" max="30" step="0.5">
-				</div>
-			</div>
-
-			<div class="jetframe-card">
-				<div class="jetframe-title">&#128225; Empfang & Filter</div>
-
-				<div class="grid-2">
-					<div class="input-field">
-						<input id="radiusNm" class="value" type="number" step="0.5">
-						<label for="radiusNm">ADSB-Scan Flughafen (NM)</label>
-					</div>
-
-					<div class="input-field">
-						<input id="adsbCustomUrl" class="value" type="text">
-						<label for="adsbCustomUrl">Eigene ADSB-URL optional</label>
-					</div>
-
-					<div class="input-field">
-						<input id="autoRunwayTrackToleranceDeg" class="value" type="number">
-						<label for="autoRunwayTrackToleranceDeg">Kurs-Toleranz Grad</label>
-					</div>
-
-					<div class="input-field">
-						<input id="minAltitudeFt" class="value" type="number">
-						<label for="minAltitudeFt">Min Höhe ft</label>
-					</div>
-
-					<div class="input-field">
-						<input id="maxAltitudeFt" class="value" type="number">
-						<label for="maxAltitudeFt">Max Höhe ft</label>
-					</div>
-
-					<div class="input-field">
-						<input id="minClimbRate" class="value" type="number">
-						<label for="minClimbRate">Min Steigen ft/min</label>
-					</div>
-
-					<div class="input-field">
-						<input id="minSinkRate" class="value" type="number">
-						<label for="minSinkRate">Min Sinken ft/min</label>
-					</div>
-
-					<div class="input-field">
-						<input id="searchPollSeconds" class="value" type="number">
-						<label for="searchPollSeconds">Suche alle Sekunden</label>
-					</div>
-
-					<div class="input-field">
-						<input id="livePollSeconds" class="value" type="number">
-						<label for="livePollSeconds">Live alle Sekunden</label>
-					</div>
-
-					<div class="input-field">
-						<input id="liveMaxSeconds" class="value" type="number">
-						<label for="liveMaxSeconds">Live max Sekunden</label>
-					</div>
-				</div>
-			</div>
-
-			<div class="jetframe-card">
-				<div class="jetframe-title">&#128745;&#65039; &Uuml;berflug</div>
-
-				<div class="switch">
-					<label>
-						Aus
-						<input id="overflightEnabled" class="value" type="checkbox">
-						<span class="lever"></span>
-						Ein
-					</label>
-				</div>
-
-				<div class="range-field">
-					<label>Max &Uuml;berflug-Distanz: <span id="overflightMaxDistanceNmValue"></span></label>
-					<input id="overflightMaxDistanceNm" class="value" type="range" min="0.2" max="10" step="0.1">
-				</div>
-
-			
-				<div class="jf-overflight-only">
-					<div class="jf-overflight-only-title">Nur Überflug-Modus</div>
-
-					<div class="switch">
-						<label>
-							Aus
-							<input id="overflightOnly" class="value" type="checkbox">
-							<span class="lever"></span>
-							Ein
-						</label>
-					</div>
-
-					<div class="jetframe-hint">
-						Keine Start-/Landungs-Erkennung. ADS-B Suche läuft nur rund um Zuhause.
-					</div>
-				</div>
-
-<div class="switch" style="margin-top:18px;margin-bottom:12px;">
-					<label>
-						egal
-						<input id="overflightRequiresWindow" class="value" type="checkbox">
-						<span class="lever"></span>
-						nur Sichtfenster
-					</label>
-				</div>
-				<div class="jetframe-hint">
-					Wenn aktiv, werden &Uuml;berfl&uuml;ge nur gemeldet, wenn sie auch im konfigurierten Sichtfenster liegen.
-				</div>
-
-				<div class="grid-2">
-					<div class="input-field">
-						<input id="overflightMinAltitudeFt" class="value" type="number">
-						<label for="overflightMinAltitudeFt">Min H&ouml;he ft</label>
-					</div>
-
-					<div class="input-field">
-						<input id="overflightMaxAltitudeFt" class="value" type="number">
-						<label for="overflightMaxAltitudeFt">Max H&ouml;he ft</label>
-					</div>
-				</div>
-			</div>
-
-		</div>
-
-		<div class="right-column">
-			<div class="jetframe-card">
-				<div class="jetframe-title">&#128506;&#65039; Karte & Sichtfenster</div>
-				<div id="map"></div>
-				<div id="mapInfo" class="map-info"></div>
 			</div>
 		</div>
 
-	</div>
-
-</div>
-
-<script>
-
-</script>
-
-
-
-
-</body>
+		<script></script>
+	</body>
 </html>
