@@ -4,4 +4,3 @@ dist/
 *.tgz
 .idea/
 .vscode/
-package-lock.json
