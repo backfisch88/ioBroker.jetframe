@@ -53,12 +53,14 @@ It detects nearby aircraft based on your window position and visualizes them wit
    - `web` adapter
    - `simple-api` adapter
 
-2. Make sure the `simple-api` adapter is reachable on port `8087`.
-
-3. Open the JetFrame adapter settings and configure:
+2. Configure JetFrame in the adapter settings:
    - your home position
    - your nearest airport
    - your visible window direction / viewing area
+   - Simple-API host and port for the visualization
+   - visualization source: current flight, airport traffic or overflight
+
+3. The visualization reads its connection settings from `vis-config.json`, which is written automatically by the adapter.
 
 4. Open the visualization in your browser:
 
@@ -70,6 +72,20 @@ Example:
 
 ```text
 http://192.168.178.10:8082/jetframe.admin/
+```
+
+Optional URL overrides:
+
+```text
+http://IPADRESSE:8082/jetframe.admin/?apiHost=192.168.178.10&apiPort=8087&source=current
+```
+
+Available sources:
+
+```text
+current
+airport
+overflight
 ```
 
 ---
@@ -116,10 +132,6 @@ If you are a rights holder and believe content is being used improperly, please 
 
 Planned future features:
 
-- multi-aircraft mode
-- enhanced map overlays
-- local image caching improvements
-
 
 ---
 
@@ -127,9 +139,41 @@ Planned future features:
 
 ## **WORK IN PROGRESS**
 
+### v0.5.0
+
+✨ New
+
+* Added configurable visualization settings via adapter admin
+* Added automatic config generation for the external visualization
+* Added selectable visualization source: current flight, airport traffic or overflight
+* Added aircraft prioritization options
+* Added emergency / Squawk detection support
+* Added emergency display states for the visualization
+* Added configurable emergency Squawk handling for 7700, 7600 and 7500
+* Added overflight-only mode
+
+🛠 Improvements
+
+* Improved Simple-API handling for the visualization
+* Visualization now keeps Simple-API host, port and source consistent after reload
+* Improved mobile admin layout
+* Improved map sizing on mobile devices
+* Improved map zoom behavior by excluding large ADS-B scan circles from automatic zoom
+* Improved special livery display in the visualization
+* Improved aircraft selection when multiple aircraft are visible
+
+🎨 UI
+
+* Added dedicated visualization settings block in admin
+* Added prioritization settings block in admin
+* Added emergency / Squawk settings block in admin
+* Emergency messages are highlighted in the visualization
+* Refined JetFrame visualization layout
+
 ### v0.4.0
 
-- Initial release
+* Initial release
+
 
 ---
 
