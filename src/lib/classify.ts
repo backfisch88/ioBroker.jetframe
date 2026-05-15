@@ -189,10 +189,11 @@ export function getMatches(config: JetFrameConfig, aircraft: Aircraft[]): Aircra
 		.sort((a, b) => sortAircraft(config, a, b));
 }
 
-
 function enrichEmergency(config: JetFrameConfig, a: Aircraft): Aircraft {
 	const squawk = String(a.squawk || '').trim();
-	const emergency = String(a.emergency || '').trim().toLowerCase();
+	const emergency = String(a.emergency || '')
+		.trim()
+		.toLowerCase();
 
 	let emergencyType = '';
 	let emergencyText = '';
@@ -208,7 +209,7 @@ function enrichEmergency(config: JetFrameConfig, a: Aircraft): Aircraft {
 		emergencyText = 'Allgemeiner Notfall Squawk 7700';
 	} else if (emergency && emergency !== 'none') {
 		emergencyType = emergency.toUpperCase();
-		emergencyText = 'Emergency: ' + emergency;
+		emergencyText = `Emergency: ${emergency}`;
 	}
 
 	return {
@@ -226,9 +227,15 @@ function emergencyBonus(config: JetFrameConfig, a: Aircraft): number {
 
 	const squawk = String(a.squawk || '').trim();
 
-	if (squawk === '7500') return 100000;
-	if (squawk === '7700') return 90000;
-	if (squawk === '7600') return 80000;
+	if (squawk === '7500') {
+		return 100000;
+	}
+	if (squawk === '7700') {
+		return 90000;
+	}
+	if (squawk === '7600') {
+		return 80000;
+	}
 
 	return 70000;
 }
@@ -252,8 +259,8 @@ function sortOverflightAircraft(config: JetFrameConfig, a: Aircraft, b: Aircraft
 }
 
 function sortAircraft(config: JetFrameConfig, a: Aircraft, b: Aircraft): number {
-	const pa = (a.priority || 99);
-	const pb = (b.priority || 99);
+	const pa = a.priority || 99;
+	const pb = b.priority || 99;
 
 	const sa =
 		pa * 100000 +
@@ -301,27 +308,35 @@ function priorityBonus(config: JetFrameConfig, a: Aircraft): number {
 function hasSpecialLivery(a: Aircraft): boolean {
 	return !!String(
 		a.specialLiveryVisText ||
-		a.specialLiveryFull ||
-		a.specialLiveryTitle ||
-		a.specialLiveryDescription ||
-		a.specialText ||
-		'',
+			a.specialLiveryFull ||
+			a.specialLiveryTitle ||
+			a.specialLiveryDescription ||
+			a.specialText ||
+			'',
 	).trim();
 }
 
 function aircraftSizeBonus(a: Aircraft): number {
-	const text = String(
-		a.aircraftSize ||
-		a.aircraftType ||
-		a.type ||
-		a.aircraftModel ||
-		'',
-	).toUpperCase();
+	const text = String(a.aircraftSize || a.aircraftType || a.type || a.aircraftModel || '').toUpperCase();
 
-	if (/SUPERJUMBO|A388|A380/.test(text)) return 650;
-	if (/JUMBO|B748|B744|B742|B741|B747|B74/.test(text)) return 600;
-	if (/WIDEBODY|A300|A310|A330|A332|A333|A339|A340|A343|A346|A350|A359|A35K|A380|A388|B767|B763|B764|B777|B772|B77W|B77L|B787|B788|B789|B78X|MD11|DC10/.test(text)) return 450;
-	if (/NARROWBODY|A318|A319|A320|A321|A20N|A21N|B737|B738|B739|B38M|B39M|B3XM|A220|BCS|E190|E195|E290|E295/.test(text)) return 200;
+	if (/SUPERJUMBO|A388|A380/.test(text)) {
+		return 650;
+	}
+	if (/JUMBO|B748|B744|B742|B741|B747|B74/.test(text)) {
+		return 600;
+	}
+	if (
+		/WIDEBODY|A300|A310|A330|A332|A333|A339|A340|A343|A346|A350|A359|A35K|A380|A388|B767|B763|B764|B777|B772|B77W|B77L|B787|B788|B789|B78X|MD11|DC10/.test(
+			text,
+		)
+	) {
+		return 450;
+	}
+	if (
+		/NARROWBODY|A318|A319|A320|A321|A20N|A21N|B737|B738|B739|B38M|B39M|B3XM|A220|BCS|E190|E195|E290|E295/.test(text)
+	) {
+		return 200;
+	}
 
 	return 0;
 }
@@ -338,9 +353,13 @@ function isMilitaryOrGovernment(a: Aircraft): boolean {
 		a.aircraftModel,
 		a.aircraftType,
 		a.type,
-	].map(v => String(v || '').toUpperCase()).join(' ');
+	]
+		.map(v => String(v || '').toUpperCase())
+		.join(' ');
 
-	return /(GAF|GOV|MIL|NATO|NAF|USAF|RCH|CNV|IAM|BAF|FAF|RAF|RRR|DUKE|ASY|CFC|CTM|AME|FMY|BUNDESWEHR|LUFTWAFFE|AIR FORCE|ARMY|NAVY|GOVERNMENT|REGIERUNG|POLICE|POLIZEI)/.test(text);
+	return /(GAF|GOV|MIL|NATO|NAF|USAF|RCH|CNV|IAM|BAF|FAF|RAF|RRR|DUKE|ASY|CFC|CTM|AME|FMY|BUNDESWEHR|LUFTWAFFE|AIR FORCE|ARMY|NAVY|GOVERNMENT|REGIERUNG|POLICE|POLIZEI)/.test(
+		text,
+	);
 }
 
 /**

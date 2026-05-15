@@ -46,7 +46,7 @@ class Jetframe extends utils.Adapter {
 
 			await ensureImageDirs(this, this.logDebug.bind(this), this.logWarn.bind(this));
 
-		await writeVisConfig(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
+			await writeVisConfig(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
 			this.log.debug('[JetFrame] Images OK');
 
 			updateAirportJson(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch(e => {
