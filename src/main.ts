@@ -12,6 +12,7 @@ import { getMatches } from './lib/classify';
 import { ensureStates, writeFlight, clearFlight } from './lib/states';
 
 import { ensureImageDirs, saveImages } from './lib/images';
+import { writeVisConfig } from './lib/visConfig';
 
 import { enrichFlightInfo } from './lib/flightInfo';
 
@@ -44,6 +45,8 @@ class Jetframe extends utils.Adapter {
 			this.log.debug('[JetFrame] States OK');
 
 			await ensureImageDirs(this, this.logDebug.bind(this), this.logWarn.bind(this));
+
+		await writeVisConfig(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
 			this.log.debug('[JetFrame] Images OK');
 
 			updateAirportJson(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch(e => {

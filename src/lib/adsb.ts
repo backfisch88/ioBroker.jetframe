@@ -158,6 +158,9 @@ export function parseAircraft(body: any): Aircraft[] {
 				type: clean(a.t || a.type || ''),
 				registration: clean(a.r || a.reg || ''),
 
+				squawk: clean(a.squawk || a.squawk_code || a.squawkCode || ''),
+				emergency: clean(a.emergency || ''),
+
 				lat: toNumber(a.lat) ?? 0,
 				lon: toNumber(a.lon) ?? 0,
 

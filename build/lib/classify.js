@@ -93,7 +93,7 @@ function classifyAircraft(config, a) {
   };
 }
 function getMatches(config, aircraft) {
-  const enriched = aircraft.map((a) => enrichAircraft(config, a));
+  const enriched = aircraft.map((a) => enrichEmergency(config, enrichAircraft(config, a)));
   if (config.overflightOnly) {
     return enriched.filter(
       (a) => (a.distHomeNm || 999) <= config.overflightMaxDistanceNm && a.altFt >= config.overflightMinAltitudeFt && a.altFt <= config.overflightMaxAltitudeFt && (!config.overflightRequiresWindow || !!a.inWindow)
@@ -104,7 +104,7 @@ function getMatches(config, aircraft) {
       directionText: "\xDCberflug",
       relevant: true,
       priority: 1
-    })).sort(sortOverflightAircraft);
+    })).sort((a, b) => sortOverflightAircraft(config, a, b));
   }
   return enriched.filter((a) => {
     if (a.inWindow) {
@@ -124,20 +124,101 @@ function getMatches(config, aircraft) {
       return true;
     }
     return a.altFt >= config.minAltitudeFt && a.altFt <= config.maxAltitudeFt;
-  }).map((a) => classifyAircraft(config, a)).filter((a) => a.relevant).sort(sortAircraft);
+  }).map((a) => classifyAircraft(config, a)).filter((a) => a.relevant).sort((a, b) => sortAircraft(config, a, b));
 }
-function sortOverflightAircraft(a, b) {
-  const sa = (a.distHomeNm || 999) * 1e3 + Math.abs(a.windowDiffDeg || 0) * 20 + (a.seenSec || 0) * 5 + a.altFt / 50;
-  const sb = (b.distHomeNm || 999) * 1e3 + Math.abs(b.windowDiffDeg || 0) * 20 + (b.seenSec || 0) * 5 + b.altFt / 50;
-  return sa - sb;
-}
-function sortAircraft(a, b) {
-  if ((a.priority || 99) !== (b.priority || 99)) {
-    return (a.priority || 99) - (b.priority || 99);
+function enrichEmergency(config, a) {
+  const squawk = String(a.squawk || "").trim();
+  const emergency = String(a.emergency || "").trim().toLowerCase();
+  let emergencyType = "";
+  let emergencyText = "";
+  if (squawk === "7500" && config.emergencySquawk7500) {
+    emergencyType = "HIJACK";
+    emergencyText = "Besonderer Notfall-Code 7500";
+  } else if (squawk === "7600" && config.emergencySquawk7600) {
+    emergencyType = "RADIO";
+    emergencyText = "Funkausfall Squawk 7600";
+  } else if (squawk === "7700" && config.emergencySquawk7700) {
+    emergencyType = "EMERGENCY";
+    emergencyText = "Allgemeiner Notfall Squawk 7700";
+  } else if (emergency && emergency !== "none") {
+    emergencyType = emergency.toUpperCase();
+    emergencyText = "Emergency: " + emergency;
   }
-  const sa = (a.distHomeNm || 0) * 250 + a.altFt + Math.abs(a.windowDiffDeg || 0) * 25 + (a.airportTrackDiffDeg || 0) * 8;
-  const sb = (b.distHomeNm || 0) * 250 + b.altFt + Math.abs(b.windowDiffDeg || 0) * 25 + (b.airportTrackDiffDeg || 0) * 8;
+  return {
+    ...a,
+    isEmergency: !!emergencyType,
+    emergencyType,
+    emergencyText
+  };
+}
+function emergencyBonus(config, a) {
+  if (!config.emergencyPriorityEnabled || !a.isEmergency) {
+    return 0;
+  }
+  const squawk = String(a.squawk || "").trim();
+  if (squawk === "7500") return 1e5;
+  if (squawk === "7700") return 9e4;
+  if (squawk === "7600") return 8e4;
+  return 7e4;
+}
+function sortOverflightAircraft(config, a, b) {
+  const sa = (a.distHomeNm || 999) * 1e3 + Math.abs(a.windowDiffDeg || 0) * 20 + (a.seenSec || 0) * 5 + a.altFt / 50 - priorityBonus(config, a);
+  const sb = (b.distHomeNm || 999) * 1e3 + Math.abs(b.windowDiffDeg || 0) * 20 + (b.seenSec || 0) * 5 + b.altFt / 50 - priorityBonus(config, b);
   return sa - sb;
+}
+function sortAircraft(config, a, b) {
+  const pa = a.priority || 99;
+  const pb = b.priority || 99;
+  const sa = pa * 1e5 + (a.distHomeNm || 0) * 250 + a.altFt + Math.abs(a.windowDiffDeg || 0) * 25 + (a.airportTrackDiffDeg || 0) * 8 - priorityBonus(config, a);
+  const sb = pb * 1e5 + (b.distHomeNm || 0) * 250 + b.altFt + Math.abs(b.windowDiffDeg || 0) * 25 + (b.airportTrackDiffDeg || 0) * 8 - priorityBonus(config, b);
+  return sa - sb;
+}
+function priorityBonus(config, a) {
+  if (!config.priorityEnabled) {
+    return 0;
+  }
+  let bonus = 0;
+  if (config.prioritySpecialLivery && hasSpecialLivery(a)) {
+    bonus += 1e3;
+  }
+  if (config.priorityMilitaryGov && isMilitaryOrGovernment(a)) {
+    bonus += 700;
+  }
+  if (config.priorityAircraftSize) {
+    bonus += aircraftSizeBonus(a);
+  }
+  bonus += emergencyBonus(config, a);
+  return bonus;
+}
+function hasSpecialLivery(a) {
+  return !!String(
+    a.specialLiveryVisText || a.specialLiveryFull || a.specialLiveryTitle || a.specialLiveryDescription || a.specialText || ""
+  ).trim();
+}
+function aircraftSizeBonus(a) {
+  const text = String(
+    a.aircraftSize || a.aircraftType || a.type || a.aircraftModel || ""
+  ).toUpperCase();
+  if (/SUPERJUMBO|A388|A380/.test(text)) return 650;
+  if (/JUMBO|B748|B744|B742|B741|B747|B74/.test(text)) return 600;
+  if (/WIDEBODY|A300|A310|A330|A332|A333|A339|A340|A343|A346|A350|A359|A35K|A380|A388|B767|B763|B764|B777|B772|B77W|B77L|B787|B788|B789|B78X|MD11|DC10/.test(text)) return 450;
+  if (/NARROWBODY|A318|A319|A320|A321|A20N|A21N|B737|B738|B739|B38M|B39M|B3XM|A220|BCS|E190|E195|E290|E295/.test(text)) return 200;
+  return 0;
+}
+function isMilitaryOrGovernment(a) {
+  const text = [
+    a.callsign,
+    a.routeCallsign,
+    a.operationalCallsign,
+    a.airlineName,
+    a.airlineIcao,
+    a.airlineIata,
+    a.registration,
+    a.aircraftModel,
+    a.aircraftType,
+    a.type
+  ].map((v) => String(v || "").toUpperCase()).join(" ");
+  return /(GAF|GOV|MIL|NATO|NAF|USAF|RCH|CNV|IAM|BAF|FAF|RAF|RRR|DUKE|ASY|CFC|CTM|AME|FMY|BUNDESWEHR|LUFTWAFFE|AIR FORCE|ARMY|NAVY|GOVERNMENT|REGIERUNG|POLICE|POLIZEI)/.test(text);
 }
 function findCurrentLive(matches, target) {
   if (!matches.length || !target) {
