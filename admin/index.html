@@ -479,6 +479,12 @@
 				color: var(--yellow);
 			}
 
+			.special.emergency {
+				color: #ff4d4d !important;
+				font-weight: 900;
+				text-shadow: 0 0 18px rgba(255, 77, 77, 0.55);
+			}
+
 			.metrics {
 				position: absolute;
 				left: 22px;
@@ -1160,7 +1166,7 @@
 				}
 			}
 		</style>
-	</head>
+	  </head>
 
 	<body>
 		<div id="app">
@@ -1365,17 +1371,30 @@
 		</div>
 
 		<script>
-			const API_BASE = (() => {
+			let API_BASE = (() => {
 				const proto = window.location.protocol || 'http:';
 				const host = window.location.hostname || '127.0.0.1';
+				const url = new URL(window.location.href);
+				const apiHost = url.searchParams.get('apiHost') || host;
+				const apiPort = url.searchParams.get('apiPort') || '8087';
 
-				// Simple-API Standard-Port
-				const simpleApiPort = '8087';
-
-				return proto + '//' + host + ':' + simpleApiPort;
+				return proto + '//' + apiHost + ':' + apiPort;
 			})();
-			const DP_ROOT = 'jetframe.0';
-			const CURRENT = DP_ROOT + '.current';
+
+			const DP_ROOT = (() => {
+				const url = new URL(window.location.href);
+				const instance = url.searchParams.get('instance') || '0';
+				return 'jetframe.' + String(instance).replace(/[^0-9]/g, '');
+			})();
+
+			let VIS_SOURCE = (() => {
+				const url = new URL(window.location.href);
+				const src = String(url.searchParams.get('source') || 'current').toLowerCase();
+				return ['current', 'airport', 'overflight'].includes(src) ? src : 'current';
+			})();
+
+			let CURRENT = DP_ROOT + '.' + VIS_SOURCE;
+let VIS_CONFIG_LOADED = false;
 
 			const IDS = {
 				enabled: DP_ROOT + '.enabled',
@@ -1401,6 +1420,9 @@
 
 				specialDisplayText: CURRENT + '.specialDisplayText',
 				specialLiveryVisText: CURRENT + '.specialLiveryVisText',
+				squawk: CURRENT + '.squawk',
+				emergency: CURRENT + '.emergency',
+				emergencyText: CURRENT + '.emergencyText',
 
 				manufacturerLogoUrl: CURRENT + '.manufacturerLogoUrl',
 				manufacturerLogoText: CURRENT + '.manufacturerLogoText',
@@ -1441,6 +1463,11 @@
 			}
 
 			async function readState(id) {
+				if (!VIS_CONFIG_LOADED) {
+					console.warn('[JetFrame] readState blockiert: vis-config.json nicht geladen');
+					return '';
+				}
+
 				try {
 					const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(id), {
 						cache: 'no-store',
@@ -1458,6 +1485,67 @@
 						cache: 'no-store',
 					});
 				} catch (e) {}
+			}
+
+			async function readObject(id) {
+				try {
+					const res = await fetch(API_BASE + '/getObject/' + encodeURIComponent(id), {
+						cache: 'no-store',
+					});
+
+					if (!res.ok) return null;
+					return await res.json();
+				} catch (e) {
+					return null;
+				}
+			}
+
+			function rebuildIds() {
+				CURRENT = DP_ROOT + '.' + VIS_SOURCE;
+
+				Object.keys(IDS).forEach(key => {
+					if (
+						key !== 'enabled' &&
+						key !== 'speechMode' &&
+						key !== 'speechEnabled'
+					) {
+						IDS[key] = CURRENT + '.' + key;
+					}
+				});
+			}
+
+			async function loadVisualConfig() {
+				const url = new URL(window.location.href);
+				const hasApiOverride = url.searchParams.has('apiHost') || url.searchParams.has('apiPort');
+				const hasSourceOverride = url.searchParams.has('source');
+
+				const res = await fetch('/jetframe.admin/vis-config.json?v=' + Date.now(), {
+					cache: 'no-store',
+				});
+
+				if (!res.ok) {
+					throw new Error('vis-config.json nicht gefunden');
+				}
+
+				const cfg = await res.json();
+
+				if (!hasApiOverride) {
+					const proto = window.location.protocol || 'http:';
+					const host = String(cfg.simpleApiHost || window.location.hostname || '127.0.0.1').trim();
+					const port = String(cfg.simpleApiPort || '8087').trim();
+
+					API_BASE = proto + '//' + host + ':' + port;
+				}
+
+				if (!hasSourceOverride) {
+					const src = String(cfg.visualSource || 'current').toLowerCase();
+					VIS_SOURCE = ['current', 'airport', 'overflight'].includes(src) ? src : 'current';
+				}
+
+				VIS_CONFIG_LOADED = true;
+				rebuildIds();
+
+				console.log('[JetFrame] vis-config.json geladen:', cfg, API_BASE, CURRENT);
 			}
 
 			async function readAll() {
@@ -1744,6 +1832,7 @@
 					$('registration').textContent = 'Kennzeichen: \u2014';
 					$('special').textContent = '';
 					$('special').style.display = 'none';
+					$('special').classList.remove('emergency');
 
 					$('altitude').textContent = '\u2013';
 					$('speed').textContent = '\u2013';
@@ -1780,10 +1869,13 @@
 
 				$('registration').textContent = 'Kennzeichen: ' + (cleanValue(s.registration) || '\u2014');
 
-				const special = cleanValue(s.specialLiveryVisText) || cleanValue(s.specialDisplayText);
+				const emergencyText = cleanValue(s.emergencyText);
+
+				const special = emergencyText || cleanValue(s.specialLiveryVisText) || cleanValue(s.specialDisplayText);
 
 				$('special').textContent = special;
 				$('special').style.display = special ? 'block' : 'none';
+				$('special').classList.toggle('emergency', !!emergencyText);
 
 				$('altitude').textContent = formatNumber(s.altitudeFt);
 				$('speed').textContent = formatNumber(s.speedKt);
@@ -1892,8 +1984,17 @@
 			);
 
 			setSpeechButton();
-			poll();
-			setInterval(poll, 1500);
+
+			loadVisualConfig()
+				.then(() => {
+					poll();
+					setInterval(poll, 1500);
+				})
+				.catch(e => {
+					VIS_CONFIG_LOADED = false;
+					console.error('[JetFrame] Start abgebrochen:', e);
+					$('statusText').textContent = 'Config fehlt';
+				});
 		</script>
 	</body>
 </html>

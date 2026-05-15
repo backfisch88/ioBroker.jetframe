@@ -132,6 +132,14 @@ async function ensureFlightStates(adapter, base) {
     ".manufacturerLogoUrl",
     ".aircraftTypeText",
     ".aircraftSize",
+    ".squawk",
+    ".emergency",
+    ".emergencyType",
+    ".emergencyText",
+    ".squawk",
+    ".emergency",
+    ".emergencyType",
+    ".emergencyText",
     ".logoUrl",
     ".jetphotosUrl",
     ".jetphotosImageUrl",
@@ -169,6 +177,7 @@ async function ensureFlightStates(adapter, base) {
   }
   await ensureState(adapter, `${base}.routeReliable`, false, "boolean", "indicator");
   await ensureState(adapter, `${base}.isSpecial`, false, "boolean", "indicator");
+  await ensureState(adapter, `${base}.isEmergency`, false, "boolean", "indicator");
   await ensureState(adapter, `${base}.speechTrigger`, false, "boolean", "button");
 }
 function cleanRouteCallsign(a) {
@@ -230,6 +239,10 @@ async function writeFlight(adapter, base, a) {
   await adapter.setForeignStateAsync(`${base}.manufacturerLogoUrl`, display.manufacturerLogoUrl, true);
   await adapter.setForeignStateAsync(`${base}.aircraftTypeText`, display.aircraftTypeText, true);
   await adapter.setForeignStateAsync(`${base}.aircraftSize`, display.aircraftSize, true);
+  await adapter.setForeignStateAsync(`${base}.squawk`, a.squawk || "", true);
+  await adapter.setForeignStateAsync(`${base}.emergency`, a.emergency || "", true);
+  await adapter.setForeignStateAsync(`${base}.emergencyType`, a.emergencyType || "", true);
+  await adapter.setForeignStateAsync(`${base}.emergencyText`, a.emergencyText || "", true);
   await adapter.setForeignStateAsync(`${base}.logoUrl`, a.logoUrl || "", true);
   await adapter.setForeignStateAsync(`${base}.jetphotosUrl`, a.jetphotosUrl || "", true);
   await adapter.setForeignStateAsync(`${base}.jetphotosImageUrl`, a.jetphotosImageUrl || "", true);
@@ -272,6 +285,7 @@ async function writeFlight(adapter, base, a) {
   await adapter.setForeignStateAsync(`${base}.specialDisplayText`, display.specialDisplayText, true);
   await adapter.setForeignStateAsync(`${base}.speechText`, display.speechText, true);
   await adapter.setForeignStateAsync(`${base}.isSpecial`, !!a.isSpecial, true);
+  await adapter.setForeignStateAsync(`${base}.isEmergency`, !!a.isEmergency, true);
   await maybeTriggerSpeech(adapter, base, a, display.speechText);
 }
 async function clearFlight(adapter, base) {
@@ -347,6 +361,7 @@ async function clearFlight(adapter, base) {
   }
   await adapter.setForeignStateAsync(`${base}.routeReliable`, false, true);
   await adapter.setForeignStateAsync(`${base}.isSpecial`, false, true);
+  await adapter.setForeignStateAsync(`${base}.isEmergency`, false, true);
   await adapter.setForeignStateAsync(`${base}.speechTrigger`, false, true);
 }
 function buildDisplayInfo(a) {

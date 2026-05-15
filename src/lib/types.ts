@@ -103,6 +103,15 @@ export interface JetFrameConfig {
 	 *
 	 */
 	overflightOnly: boolean;
+	priorityEnabled: boolean;
+	prioritySpecialLivery: boolean;
+	priorityAircraftSize: boolean;
+	priorityMilitaryGov: boolean;
+	emergencyPriorityEnabled: boolean;
+	emergencySpeechEnabled: boolean;
+	emergencySquawk7500: boolean;
+	emergencySquawk7600: boolean;
+	emergencySquawk7700: boolean;
 	/**
 	 *
 	 */
@@ -434,6 +443,12 @@ export interface Aircraft {
 	 *
 	 */
 	aircraftSize?: string;
+
+	squawk?: string;
+	emergency?: string;
+	isEmergency?: boolean;
+	emergencyType?: string;
+	emergencyText?: string;
 	/**
 	 *
 	 */

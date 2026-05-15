@@ -119,6 +119,8 @@ function parseAircraft(body) {
         callsign: clean(a.flight || a.call || a.callsign || ""),
         type: clean(a.t || a.type || ""),
         registration: clean(a.r || a.reg || ""),
+        squawk: clean(a.squawk || a.squawk_code || a.squawkCode || ""),
+        emergency: clean(a.emergency || ""),
         lat: (_a = toNumber(a.lat)) != null ? _a : 0,
         lon: (_b = toNumber(a.lon)) != null ? _b : 0,
         altFt: parseAltitude(a.alt_baro || a.alt_geom || a.altitude),

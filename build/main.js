@@ -32,6 +32,7 @@ var import_adsb = require("./lib/adsb");
 var import_classify = require("./lib/classify");
 var import_states = require("./lib/states");
 var import_images = require("./lib/images");
+var import_visConfig = require("./lib/visConfig");
 var import_flightInfo = require("./lib/flightInfo");
 class Jetframe extends utils.Adapter {
   timer = null;
@@ -56,6 +57,7 @@ class Jetframe extends utils.Adapter {
       await (0, import_states.ensureStates)(this, config);
       this.log.debug("[JetFrame] States OK");
       await (0, import_images.ensureImageDirs)(this, this.logDebug.bind(this), this.logWarn.bind(this));
+      await (0, import_visConfig.writeVisConfig)(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
       this.log.debug("[JetFrame] Images OK");
       (0, import_airports.updateAirportJson)(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch((e) => {
         this.logWarn(`Airport DB Update Fehler: ${this.errorText(e)}`);

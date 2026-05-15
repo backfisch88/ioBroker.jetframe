@@ -289,6 +289,7 @@
 				priorityAircraftSize: true,
 				priorityMilitaryGov: true,
 				emergencyPriorityEnabled: true,
+				emergencySpeechEnabled: true,
 				emergencySquawk7500: true,
 				emergencySquawk7600: true,
 				emergencySquawk7700: true,
@@ -1544,14 +1545,36 @@
 									Militär / Government
 								</label>
 							</div>
+						</div>
+					</div>
+
+					
+					<div class="jetframe-card">
+						<div class="jetframe-title">&#128680; Notfall / Squawk</div>
+
+						<div class="jetframe-hint" style="margin-bottom:14px;">
+							Notfall-Squawks können immer bevorzugt werden. 7500 wird bewusst neutral als besonderer Notfall-Code angezeigt.
+						</div>
+
+						<div class="grid-2">
 							<div class="switch">
 								<label>
 									Aus
 									<input id="emergencyPriorityEnabled" class="value" type="checkbox" />
 									<span class="lever"></span>
-									Notfall / Squawk
+									Notfälle priorisieren
 								</label>
 							</div>
+
+							<div class="switch">
+								<label>
+									Aus
+									<input id="emergencySpeechEnabled" class="value" type="checkbox" />
+									<span class="lever"></span>
+									Notfall-Ansage
+								</label>
+							</div>
+
 							<div class="switch">
 								<label>
 									Aus
@@ -1560,6 +1583,7 @@
 									7700 Allgemeiner Notfall
 								</label>
 							</div>
+
 							<div class="switch">
 								<label>
 									Aus
@@ -1568,6 +1592,7 @@
 									7600 Funkausfall
 								</label>
 							</div>
+
 							<div class="switch">
 								<label>
 									Aus
@@ -1579,8 +1604,7 @@
 						</div>
 					</div>
 
-					
-					<div class="jetframe-card">
+<div class="jetframe-card">
 						<div class="jetframe-title">&#128250; Visualisierung</div>
 
 						<div class="jetframe-hint" style="margin-bottom:14px;">
