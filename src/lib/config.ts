@@ -75,6 +75,13 @@ export function readConfig(adapter: any): JetFrameConfig {
 		emergencySquawk7500: cfgBool(native, 'emergencySquawk7500', true),
 		emergencySquawk7600: cfgBool(native, 'emergencySquawk7600', true),
 		emergencySquawk7700: cfgBool(native, 'emergencySquawk7700', true),
+
+		externalManufacturerLogos: cfgBool(native, 'externalManufacturerLogos', false),
+		manufacturerLogoUrls: cfgStr(native, 'manufacturerLogoUrls', ''),
+		externalAirlineLogos: cfgBool(native, 'externalAirlineLogos', false),
+		airlineLogoBaseUrl: cfgStr(native, 'airlineLogoBaseUrl', ''),
+		cacheExternalImages: cfgBool(native, 'cacheExternalImages', false),
+
 		overflightMaxDistanceNm: cfgNum(native, 'overflightMaxDistanceNm', 1.2),
 		overflightMinAltitudeFt: cfgNum(native, 'overflightMinAltitudeFt', 4000),
 		overflightMaxAltitudeFt: cfgNum(native, 'overflightMaxAltitudeFt', 45000),

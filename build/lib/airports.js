@@ -35,6 +35,7 @@ module.exports = __toCommonJS(airports_exports);
 var https = __toESM(require("https"));
 var import_airportNamesDe = require("./airportNamesDe");
 const AIRPORTS_URL = "https://ourairports.com/data/airports.csv";
+const RUNWAYS_URL = "https://ourairports.com/data/runways.csv";
 const IATA_WIKI_DE_BASE = "https://de.wikipedia.org/wiki/Liste_der_IATA-Codes/";
 function countryFlagEmoji(countryCode) {
   if (!countryCode || countryCode.length !== 2) {
@@ -45,9 +46,15 @@ function countryFlagEmoji(countryCode) {
 async function updateAirportJson(adapter, logDebug, logWarn) {
   try {
     logDebug == null ? void 0 : logDebug("Lade Airport Datenbank...", 1);
-    const csv = await downloadCsv(AIRPORTS_URL);
-    let airports = parseAirportCsv(csv);
+    const csv = await downloadCsv(AIRPORTS_URL, 0, "iata_code");
+    const runwayCsv = await downloadCsv(RUNWAYS_URL, 0, "airport_ident");
+    const runwaysByIdent = parseRunwayCsv(runwayCsv);
+    let airports = parseAirportCsv(csv).map((a) => ({
+      ...a,
+      runways: runwaysByIdent[a.ident] || []
+    }));
     logDebug == null ? void 0 : logDebug(`Airport DB parsed: ${airports.length} Airports`, 1);
+    logDebug == null ? void 0 : logDebug(`Runways parsed: ${Object.keys(runwaysByIdent).length} Airports mit Runways`, 1);
     try {
       const deNames = await getGermanIataNamesCached(adapter, logDebug);
       airports = airports.map((a) => ({
@@ -119,9 +126,11 @@ function parseAirportCsv(csv) {
         continue;
       }
       const country = String(row[idx("iso_country")] || "").trim().toUpperCase();
+      const ident = String(row[idx("ident")] || "").trim().toUpperCase();
       result.push({
         iata,
-        icao: String(row[idx("icao_code")] || row[idx("gps_code")] || row[idx("ident")] || "").trim().toUpperCase(),
+        ident,
+        icao: String(row[idx("icao_code")] || row[idx("gps_code")] || ident || "").trim().toUpperCase(),
         name: String(row[idx("name")] || "").trim(),
         city: String(row[idx("municipality")] || "").trim(),
         country,
@@ -138,6 +147,54 @@ function parseAirportCsv(csv) {
   result.sort((a, b) => {
     return a.iata.localeCompare(b.iata);
   });
+  return result;
+}
+function parseRunwayCsv(csv) {
+  const lines = csv.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) {
+    return {};
+  }
+  const headers = parseCsvLine(lines[0]);
+  const idx = (name) => headers.indexOf(name);
+  const result = {};
+  for (let i = 1; i < lines.length; i++) {
+    try {
+      const row = parseCsvLine(lines[i]);
+      const airportIdent = String(row[idx("airport_ident")] || "").trim().toUpperCase();
+      if (!airportIdent) {
+        continue;
+      }
+      if (String(row[idx("closed")] || "").trim() === "1") {
+        continue;
+      }
+      const leIdent = String(row[idx("le_ident")] || "").trim().toUpperCase();
+      const heIdent = String(row[idx("he_ident")] || "").trim().toUpperCase();
+      const leHeadingDegRaw = Number(row[idx("le_heading_degT")]);
+      const heHeadingDegRaw = Number(row[idx("he_heading_degT")]);
+      if (!leIdent && !heIdent) {
+        continue;
+      }
+      const runway = {
+        airportIdent,
+        lengthFt: Number(row[idx("length_ft")]) || 0,
+        widthFt: Number(row[idx("width_ft")]) || 0,
+        surface: String(row[idx("surface")] || "").trim(),
+        lighted: String(row[idx("lighted")] || "").trim() === "1",
+        leIdent,
+        leHeadingDeg: Number.isFinite(leHeadingDegRaw) ? Math.round(leHeadingDegRaw) : null,
+        heIdent,
+        heHeadingDeg: Number.isFinite(heHeadingDegRaw) ? Math.round(heHeadingDegRaw) : null
+      };
+      if (!result[airportIdent]) {
+        result[airportIdent] = [];
+      }
+      result[airportIdent].push(runway);
+    } catch {
+    }
+  }
+  for (const ident of Object.keys(result)) {
+    result[ident].sort((a, b) => Number(b.lengthFt || 0) - Number(a.lengthFt || 0));
+  }
   return result;
 }
 function parseCsvLine(line) {
@@ -165,7 +222,7 @@ function parseCsvLine(line) {
   result.push(current);
   return result;
 }
-function downloadCsv(url, redirects = 0) {
+function downloadCsv(url, redirects = 0, expectedHeader = "iata_code") {
   return new Promise((resolve, reject) => {
     const req = https.get(
       url,
@@ -183,7 +240,7 @@ function downloadCsv(url, redirects = 0) {
             return;
           }
           const nextUrl = res.headers.location.startsWith("http") ? res.headers.location : new URL(res.headers.location, url).toString();
-          resolve(downloadCsv(nextUrl, redirects + 1));
+          resolve(downloadCsv(nextUrl, redirects + 1, expectedHeader));
           return;
         }
         if (res.statusCode && res.statusCode >= 400) {
@@ -203,8 +260,8 @@ function downloadCsv(url, redirects = 0) {
           if (text.startsWith("<")) {
             return reject(new Error("Airport CSV Download lieferte HTML statt CSV"));
           }
-          if (!text.includes("iata_code")) {
-            return reject(new Error("Airport CSV sieht ung\xFCltig aus: Header iata_code fehlt"));
+          if (expectedHeader && !text.includes(expectedHeader)) {
+            return reject(new Error(`CSV sieht ung\xFCltig aus: Header ${expectedHeader} fehlt`));
           }
           resolve(text);
         });

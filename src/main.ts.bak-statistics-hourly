@@ -1,0 +1,1052 @@
+import * as utils from '@iobroker/adapter-core';
+import * as https from 'https';
+import * as http from 'http';
+
+import type { Aircraft } from './lib/types';
+import { copyStaticFiles } from './lib/staticFiles';
+import { updateAirportJson } from './lib/airports';
+import { updateSpecialLiveries } from './lib/specialLiveries';
+import { readConfig } from './lib/config';
+import { fetchAdsb, parseAircraft } from './lib/adsb';
+import { getMatches } from './lib/classify';
+import { ensureStates, writeFlight, clearFlight } from './lib/states';
+
+import { clearImageCache, ensureImageDirs, saveImages } from './lib/images';
+import { writeVisConfig } from './lib/visConfig';
+
+import { enrichFlightInfo } from './lib/flightInfo';
+
+class Jetframe extends utils.Adapter {
+	private timer: NodeJS.Timeout | null = null;
+	private liveTarget: Partial<Aircraft> | null = null;
+	private liveInfo: Partial<Aircraft> | null = null;
+	private liveStarted = 0;
+	private lastStartKey = '';
+	private lastStartTs = 0;
+	private lastImageSaveKey = '';
+	private lastIdleRunwayText = '';
+
+	public constructor(options: Partial<utils.AdapterOptions> = {}) {
+		super({
+			...options,
+			name: 'jetframe',
+		});
+
+		this.on('ready', this.onReady.bind(this));
+		this.on('unload', this.onUnload.bind(this));
+		this.on('stateChange', this.onStateChange.bind(this));
+	}
+
+	private async onReady(): Promise<void> {
+		this.log.info('JetFrame Adapter gestartet');
+		await copyStaticFiles(this);
+
+		try {
+			const config = readConfig(this);
+
+			await ensureStates(this, config);
+			await this.ensureStatisticsStates(config.dpRoot);
+			await this.ensureProbableRunwayStates(config.dpRoot);
+			await this.ensureIdleRunwayState(config.dpRoot);
+			this.subscribeStates('clearImageCache');
+			this.log.debug('[JetFrame] States OK');
+
+			await ensureImageDirs(this, this.logDebug.bind(this), this.logWarn.bind(this));
+
+			await writeVisConfig(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
+			this.log.debug('[JetFrame] Images OK');
+
+			updateAirportJson(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch(e => {
+				this.logWarn(`Airport DB Update Fehler: ${this.errorText(e)}`);
+			});
+			updateSpecialLiveries(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch(e => {
+				this.logWarn(`Special-Liveries DB Update Fehler: ${this.errorText(e)}`);
+			});
+
+			this.log.debug('[JetFrame] Starte Loop');
+
+			this.loop().catch(e => {
+				this.logError(`Loop Start Fehler: ${this.errorText(e)}`);
+			});
+		} catch (e) {
+			this.logError(`onReady Fehler: ${this.errorText(e)}`);
+		}
+	}
+
+	private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
+		if (!state || state.ack || state.val !== true) {
+			return;
+		}
+
+		const config = readConfig(this);
+
+		if (id !== `${config.dpRoot}.clearImageCache`) {
+			return;
+		}
+
+		try {
+			await clearImageCache(this, this.logDebug.bind(this), this.logWarn.bind(this));
+			await this.setForeignStateAsync(`${config.dpRoot}.clearImageCache`, false, true);
+			this.log.info('JetFrame Bild-/Logo-Cache wurde geleert');
+		} catch (e) {
+			this.logWarn(`Cache leeren fehlgeschlagen: ${this.errorText(e)}`);
+			await this.setForeignStateAsync(`${config.dpRoot}.clearImageCache`, false, true);
+		}
+	}
+
+
+	private async ensureIdleRunwayState(dpRoot: string): Promise<void> {
+		try {
+			await (this as any).setForeignObjectNotExistsAsync(`${dpRoot}.idleRunwayText`, {
+				type: 'state',
+				common: {
+					name: 'Idle active runway text',
+					type: 'string',
+					role: 'text',
+					read: true,
+					write: false,
+				},
+				native: {},
+			});
+		} catch (e) {
+			this.logWarn(`idleRunwayText State konnte nicht erstellt werden: ${this.errorText(e)}`);
+		}
+	}
+
+	private async updateIdleRunway(a: Aircraft, config: any): Promise<void> {
+		const track = Number((a as any).trackDeg || (a as any).track || 0);
+
+		if (!Number.isFinite(track) || !track) {
+			return;
+		}
+
+		let runways: any[] = [];
+
+		try {
+			const st = await this.getForeignStateAsync(`${config.dpRoot}.airportjson`);
+			const airports = JSON.parse(String(st?.val || '[]'));
+
+			const airportIata = String(config.airport?.iata || '')
+				.trim()
+				.toUpperCase();
+
+			const airport = Array.isArray(airports)
+				? airports.find((x: any) => String(x.iata || x.IATA || '').trim().toUpperCase() === airportIata)
+				: null;
+
+			runways = Array.isArray(airport?.runways) ? airport.runways : [];
+		} catch {
+			runways = [];
+		}
+
+		let bestName = '';
+		let bestGroup = '';
+		let bestDiff = 999;
+
+		for (const rw of runways) {
+			const sides = [
+				{ name: rw.leIdent, heading: rw.leHeadingDeg },
+				{ name: rw.heIdent, heading: rw.heHeadingDeg },
+			];
+
+			for (const side of sides) {
+				const name = String(side.name || '').trim().toUpperCase();
+				const heading = Number(side.heading);
+
+				if (!name || !Number.isFinite(heading)) {
+					continue;
+				}
+
+				let diff = Math.abs(track - heading);
+
+				if (diff > 180) {
+					diff = 360 - diff;
+				}
+
+				if (diff < bestDiff) {
+					bestDiff = diff;
+					bestName = name;
+					bestGroup = name.replace(/[LCR]$/i, '');
+				}
+			}
+		}
+
+		let runway = '';
+
+		if (bestName && bestDiff <= 35) {
+			runway = `RWY ${bestGroup || bestName} aktiv`;
+		} else {
+			runway = `Aktive Richtung ${Math.round(track)}°`;
+		}
+
+		const mode = a.mode === 'LANDING' ? 'Landungen' : a.mode === 'TAKEOFF' ? 'Starts' : 'Traffic';
+
+		const text = `${runway} · ${mode}`;
+
+		if (text === this.lastIdleRunwayText) {
+			return;
+		}
+
+		this.lastIdleRunwayText = text;
+		await this.setForeignStateAsync(`${config.dpRoot}.idleRunwayText`, text, true);
+	}
+
+
+	private async ensureProbableRunwayStates(dpRoot: string): Promise<void> {
+		const bases = [`${dpRoot}.current`, `${dpRoot}.airport`, `${dpRoot}.overflight`];
+
+		for (const base of bases) {
+			await this.ensureSimpleState(`${base}.probableRunway`, 'Probable runway', 'string', 'text');
+			await this.ensureSimpleState(`${base}.probableRunwayText`, 'Probable runway text', 'string', 'text');
+			await this.ensureSimpleState(`${base}.probableRunwayHeading`, 'Probable runway heading', 'number', 'value');
+			await this.ensureSimpleState(`${base}.probableRunwayDiffDeg`, 'Probable runway difference degrees', 'number', 'value');
+		}
+	}
+
+	private async ensureSimpleState(id: string, name: string, type: ioBroker.CommonType, role: string): Promise<void> {
+		try {
+			await (this as any).setForeignObjectNotExistsAsync(id, {
+				type: 'state',
+				common: {
+					name,
+					type,
+					role,
+					read: true,
+					write: false,
+				},
+				native: {},
+			});
+
+			const st = await this.getForeignStateAsync(id);
+
+			if (!st) {
+				await this.setForeignStateAsync(id, type === 'number' ? 0 : '', true);
+			}
+		} catch (e) {
+			this.logWarn(`State konnte nicht erstellt/initialisiert werden: ${id} | ${this.errorText(e)}`);
+		}
+	}
+
+	private async applyProbableRunway(a: Aircraft, config: any): Promise<void> {
+		const track = Number((a as any).trackDeg || (a as any).track || 0);
+
+		if (!Number.isFinite(track) || !track) {
+			return;
+		}
+
+		let runways: any[] = [];
+
+		try {
+			const st = await this.getForeignStateAsync(`${config.dpRoot}.airportjson`);
+			const airports = JSON.parse(String(st?.val || '[]'));
+
+			const airportIata = String(config.airport?.iata || '')
+				.trim()
+				.toUpperCase();
+
+			const airport = Array.isArray(airports)
+				? airports.find((x: any) => String(x.iata || x.IATA || '').trim().toUpperCase() === airportIata)
+				: null;
+
+			runways = Array.isArray(airport?.runways) ? airport.runways : [];
+		} catch {
+			runways = [];
+		}
+
+		let bestName = '';
+		let bestGroup = '';
+		let bestHeading = 0;
+		let bestDiff = 999;
+
+		for (const rw of runways) {
+			const sides = [
+				{ name: rw.leIdent, heading: rw.leHeadingDeg },
+				{ name: rw.heIdent, heading: rw.heHeadingDeg },
+			];
+
+			for (const side of sides) {
+				const name = String(side.name || '').trim().toUpperCase();
+				const heading = Number(side.heading);
+
+				if (!name || !Number.isFinite(heading)) {
+					continue;
+				}
+
+				let diff = Math.abs(track - heading);
+
+				if (diff > 180) {
+					diff = 360 - diff;
+				}
+
+				if (diff < bestDiff) {
+					bestDiff = diff;
+					bestName = name;
+					bestGroup = name.replace(/[LCR]$/i, '');
+					bestHeading = heading;
+				}
+			}
+		}
+
+		if (!bestName || bestDiff > 35) {
+			(a as any).probableRunway = '';
+			(a as any).probableRunwayText = '';
+			(a as any).probableRunwayHeading = 0;
+			(a as any).probableRunwayDiffDeg = 0;
+			(a as any).runwayConfidence = 0;
+			return;
+		}
+
+		const modeIcon = a.mode === 'LANDING' ? '🛬' : a.mode === 'TAKEOFF' ? '🛫' : '📡';
+		const modeText = a.mode === 'LANDING' ? 'Landung' : a.mode === 'TAKEOFF' ? 'Start' : 'Traffic';
+
+		const confidence = Math.max(0, Math.min(100, Math.round(100 - (bestDiff / 35) * 100)));
+
+		(a as any).probableRunway = bestGroup || bestName;
+		(a as any).probableRunwayHeading = Math.round(bestHeading);
+		(a as any).probableRunwayDiffDeg = Math.round(bestDiff);
+		(a as any).runwayConfidence = confidence;
+		(a as any).probableRunwayText = `${modeIcon} vermutlich RWY ${bestGroup || bestName} · ${modeText}`;
+	}
+
+
+	private async ensureStatisticsStates(dpRoot: string): Promise<void> {
+		const base = `${dpRoot}.statistics`;
+
+		await this.ensureSimpleState(`${base}.totalFlightsSeen`, 'Total flights seen', 'number', 'value');
+		await this.ensureSimpleState(`${base}.landings`, 'Landings', 'number', 'value');
+		await this.ensureSimpleState(`${base}.departures`, 'Departures', 'number', 'value');
+		await this.ensureSimpleState(`${base}.overflights`, 'Overflights', 'number', 'value');
+
+		await this.ensureSimpleState(`${base}.lastFlight`, 'Last flight', 'string', 'text');
+		await this.ensureSimpleState(`${base}.lastAirline`, 'Last airline', 'string', 'text');
+		await this.ensureSimpleState(`${base}.lastRoute`, 'Last route', 'string', 'text');
+		await this.ensureSimpleState(`${base}.lastRegistration`, 'Last registration', 'string', 'text');
+		await this.ensureSimpleState(`${base}.lastSeen`, 'Last seen', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.airlineRanking`, 'Airline ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.airlineRankingText`, 'Airline ranking text', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.date`, 'Today date', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.totalFlights`, 'Today total flights', 'number', 'value');
+		await this.ensureSimpleState(`${base}.today.landings`, 'Today landings', 'number', 'value');
+		await this.ensureSimpleState(`${base}.today.departures`, 'Today departures', 'number', 'value');
+		await this.ensureSimpleState(`${base}.today.overflights`, 'Today overflights', 'number', 'value');
+
+		await this.ensureSimpleState(`${base}.today.firstSeen`, 'Today first seen', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.lastSeen`, 'Today last seen', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.lastFlight`, 'Today last flight', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.lastAirline`, 'Today last airline', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.lastRoute`, 'Today last route', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.lastRegistration`, 'Today last registration', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.topAirline`, 'Today top airline', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.topRoute`, 'Today top route', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.airlineRanking`, 'Today airline ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.today.airlineRankingText`, 'Today airline ranking text', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.routeRanking`, 'Today route ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.today.routeRankingText`, 'Today route ranking text', 'string', 'text');
+	}
+
+	private async readNumberState(id: string): Promise<number> {
+		try {
+			const st = await this.getForeignStateAsync(id);
+			const n = Number(st?.val || 0);
+			return Number.isFinite(n) ? n : 0;
+		} catch {
+			return 0;
+		}
+	}
+
+	private async readJsonState<T>(id: string, fallback: T): Promise<T> {
+		try {
+			const st = await this.getForeignStateAsync(id);
+			const raw = String(st?.val || '').trim();
+
+			if (!raw) {
+				return fallback;
+			}
+
+			return JSON.parse(raw) as T;
+		} catch {
+			return fallback;
+		}
+	}
+
+	private todayDateKey(): string {
+		const d = new Date();
+		const yyyy = d.getFullYear();
+		const mm = String(d.getMonth() + 1).padStart(2, '0');
+		const dd = String(d.getDate()).padStart(2, '0');
+
+		return `${yyyy}-${mm}-${dd}`;
+	}
+
+	private async resetTodayStatisticsIfNeeded(base: string): Promise<void> {
+		const todayBase = `${base}.today`;
+		const today = this.todayDateKey();
+
+		let storedDate = '';
+
+		try {
+			const st = await this.getForeignStateAsync(`${todayBase}.date`);
+			storedDate = this.clean(st?.val);
+		} catch {
+			storedDate = '';
+		}
+
+		if (storedDate === today) {
+			return;
+		}
+
+		await this.setForeignStateAsync(`${todayBase}.date`, today, true);
+		await this.setForeignStateAsync(`${todayBase}.totalFlights`, 0, true);
+		await this.setForeignStateAsync(`${todayBase}.landings`, 0, true);
+		await this.setForeignStateAsync(`${todayBase}.departures`, 0, true);
+		await this.setForeignStateAsync(`${todayBase}.overflights`, 0, true);
+
+		await this.setForeignStateAsync(`${todayBase}.firstSeen`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.lastSeen`, '', true);
+
+		await this.setForeignStateAsync(`${todayBase}.lastFlight`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.lastAirline`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.lastRoute`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.lastRegistration`, '', true);
+
+		await this.setForeignStateAsync(`${todayBase}.topAirline`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.topRoute`, '', true);
+
+		await this.setForeignStateAsync(`${todayBase}.airlineRanking`, '{}', true);
+		await this.setForeignStateAsync(`${todayBase}.airlineRankingText`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.routeRanking`, '{}', true);
+		await this.setForeignStateAsync(`${todayBase}.routeRankingText`, '', true);
+	}
+
+	private async updateTodayStatistics(
+		base: string,
+		a: Aircraft,
+		info: {
+			mode: string;
+			callsign: string;
+			airline: string;
+			registration: string;
+			route: string;
+		},
+	): Promise<void> {
+		await this.resetTodayStatisticsIfNeeded(base);
+
+		const todayBase = `${base}.today`;
+		const nowIso = new Date().toISOString();
+
+		const total = (await this.readNumberState(`${todayBase}.totalFlights`)) + 1;
+
+		await this.setForeignStateAsync(`${todayBase}.totalFlights`, total, true);
+
+		if (info.mode === 'LANDING') {
+			await this.setForeignStateAsync(`${todayBase}.landings`, (await this.readNumberState(`${todayBase}.landings`)) + 1, true);
+		} else if (info.mode === 'TAKEOFF') {
+			await this.setForeignStateAsync(`${todayBase}.departures`, (await this.readNumberState(`${todayBase}.departures`)) + 1, true);
+		} else if (info.mode === 'OVERFLIGHT') {
+			await this.setForeignStateAsync(`${todayBase}.overflights`, (await this.readNumberState(`${todayBase}.overflights`)) + 1, true);
+		}
+
+		try {
+			const firstSeen = this.clean((await this.getForeignStateAsync(`${todayBase}.firstSeen`))?.val);
+
+			if (!firstSeen) {
+				await this.setForeignStateAsync(`${todayBase}.firstSeen`, nowIso, true);
+			}
+		} catch {
+			await this.setForeignStateAsync(`${todayBase}.firstSeen`, nowIso, true);
+		}
+
+		await this.setForeignStateAsync(`${todayBase}.lastSeen`, nowIso, true);
+		await this.setForeignStateAsync(`${todayBase}.lastFlight`, info.callsign, true);
+		await this.setForeignStateAsync(`${todayBase}.lastAirline`, info.airline, true);
+		await this.setForeignStateAsync(`${todayBase}.lastRoute`, info.route, true);
+		await this.setForeignStateAsync(`${todayBase}.lastRegistration`, info.registration, true);
+
+		const airlineRanking = await this.readJsonState<Record<string, number>>(`${todayBase}.airlineRanking`, {});
+		airlineRanking[info.airline] = (airlineRanking[info.airline] || 0) + 1;
+
+		const airlineSorted = Object.entries(airlineRanking)
+			.sort((aEntry, bEntry) => bEntry[1] - aEntry[1] || aEntry[0].localeCompare(bEntry[0]))
+			.slice(0, 20);
+
+		const airlineText = airlineSorted
+			.slice(0, 5)
+			.map(([name, count], index) => `${index + 1}. ${name} · ${count}`)
+			.join('\n');
+
+		await this.setForeignStateAsync(`${todayBase}.airlineRanking`, JSON.stringify(Object.fromEntries(airlineSorted)), true);
+		await this.setForeignStateAsync(`${todayBase}.airlineRankingText`, airlineText, true);
+		await this.setForeignStateAsync(`${todayBase}.topAirline`, airlineSorted.length ? `${airlineSorted[0][0]} · ${airlineSorted[0][1]}` : '', true);
+
+		if (info.route) {
+			const routeRanking = await this.readJsonState<Record<string, number>>(`${todayBase}.routeRanking`, {});
+			routeRanking[info.route] = (routeRanking[info.route] || 0) + 1;
+
+			const routeSorted = Object.entries(routeRanking)
+				.sort((aEntry, bEntry) => bEntry[1] - aEntry[1] || aEntry[0].localeCompare(bEntry[0]))
+				.slice(0, 20);
+
+			const routeText = routeSorted
+				.slice(0, 5)
+				.map(([name, count], index) => `${index + 1}. ${name} · ${count}`)
+				.join('\n');
+
+			await this.setForeignStateAsync(`${todayBase}.routeRanking`, JSON.stringify(Object.fromEntries(routeSorted)), true);
+			await this.setForeignStateAsync(`${todayBase}.routeRankingText`, routeText, true);
+			await this.setForeignStateAsync(`${todayBase}.topRoute`, routeSorted.length ? `${routeSorted[0][0]} · ${routeSorted[0][1]}` : '', true);
+		}
+	}
+
+
+	private async updateStatistics(dpRoot: string, a: Aircraft): Promise<void> {
+		const base = `${dpRoot}.statistics`;
+		const mode = String(a.mode || '').toUpperCase();
+
+		const callsign = this.clean(a.routeCallsign || a.callsign || a.hex || '');
+		const airline = this.clean(a.airlineName || 'Unbekannte Airline');
+		const registration = this.clean(a.registration || '');
+
+		const origin = this.clean(a.originIata || '');
+		const dest = this.clean(a.destIata || '');
+		const route = origin || dest ? `${origin || '?'} → ${dest || '?'}` : '';
+
+		await this.setForeignStateAsync(`${base}.totalFlightsSeen`, (await this.readNumberState(`${base}.totalFlightsSeen`)) + 1, true);
+
+		if (mode === 'LANDING') {
+			await this.setForeignStateAsync(`${base}.landings`, (await this.readNumberState(`${base}.landings`)) + 1, true);
+		} else if (mode === 'TAKEOFF') {
+			await this.setForeignStateAsync(`${base}.departures`, (await this.readNumberState(`${base}.departures`)) + 1, true);
+		} else if (mode === 'OVERFLIGHT') {
+			await this.setForeignStateAsync(`${base}.overflights`, (await this.readNumberState(`${base}.overflights`)) + 1, true);
+		}
+
+		await this.setForeignStateAsync(`${base}.lastFlight`, callsign, true);
+		await this.setForeignStateAsync(`${base}.lastAirline`, airline, true);
+		await this.setForeignStateAsync(`${base}.lastRoute`, route, true);
+		await this.setForeignStateAsync(`${base}.lastRegistration`, registration, true);
+		await this.setForeignStateAsync(`${base}.lastSeen`, new Date().toISOString(), true);
+
+		const ranking = await this.readJsonState<Record<string, number>>(`${base}.airlineRanking`, {});
+
+		ranking[airline] = (ranking[airline] || 0) + 1;
+
+		const sorted = Object.entries(ranking)
+			.sort((aEntry, bEntry) => bEntry[1] - aEntry[1] || aEntry[0].localeCompare(bEntry[0]))
+			.slice(0, 20);
+
+		const rankingJson = Object.fromEntries(sorted);
+
+		const rankingText = sorted
+			.slice(0, 5)
+			.map(([name, count], index) => `${index + 1}. ${name} · ${count}`)
+			.join('\n');
+
+		await this.setForeignStateAsync(`${base}.airlineRanking`, JSON.stringify(rankingJson), true);
+		await this.setForeignStateAsync(`${base}.airlineRankingText`, rankingText, true);
+
+		await this.updateTodayStatistics(base, a, {
+			mode,
+			callsign,
+			airline,
+			registration,
+			route,
+		});
+	}
+
+	private async loop(): Promise<void> {
+		try {
+			this.clearTimer();
+
+			const config = readConfig(this);
+
+			if (!config.enabled) {
+				await this.setForeignStateAsync(`${config.dpRoot}.status`, 'disabled', true);
+
+				this.scheduleNext(config.searchPollSeconds);
+				return;
+			}
+
+			if (this.liveTarget) {
+				await this.liveLoop();
+			} else {
+				await this.searchLoop();
+			}
+		} catch (e) {
+			this.logError(`JetFrame Fehler: ${this.errorText(e)}`);
+
+			const config = readConfig(this);
+			this.scheduleNext(config.searchPollSeconds);
+		}
+	}
+
+	private async searchLoop(): Promise<void> {
+		const config = readConfig(this);
+
+		this.log.debug('Search Loop gestartet');
+
+		await this.setForeignStateAsync(`${config.dpRoot}.status`, 'searching', true);
+
+		const data = await fetchAdsb(config, this.httpJsonRaw.bind(this), this.logWarn.bind(this), this.logDebug.bind(this));
+
+		this.log.debug('[JetFrame] ADSB Fetch OK');
+
+		const aircraft = parseAircraft(data);
+		this.log.debug(`[JetFrame] ADSB parsed: ${aircraft.length}`);
+		this.log.debug(`Aircraft parsed: ${aircraft.length}`);
+
+		const matches = getMatches(config, aircraft);
+
+		if (matches.length) {
+			await this.updateIdleRunway(matches[0], config);
+		}
+
+		this.log.debug(`Matches gefunden: ${matches.length}`);
+
+		await this.setForeignStateAsync(`${config.dpRoot}.lastUpdate`, new Date().toISOString(), true);
+
+		await this.setForeignStateAsync(`${config.dpRoot}.allCount`, aircraft.length, true);
+
+		await this.setForeignStateAsync(`${config.dpRoot}.matchCount`, matches.length, true);
+
+		if (!matches.length) {
+			await this.setForeignStateAsync(
+				`${config.dpRoot}.current.text`,
+				`Kein Start/Landung/Überflug bei ${config.airport.iata}`,
+				true,
+			);
+
+			this.scheduleNext(config.searchPollSeconds);
+			return;
+		}
+
+		this.log.debug(
+			`Best Match: ${matches[0].callsign || matches[0].hex || '?'} | alt=${matches[0].altFt}ft | mode=${matches[0].mode}`,
+		);
+
+		await this.startNewFlight(matches[0]);
+	}
+
+	private async liveLoop(): Promise<void> {
+		const config = readConfig(this);
+
+		const elapsed = (Date.now() - this.liveStarted) / 1000;
+
+		const data = await fetchAdsb(config, this.httpJsonRaw.bind(this), this.logWarn.bind(this), this.logDebug.bind(this));
+
+		const aircraft = parseAircraft(data);
+
+		const matches = getMatches(config, aircraft);
+
+		await this.setForeignStateAsync(`${config.dpRoot}.lastUpdate`, new Date().toISOString(), true);
+
+		await this.setForeignStateAsync(`${config.dpRoot}.allCount`, aircraft.length, true);
+
+		await this.setForeignStateAsync(`${config.dpRoot}.matchCount`, matches.length, true);
+
+		const live = this.findCurrentLive(matches, this.liveTarget);
+
+		const bestNow = matches[0];
+
+		if (bestNow && !live && this.isDifferentAircraft(bestNow, this.liveTarget)) {
+			this.log.info(`Neues Flugzeug erkannt, schalte um: ${bestNow.callsign || bestNow.hex}`);
+
+			await this.startNewFlight(bestNow);
+			return;
+		}
+
+		if (elapsed >= config.liveMaxSeconds) {
+			this.liveTarget = null;
+			this.liveStarted = 0;
+			this.liveInfo = null;
+
+			await clearFlight(this, `${config.dpRoot}.current`);
+
+			await this.setForeignStateAsync(`${config.dpRoot}.status`, 'cleared', true);
+
+			this.scheduleNext(config.searchPollSeconds);
+			return;
+		}
+
+		if (!live) {
+			this.liveTarget = null;
+			this.liveStarted = 0;
+
+			this.log.info('Live Flug verloren');
+
+			await clearFlight(this, `${config.dpRoot}.current`);
+
+			await this.setForeignStateAsync(`${config.dpRoot}.status`, 'lost', true);
+
+			this.scheduleNext(config.searchPollSeconds);
+			return;
+		}
+
+		const bases = [`${config.dpRoot}.current`];
+
+		if (this.liveTarget?.mode === 'OVERFLIGHT') {
+			bases.push(`${config.dpRoot}.overflight`);
+		} else {
+			bases.push(`${config.dpRoot}.airport`);
+		}
+
+		const enrichedLive: Aircraft = {
+			...(this.liveInfo || {}),
+			...live,
+
+			// Diese Werte kommen nur aus saveImages()/enrichFlightInfo
+			// und dürfen vom Live-ADS-B-Update nicht wieder leer überschrieben werden.
+			localLogoUrl: this.liveInfo?.localLogoUrl || live.localLogoUrl || '',
+			localImageUrl: this.liveInfo?.localImageUrl || live.localImageUrl || '',
+			finalImageUrl: this.liveInfo?.finalImageUrl || live.finalImageUrl || '',
+			logoUrl: this.liveInfo?.logoUrl || live.logoUrl || '',
+			routeCallsign: this.liveInfo?.routeCallsign || live.routeCallsign || live.callsign || '',
+			aircraftModel: this.liveInfo?.aircraftModel || live.aircraftModel || live.aircraftType || live.type || '',
+		};
+
+		await this.applyProbableRunway(enrichedLive, config);
+
+		this.liveInfo = {
+			...enrichedLive,
+		};
+
+		for (const base of bases) {
+			await writeFlight(this, base, enrichedLive);
+		}
+
+		await this.setForeignStateAsync(`${config.dpRoot}.status`, 'live', true);
+
+		this.scheduleNext(config.livePollSeconds);
+	}
+
+	private async startNewFlight(rawMatch: Aircraft): Promise<void> {
+		const config = readConfig(this);
+
+		const startKey = this.flightKey(rawMatch);
+		const now = Date.now();
+
+		if (startKey && startKey === this.lastStartKey && now - this.lastStartTs < 15000) {
+			this.log.debug(`Gleicher Flug wurde gerade erst gestartet → ignoriere: ${startKey}`);
+
+			this.scheduleNext(config.livePollSeconds);
+			return;
+		}
+
+		this.lastStartKey = startKey;
+		this.lastStartTs = now;
+
+		this.log.debug(`Starte neuen Flug: ${rawMatch.callsign || rawMatch.hex}`);
+
+		const best = await enrichFlightInfo(
+			this,
+			config,
+			rawMatch,
+			this.httpJson.bind(this),
+			this.httpText.bind(this),
+			this.logDebug.bind(this),
+			this.logWarn.bind(this),
+		);
+
+		await this.applyProbableRunway(best, config);
+
+		this.log.info(
+			`Neuer Flug: callsign=${best.callsign || ''} route=${best.originIata || '?'} → ${best.destIata || '?'} | ${best.originName || '?'} → ${best.destName || '?'}${best.probableRunwayText ? ' | ' + best.probableRunwayText : ''}`,
+		);
+
+		await this.updateStatistics(config.dpRoot, best);
+
+		this.liveTarget = {
+			hex: best.hex,
+			callsign: best.callsign,
+			mode: best.mode,
+		};
+
+		// Bilder/Logos nur EINMAL pro Flug behandeln.
+		const imageSaveKey = this.flightKey(best);
+
+		if (imageSaveKey && imageSaveKey !== this.lastImageSaveKey) {
+			await saveImages(this, config, best, this.logDebug.bind(this), this.logWarn.bind(this));
+			this.lastImageSaveKey = imageSaveKey;
+		}
+
+		this.liveInfo = {
+			...best,
+		};
+
+		this.liveStarted = Date.now();
+
+		await writeFlight(this, `${config.dpRoot}.current`, best);
+
+		if (best.mode === 'OVERFLIGHT') {
+			await writeFlight(this, `${config.dpRoot}.overflight`, best);
+		} else {
+			await writeFlight(this, `${config.dpRoot}.airport`, best);
+		}
+
+		await this.setForeignStateAsync(`${config.dpRoot}.status`, 'live', true);
+
+		this.scheduleNext(config.livePollSeconds);
+	}
+
+	private findCurrentLive(matches: Aircraft[], target: Partial<Aircraft> | null): Aircraft | null {
+		if (!matches.length || !target) {
+			return null;
+		}
+
+		return (
+			matches.find(a => {
+				const aHex = this.clean(a.hex).toLowerCase();
+				const tHex = this.clean(target.hex).toLowerCase();
+
+				const aCall = this.clean(a.callsign).toUpperCase();
+				const tCall = this.clean(target.callsign).toUpperCase();
+
+				if (aHex && tHex && aHex === tHex) {
+					return true;
+				}
+				if (aCall && tCall && aCall === tCall) {
+					return true;
+				}
+
+				return false;
+			}) || null
+		);
+	}
+
+	private isDifferentAircraft(a: Aircraft | null | undefined, target: Partial<Aircraft> | null): boolean {
+		if (!a || !target) {
+			return false;
+		}
+
+		const aHex = this.clean(a.hex).toLowerCase();
+		const tHex = this.clean(target.hex).toLowerCase();
+
+		const aCall = this.clean(a.callsign).toUpperCase();
+		const tCall = this.clean(target.callsign).toUpperCase();
+
+		if (aCall && tCall && aCall === tCall) {
+			return false;
+		}
+		if (aHex && tHex && aHex === tHex) {
+			return false;
+		}
+
+		if (aCall && tCall) {
+			return aCall !== tCall;
+		}
+		if (aHex && tHex) {
+			return aHex !== tHex;
+		}
+
+		return false;
+	}
+
+	private flightKey(a: Aircraft): string {
+		const hex = this.clean(a.hex).toLowerCase();
+		const cs = this.clean(a.callsign).toUpperCase();
+
+		if (cs) {
+			return `CS:${cs}`;
+		}
+		if (hex) {
+			return `HEX:${hex}`;
+		}
+
+		return '';
+	}
+
+	private scheduleNext(seconds: number): void {
+		this.timer = setTimeout(() => this.loop(), seconds * 1000);
+	}
+
+	private clearTimer(): void {
+		if (this.timer) {
+			clearTimeout(this.timer);
+			this.timer = null;
+		}
+	}
+
+	private async httpJson(url: string): Promise<any> {
+		const res = await this.httpRequest(url, {
+			timeout: 12000,
+			headers: {
+				'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+				Accept: 'application/json,text/plain,*/*',
+				'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+				'Cache-Control': 'no-cache',
+				Pragma: 'no-cache',
+			},
+		});
+
+		if (typeof res === 'string') {
+			return JSON.parse(res);
+		}
+
+		return res;
+	}
+
+	private async httpJsonRaw(url: string): Promise<any> {
+		const res = await this.httpRequest(url, {
+			timeout: 20000,
+			headers: {
+				'User-Agent': 'Mozilla/5.0',
+				Accept: 'application/json,text/plain,*/*',
+			},
+		});
+
+		if (typeof res === 'string') {
+			const text = res.trim();
+
+			if (text.startsWith('<')) {
+				throw new Error('HTML statt JSON erhalten');
+			}
+
+			return JSON.parse(text);
+		}
+
+		return res;
+	}
+
+	private async httpText(url: string): Promise<string> {
+		const res = await this.httpRequest(url, {
+			timeout: 15000,
+			headers: {
+				'User-Agent': 'Mozilla/5.0 AppleWebKit/605.1.15 Safari/604.1',
+
+				Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+
+				'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+
+				Referer: 'https://www.google.com/',
+			},
+		});
+
+		return String(res || '');
+	}
+
+	private httpRequest(
+		url: string,
+		options: {
+			timeout?: number;
+			headers?: Record<string, string>;
+		} = {},
+	): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const client = url.startsWith('https') ? https : http;
+
+			const req = client.get(
+				url,
+				{
+					headers: options.headers || {},
+					timeout: options.timeout || 15000,
+				},
+				res => {
+					let body = '';
+
+					res.on('data', chunk => {
+						body += chunk;
+					});
+
+					res.on('end', () => {
+						if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+							this.httpRequest(res.headers.location, options).then(resolve).catch(reject);
+
+							return;
+						}
+
+						if (res.statusCode && res.statusCode >= 400) {
+							reject(new Error(`HTTP ${res.statusCode} bei ${url}`));
+
+							return;
+						}
+
+						resolve(body);
+					});
+				},
+			);
+
+			req.on('error', reject);
+
+			req.setTimeout(options.timeout || 15000, () => {
+				req.destroy(new Error(`timeout of ${options.timeout || 15000}ms exceeded`));
+			});
+		});
+	}
+
+	private async ensureMetaObject(): Promise<void> {
+		const id = `${this.namespace}.meta`;
+
+		try {
+			const obj = await this.getObjectAsync(id);
+
+			if (!obj) {
+				await this.setObjectAsync(id, {
+					type: 'meta',
+					common: {
+						name: 'JetFrame Files',
+						type: 'meta.user',
+					},
+					native: {},
+				});
+
+				this.log.info('Meta-Objekt für Dateien erstellt');
+			}
+		} catch (e) {
+			this.log.error(`Meta-Objekt Fehler: ${this.errorText(e)}`);
+		}
+	}
+
+	private logDebug(msg: string): void {
+		const config = readConfig(this);
+		this.log.debug(`[JetFrame] ${msg}`);
+	}
+
+	private logWarn(msg: string): void {
+		this.log.warn(`[JetFrame] ⚠️ ${msg}`);
+	}
+
+	private logError(msg: string): void {
+		this.log.error(`[JetFrame] ❌ ${msg}`);
+	}
+
+	private clean(v: unknown): string {
+		return String(v || '').trim();
+	}
+
+	private errorText(e: unknown): string {
+		if (!e) {
+			return 'unbekannter Fehler';
+		}
+		if (typeof e === 'string') {
+			return e;
+		}
+		if (e instanceof Error) {
+			return e.message;
+		}
+
+		try {
+			return JSON.stringify(e);
+		} catch {
+			return String(e);
+		}
+	}
+
+	private onUnload(callback: () => void): void {
+		try {
+			this.clearTimer();
+			callback();
+		} catch {
+			callback();
+		}
+	}
+}
+
+if (require.main !== module) {
+	module.exports = (options: Partial<utils.AdapterOptions> | undefined) => new Jetframe(options);
+} else {
+	(() => new Jetframe())();
+}

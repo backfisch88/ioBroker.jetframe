@@ -2,6 +2,10 @@ import type { Aircraft, JetFrameConfig } from './types';
 
 export type HttpJsonRaw = (url: string) => Promise<any>;
 
+const ADSB_ERROR_STATE: Record<string, { count: number; lastWarn: number }> = {};
+
+const ADSB_503_STATE: Record<string, { count: number; lastWarn: number }> = {};
+
 function clean(v: unknown): string {
 	return String(v || '').trim();
 }
@@ -41,25 +45,86 @@ export async function fetchAdsb(
 	config: JetFrameConfig,
 	httpJsonRaw: HttpJsonRaw,
 	logWarn: (msg: string) => void,
+	logDebug?: (msg: string) => void,
 ): Promise<any> {
 	const urls = buildAdsbUrls(config);
 
 	const aircraftByKey: Record<string, any> = {};
 
-	for (const url of urls) {
+	for (const primaryUrl of urls) {
+		const sources: Array<{ name: string; url: string }> = [{ name: 'adsb.lol', url: primaryUrl }];
+
+		const fallbackUrl = buildAdsbFiFallbackUrl(primaryUrl);
+
+		if (fallbackUrl) {
+			sources.push({ name: 'adsb.fi', url: fallbackUrl });
+		}
+
 		let body: any = null;
+		let usedSource = '';
 
-		for (let attempt = 1; attempt <= 2; attempt++) {
-			try {
-				body = await httpJsonRaw(url);
-				break;
-			} catch (e) {
-				logWarn(`ADSB Fehler Versuch ${attempt}: ${errorText(e)} | ${url}`);
+		for (const source of sources) {
+			const maxAttempts = source.name === 'adsb.lol' ? 1 : 2;
 
-				if (attempt < 2) {
-					await sleep(1500);
+			if (source.name !== 'adsb.lol') {
+				logDebug?.(`ADSB adsb.lol fehlgeschlagen – versuche ${source.name} Fallback`);
+			}
+
+			for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+				try {
+					body = await httpJsonRaw(source.url);
+					usedSource = source.name;
+
+					if (source.name !== 'adsb.lol') {
+						logDebug?.(`ADSB Fallback aktiv: ${source.name}`);
+					}
+
+					logDebug?.(`ADSB Quelle: ${source.name}`);
+
+					break;
+				} catch (e) {
+					const errText = errorText(e);
+					const isSoftAdsbError =
+						errText.includes('HTTP 502') ||
+						errText.includes('HTTP 503') ||
+						errText.toLowerCase().includes('timeout') ||
+						errText.includes('HTML statt JSON');
+
+					const key = `${source.name}:${source.url}`;
+					const now = Date.now();
+					const st = ADSB_ERROR_STATE[key] || { count: 0, lastWarn: 0 };
+
+					st.count++;
+
+					if (!isSoftAdsbError || now - st.lastWarn > 300000) {
+						if (isSoftAdsbError) {
+							logDebug?.(`ADSB ${source.name} temporär nicht erreichbar (${errText})`);
+						} else {
+							logDebug?.(`ADSB ${source.name} Fehler Versuch ${attempt}: ${errText}`);
+						}
+
+						st.lastWarn = now;
+					}
+
+					ADSB_ERROR_STATE[key] = st;
+
+					if (attempt < maxAttempts) {
+						await sleep(1500);
+					}
 				}
 			}
+
+			if (body) {
+				break;
+			}
+		}
+
+		if (!body) {
+			continue;
+		}
+
+		if (usedSource) {
+			logDebug?.(`ADSB Daten empfangen über ${usedSource}`);
 		}
 
 		const arr = Array.isArray(body?.aircraft) ? body.aircraft : Array.isArray(body?.ac) ? body.ac : [];
@@ -116,6 +181,24 @@ function buildAdsbUrls(config: JetFrameConfig): string[] {
 	}
 
 	return urls;
+}
+
+function buildAdsbFiFallbackUrl(url: string): string {
+	const m = String(url || '').match(/\/lat\/([^/]+)\/lon\/([^/]+)\/dist\/([^/?#]+)/);
+
+	if (!m) {
+		return '';
+	}
+
+	const lat = m[1];
+	const lon = m[2];
+	const dist = m[3];
+
+	if (!lat || !lon || !dist) {
+		return '';
+	}
+
+	return `https://opendata.adsb.fi/api/v3/lat/${lat}/lon/${lon}/dist/${dist}`;
 }
 
 function replaceAdsbUrlTokens(url: string, config: JetFrameConfig): string {
@@ -205,4 +288,24 @@ function errorText(e: unknown): string {
 	} catch {
 		return String(e);
 	}
+}
+
+function shouldWarn503(url: string): boolean {
+	const now = Date.now();
+	const item = ADSB_503_STATE[url] || { count: 0, lastWarn: 0 };
+
+	item.count += 1;
+
+	const first = item.count === 1;
+	const everyTen = item.count % 10 === 0;
+	const olderThanFiveMin = now - item.lastWarn > 5 * 60 * 1000;
+
+	if (first || everyTen || olderThanFiveMin) {
+		item.lastWarn = now;
+		ADSB_503_STATE[url] = item;
+		return true;
+	}
+
+	ADSB_503_STATE[url] = item;
+	return false;
 }

@@ -1,0 +1,1358 @@
+<!doctype html>
+<html lang="de">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<title>JetFrame Heatmap</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="jetframe.png">
+<link rel="icon" type="image/png" href="jetframe.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#05060a">
+
+
+<link rel="apple-touch-icon" href="jetframe.png">
+<link rel="icon" type="image/png" href="jetframe.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#05060a">
+
+	<style>
+		:root {
+			--bg: #05060a;
+			--muted: rgba(255,255,255,.62);
+			--green: #35e66b;
+			--blue: #56a8ff;
+			--yellow: #ffd84d;
+			--red: #ff5a5a;
+		}
+
+		* {
+			box-sizing: border-box;
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		html, body {
+			margin: 0;
+			width: 100%;
+			min-height: 100dvh;
+			background: var(--bg);
+			color: white;
+			font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+			overflow: hidden;
+		}
+
+		body {
+			background:
+				radial-gradient(circle at 16% 8%, rgba(70,110,180,.34), transparent 38%),
+				radial-gradient(circle at 88% 22%, rgba(255,150,60,.16), transparent 34%),
+				linear-gradient(145deg, #090b11, #020306 72%);
+		}
+
+		#app {
+			width: 100vw;
+			height: 100dvh;
+			padding: calc(10px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom));
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.card {
+			width: min(820px, 96vw);
+			height: min(1080px, 94dvh);
+			border-radius: 36px;
+			padding: 22px;
+			background: linear-gradient(145deg, rgba(62,70,90,.56), rgba(18,18,20,.78));
+			border: 1px solid rgba(255,255,255,.18);
+			box-shadow:
+				0 35px 100px rgba(0,0,0,.58),
+				inset 0 1px 0 rgba(255,255,255,.22);
+			backdrop-filter: blur(24px);
+			-webkit-backdrop-filter: blur(24px);
+			overflow: hidden;
+			position: relative;
+		}
+
+		.header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			gap: 12px;
+			margin-bottom: 10px;
+		}
+
+		.title {
+			font-size: clamp(22px, 5.2vw, 34px);
+			font-weight: 900;
+			letter-spacing: -.055em;
+			line-height: .95;
+		}
+
+		.sub {
+			margin-top: 6px;
+			color: var(--muted);
+			font-size: 14px;
+			font-weight: 650;
+		}
+
+		.livePill {
+			flex: 0 0 auto;
+			padding: 7px 12px;
+			border-radius: 999px;
+			background: rgba(53,230,107,.13);
+			border: 1px solid rgba(53,230,107,.28);
+			color: rgba(210,255,225,.92);
+			font-size: 12px;
+			font-weight: 850;
+			white-space: nowrap;
+		}
+
+		.stats {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 8px;
+			margin-bottom: 10px;
+		}
+
+		.stat {
+			min-height: 58px;
+			border-radius: 18px;
+			background: rgba(255,255,255,.075);
+			border: 1px solid rgba(255,255,255,.12);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.value {
+			font-size: clamp(22px, 6vw, 34px);
+			font-weight: 900;
+			letter-spacing: -.04em;
+		}
+
+		.label {
+			margin-top: 3px;
+			font-size: 8px;
+			letter-spacing: .13em;
+			color: var(--muted);
+			font-weight: 800;
+		}
+
+		.rush {
+			min-height: 42px;
+			border-radius: 18px;
+			padding: 8px 12px;
+			margin-bottom: 10px;
+			background: rgba(255,216,77,.10);
+			border: 1px solid rgba(255,216,77,.20);
+			color: rgba(255,240,170,.94);
+			font-size: clamp(11px, 2.9vw, 14px);
+			font-weight: 800;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+		}
+
+		.rush.hot {
+			background: rgba(255,90,90,.13);
+			border-color: rgba(255,90,90,.28);
+			color: #ffd6d6;
+			box-shadow: 0 0 28px rgba(255,90,90,.12);
+		}
+
+		.scroller {
+			display: flex;
+			gap: 10px;
+			overflow-x: auto;
+			scroll-snap-type: x mandatory;
+			padding: 2px 2px 14px;
+			margin: 0 -2px;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.scroller::-webkit-scrollbar {
+			display: none;
+		}
+
+		.hourCard {
+			scroll-snap-align: center;
+			flex: 0 0 min(190px, 60vw);
+			min-height: 158px;
+			border-radius: 26px;
+			padding: 16px;
+			background: rgba(255,255,255,.075);
+			border: 1px solid rgba(255,255,255,.12);
+			position: relative;
+			overflow: hidden;
+		}
+
+		.hourCard::before {
+			content: "";
+			position: absolute;
+			inset: 0;
+			opacity: var(--heat, .08);
+			background:
+				radial-gradient(circle at 50% 0%, rgba(53,230,107,.9), transparent 62%),
+				linear-gradient(145deg, rgba(86,168,255,.7), rgba(255,216,77,.6));
+			pointer-events: none;
+		}
+
+		.hourCard.now {
+			border-color: rgba(53,230,107,.4);
+			box-shadow: 0 0 28px rgba(53,230,107,.16);
+		}
+
+		.hourCard.best {
+			border-color: rgba(255,216,77,.42);
+			box-shadow: 0 0 28px rgba(255,216,77,.16);
+		}
+
+		.hourInner {
+			position: relative;
+			z-index: 2;
+		}
+
+		.hourTop {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 10px;
+		}
+
+		.hour {
+			font-size: 24px;
+			font-weight: 950;
+			letter-spacing: -.055em;
+		}
+
+		.badge {
+			padding: 5px 8px;
+			border-radius: 999px;
+			background: rgba(0,0,0,.22);
+			border: 1px solid rgba(255,255,255,.13);
+			color: rgba(255,255,255,.78);
+			font-size: 11px;
+			font-weight: 850;
+		}
+
+		.hourTotal {
+			font-size: 46px;
+			line-height: .9;
+			font-weight: 950;
+			letter-spacing: -.075em;
+		}
+
+		.hourSub {
+			margin-top: 8px;
+			color: var(--muted);
+			font-size: 12px;
+			font-weight: 750;
+		}
+
+		.bars {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 6px;
+			margin-top: 12px;
+		}
+
+		.bar {
+			height: 38px;
+			border-radius: 13px;
+			background: rgba(255,255,255,.09);
+			border: 1px solid rgba(255,255,255,.10);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: 900;
+			font-size: 12px;
+		}
+
+		.rankings {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 10px;
+			margin-top: 4px;
+		}
+
+		.panel {
+	padding-bottom: 14px !important;
+			border-radius: 22px;
+			background: rgba(255,255,255,.07);
+			border: 1px solid rgba(255,255,255,.11);
+			padding: 13px;
+			min-height: 132px;
+			overflow: hidden;
+		}
+
+		.panel h3 {
+			margin: 0 0 8px;
+			font-size: 13px;
+			letter-spacing: .08em;
+			color: var(--muted);
+			text-transform: uppercase;
+		}
+
+		.panel pre {
+	padding-bottom: 6px !important;
+			margin: 0;
+			white-space: pre-wrap;
+			font-family: inherit;
+			font-size: 13px;
+			line-height: 1.35;
+			font-weight: 750;
+			color: rgba(255,255,255,.88);
+		}
+
+		.footer {
+			color: rgba(255,255,255,.42);
+			font-size: 11px;
+			font-weight: 700;
+			text-align: center;
+			margin-top: 10px;
+			padding-bottom: 4px;
+		}
+
+		@media (max-width: 540px) {
+			.card {
+				padding: 14px;
+				border-radius: 28px;
+			}
+
+			.stats {
+				grid-template-columns: repeat(2, 1fr);
+			}
+
+			.rankings {
+				grid-template-columns: 1fr 1fr;
+			}
+
+			.panel {
+				padding: 11px;
+				min-height: 106px;
+				max-height: 142px;
+			}
+
+			.panel h3 {
+				font-size: 11px;
+				margin-bottom: 6px;
+			}
+
+			.panel pre {
+				font-size: 11px;
+				line-height: 1.28;
+			}
+
+			.footer {
+				display: none;
+			}
+		}
+	
+/* --------------------------------------------------
+   JetFrame Heatmap Compact One-Page Layout
+-------------------------------------------------- */
+
+html, body {
+	overflow: hidden !important;
+}
+
+#app {
+	height: 100dvh !important;
+	min-height: 100dvh !important;
+	padding: calc(8px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom)) !important;
+	align-items: center !important;
+}
+
+.card {
+	width: min(820px, 96vw) !important;
+	height: min(1040px, 96dvh) !important;
+	min-height: 0 !important;
+	padding: 14px !important;
+	border-radius: 28px !important;
+	overflow: hidden !important;
+}
+
+.header {
+	margin-bottom: 8px !important;
+}
+
+.title {
+	font-size: clamp(22px, 5vw, 34px) !important;
+}
+
+.sub {
+	margin-top: 4px !important;
+	font-size: 13px !important;
+}
+
+.stats {
+	grid-template-columns: repeat(4, 1fr) !important;
+	gap: 7px !important;
+	margin-bottom: 9px !important;
+}
+
+.stat {
+	min-height: 54px !important;
+	border-radius: 16px !important;
+}
+
+.value {
+	font-size: clamp(20px, 5.6vw, 30px) !important;
+}
+
+.label {
+	font-size: 7px !important;
+}
+
+.rush {
+	min-height: 38px !important;
+	padding: 7px 10px !important;
+	margin-bottom: 9px !important;
+	font-size: clamp(10px, 2.6vw, 13px) !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+}
+
+.rush span {
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+	white-space: nowrap !important;
+}
+
+.scroller {
+	padding: 0 2px 9px !important;
+	gap: 9px !important;
+}
+
+.hourCard {
+	flex: 0 0 min(178px, 56vw) !important;
+	min-height: 148px !important;
+	padding: 13px !important;
+	border-radius: 22px !important;
+}
+
+.hourTop {
+	margin-bottom: 8px !important;
+}
+
+.hour {
+	font-size: 22px !important;
+}
+
+.badge {
+	font-size: 9px !important;
+	padding: 4px 7px !important;
+}
+
+.hourTotal {
+	font-size: 42px !important;
+}
+
+.hourSub {
+	margin-top: 5px !important;
+	font-size: 11px !important;
+}
+
+.bars {
+	margin-top: 10px !important;
+	gap: 5px !important;
+}
+
+.bar {
+	height: 34px !important;
+	border-radius: 11px !important;
+	font-size: 11px !important;
+}
+
+.rankings {
+	display: grid !important;
+	grid-template-columns: 1fr 1fr !important;
+	gap: 8px !important;
+	margin-top: 6px !important;
+}
+
+.panel {
+	min-height: 106px !important;
+	max-height: 138px !important;
+	padding: 10px !important;
+	border-radius: 20px !important;
+	overflow: hidden !important;
+}
+
+.panel h3 {
+	margin: 0 0 6px !important;
+	font-size: 10px !important;
+	letter-spacing: .1em !important;
+}
+
+.panel pre {
+	font-size: 10.5px !important;
+	line-height: 1.28 !important;
+}
+
+.footer {
+	display: none !important;
+}
+
+@media (max-width: 540px) {
+	.card {
+		padding: 13px !important;
+	}
+
+	.stats {
+		grid-template-columns: repeat(4, 1fr) !important;
+	}
+
+	.stat {
+		min-height: 50px !important;
+	}
+
+	.value {
+		font-size: clamp(18px, 5vw, 26px) !important;
+	}
+
+	.label {
+		font-size: 6px !important;
+		letter-spacing: .1em !important;
+	}
+
+	.rankings {
+		grid-template-columns: 1fr 1fr !important;
+	}
+
+	.panel {
+		min-height: 102px !important;
+		max-height: 132px !important;
+		padding: 9px !important;
+	}
+
+	.panel pre {
+		font-size: 10px !important;
+	}
+}
+
+
+/* --------------------------------------------------
+   JetFrame Heatmap TRUE 100% HEIGHT PATCH
+-------------------------------------------------- */
+
+html,
+body {
+	width: 100% !important;
+	height: 100% !important;
+	min-height: 100dvh !important;
+	overflow: hidden !important;
+}
+
+#app {
+	width: 100vw !important;
+	height: 100dvh !important;
+	min-height: 100dvh !important;
+	padding: calc(8px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom)) !important;
+	display: flex !important;
+	align-items: stretch !important;
+	justify-content: center !important;
+	overflow: hidden !important;
+}
+
+.card {
+	width: min(820px, 96vw) !important;
+	height: 100% !important;
+	min-height: 0 !important;
+	max-height: none !important;
+	padding: 14px !important;
+	border-radius: 28px !important;
+	display: flex !important;
+	flex-direction: column !important;
+	overflow: hidden !important;
+}
+
+.header,
+.stats,
+.rush {
+	flex: 0 0 auto !important;
+}
+
+.header {
+	margin-bottom: 8px !important;
+}
+
+.stats {
+	grid-template-columns: repeat(4, 1fr) !important;
+	margin-bottom: 8px !important;
+}
+
+.rush {
+	margin-bottom: 10px !important;
+	white-space: nowrap !important;
+}
+
+.scroller {
+	flex: 1 1 auto !important;
+	min-height: 0 !important;
+	height: auto !important;
+	display: flex !important;
+	align-items: stretch !important;
+	padding: 2px 2px 10px !important;
+	margin: 0 -2px !important;
+}
+
+.hourCard {
+	flex: 0 0 min(390px, 50vw) !important;
+	height: 100% !important;
+	min-height: 0 !important;
+	padding: 22px !important;
+	border-radius: 28px !important;
+	display: flex !important;
+	align-items: stretch !important;
+}
+
+.hourInner {
+	width: 100% !important;
+	display: flex !important;
+	flex-direction: column !important;
+}
+
+.hourTop {
+	margin-bottom: 12px !important;
+}
+
+.hour {
+	font-size: clamp(30px, 7vw, 46px) !important;
+}
+
+.badge {
+	font-size: clamp(11px, 2.4vw, 16px) !important;
+	padding: 6px 10px !important;
+}
+
+.hourTotal {
+	font-size: clamp(76px, 20vw, 130px) !important;
+	line-height: .82 !important;
+	margin-top: auto !important;
+}
+
+.hourSub {
+	font-size: clamp(15px, 3.5vw, 24px) !important;
+	margin-top: 10px !important;
+}
+
+.bars {
+	margin-top: auto !important;
+	gap: 10px !important;
+}
+
+.bar {
+	height: clamp(44px, 8vh, 72px) !important;
+	font-size: clamp(14px, 3.2vw, 22px) !important;
+	border-radius: 16px !important;
+}
+
+.rankings {
+	flex: 0 0 auto !important;
+	display: grid !important;
+	grid-template-columns: 1fr 1fr !important;
+	gap: 10px !important;
+	margin-top: 10px !important;
+}
+
+.panel {
+	min-height: clamp(120px, 17vh, 190px) !important;
+	max-height: none !important;
+	padding: 12px !important;
+}
+
+.panel h3 {
+	font-size: clamp(11px, 2.8vw, 16px) !important;
+}
+
+.panel pre {
+	font-size: clamp(10px, 2.8vw, 16px) !important;
+	line-height: 1.25 !important;
+}
+
+.footer {
+	display: none !important;
+}
+
+@media (max-width: 540px) {
+	.card {
+		width: 96vw !important;
+		padding: 14px !important;
+	}
+
+	.stat {
+		min-height: 52px !important;
+	}
+
+	.scroller {
+		flex: 1 1 auto !important;
+	}
+
+	.hourCard {
+		flex-basis: min(390px, 52vw) !important;
+	}
+}
+
+
+
+
+
+/* --------------------------------------------------
+   JetFrame Heatmap LANDSCAPE GRID LAYOUT
+-------------------------------------------------- */
+
+@media (orientation: landscape) {
+	#app {
+		height: 100dvh !important;
+		min-height: 100dvh !important;
+		padding: 8px 14px !important;
+		align-items: stretch !important;
+		justify-content: center !important;
+		overflow: hidden !important;
+	}
+
+	.card {
+		width: min(1320px, 96vw) !important;
+		height: 100% !important;
+		max-height: none !important;
+		padding: 16px !important;
+		border-radius: 28px !important;
+		display: grid !important;
+		grid-template-columns: 1.25fr .95fr !important;
+		grid-template-rows: auto auto 1fr !important;
+		grid-template-areas:
+			"head stats"
+			"rush rush"
+			"hours ranks" !important;
+		gap: 10px 14px !important;
+		overflow: hidden !important;
+	}
+
+	.header {
+		grid-area: head !important;
+		margin: 0 !important;
+		align-items: flex-start !important;
+	}
+
+	.title {
+		font-size: clamp(28px, 4.2vw, 48px) !important;
+		line-height: .9 !important;
+	}
+
+	.sub {
+		font-size: 15px !important;
+		margin-top: 5px !important;
+	}
+
+	.livePill {
+		font-size: 13px !important;
+		padding: 8px 14px !important;
+	}
+
+	.stats {
+		grid-area: stats !important;
+		grid-template-columns: repeat(4, 1fr) !important;
+		gap: 8px !important;
+		margin: 0 !important;
+		align-self: end !important;
+	}
+
+	.stat {
+		min-height: 74px !important;
+		border-radius: 18px !important;
+	}
+
+	.value {
+		font-size: clamp(34px, 5vw, 56px) !important;
+	}
+
+	.label {
+		font-size: 9px !important;
+	}
+
+	.rush {
+		grid-area: rush !important;
+		margin: 0 !important;
+		min-height: 46px !important;
+		font-size: clamp(16px, 2vw, 24px) !important;
+		padding: 8px 16px !important;
+	}
+
+	.scroller {
+		grid-area: hours !important;
+		height: 100% !important;
+		min-height: 0 !important;
+		max-height: none !important;
+		flex: none !important;
+		display: flex !important;
+		align-items: stretch !important;
+		overflow-x: auto !important;
+		overflow-y: hidden !important;
+		padding: 0 2px 2px !important;
+		margin: 0 !important;
+	}
+
+	.hourCard {
+		height: 100% !important;
+		min-height: 0 !important;
+		flex: 0 0 min(300px, 32vw) !important;
+		padding: 18px !important;
+		border-radius: 24px !important;
+	}
+
+	.hourInner {
+		height: 100% !important;
+		display: flex !important;
+		flex-direction: column !important;
+	}
+
+	.hour {
+		font-size: clamp(28px, 3.2vw, 40px) !important;
+	}
+
+	.badge {
+		font-size: 12px !important;
+		padding: 6px 10px !important;
+	}
+
+	.hourTotal {
+		font-size: clamp(64px, 9vw, 110px) !important;
+		line-height: .82 !important;
+		margin-top: auto !important;
+	}
+
+	.hourSub {
+		font-size: clamp(13px, 1.7vw, 20px) !important;
+		margin-top: 8px !important;
+	}
+
+	.bars {
+		margin-top: auto !important;
+		gap: 8px !important;
+	}
+
+	.bar {
+		height: clamp(36px, 8vh, 58px) !important;
+		font-size: clamp(12px, 1.6vw, 18px) !important;
+		border-radius: 13px !important;
+	}
+
+	.rankings {
+		grid-area: ranks !important;
+		display: grid !important;
+		grid-template-columns: 1fr !important;
+		grid-template-rows: 1fr 1fr !important;
+		gap: 10px !important;
+		margin: 0 !important;
+		min-height: 0 !important;
+	}
+
+	.panel {
+		min-height: 0 !important;
+		height: 100% !important;
+		padding: 14px !important;
+		border-radius: 22px !important;
+	}
+
+	.panel h3 {
+		font-size: clamp(13px, 1.7vw, 20px) !important;
+		margin-bottom: 8px !important;
+	}
+
+	.panel pre {
+		font-size: clamp(12px, 1.55vw, 18px) !important;
+		line-height: 1.22 !important;
+	}
+
+	.footer {
+		display: none !important;
+	}
+}
+
+
+/* --------------------------------------------------
+   JetFrame Heatmap LANDSCAPE AUTOFIT OVERRIDE
+-------------------------------------------------- */
+
+@media (orientation: landscape) {
+	#app {
+		padding: 6px 10px !important;
+	}
+
+	.card {
+		width: 97vw !important;
+		height: 100% !important;
+		padding: clamp(8px, 1.5vh, 14px) !important;
+		border-radius: 22px !important;
+		grid-template-columns: 1.12fr .88fr !important;
+		grid-template-rows: auto auto minmax(0, 1fr) !important;
+		gap: clamp(6px, 1.2vh, 10px) clamp(8px, 1vw, 14px) !important;
+	}
+
+	.title {
+		font-size: clamp(24px, 3.5vw, 40px) !important;
+		line-height: .9 !important;
+	}
+
+	.sub {
+		font-size: clamp(12px, 1.4vw, 15px) !important;
+		margin-top: 3px !important;
+	}
+
+	.livePill {
+		font-size: clamp(10px, 1.2vw, 13px) !important;
+		padding: 6px 12px !important;
+	}
+
+	.stats {
+		gap: 7px !important;
+	}
+
+	.stat {
+		min-height: clamp(48px, 12vh, 66px) !important;
+		border-radius: 15px !important;
+	}
+
+	.value {
+		font-size: clamp(26px, 4.1vw, 46px) !important;
+		line-height: .85 !important;
+	}
+
+	.label {
+		font-size: clamp(7px, .9vw, 9px) !important;
+		margin-top: 2px !important;
+	}
+
+	.rush {
+		min-height: clamp(36px, 8vh, 46px) !important;
+		font-size: clamp(14px, 1.8vw, 22px) !important;
+		padding: 6px 14px !important;
+		border-radius: 18px !important;
+	}
+
+	.scroller {
+		min-width: 0 !important;
+		height: 100% !important;
+		padding-bottom: 0 !important;
+	}
+
+	.hourCard {
+		flex-basis: clamp(190px, 25vw, 270px) !important;
+		padding: clamp(10px, 1.8vh, 16px) !important;
+		border-radius: 20px !important;
+	}
+
+	.hourTop {
+		margin-bottom: 6px !important;
+	}
+
+	.hour {
+		font-size: clamp(21px, 2.6vw, 34px) !important;
+	}
+
+	.badge {
+		font-size: clamp(9px, 1.1vw, 12px) !important;
+		padding: 4px 8px !important;
+	}
+
+	.hourTotal {
+		font-size: clamp(44px, 7vw, 82px) !important;
+		line-height: .82 !important;
+	}
+
+	.hourSub {
+		font-size: clamp(10px, 1.35vw, 15px) !important;
+		margin-top: 5px !important;
+	}
+
+	.bars {
+		gap: 5px !important;
+		margin-top: auto !important;
+	}
+
+	.bar {
+		height: clamp(28px, 6.4vh, 42px) !important;
+		font-size: clamp(9px, 1.25vw, 13px) !important;
+		border-radius: 10px !important;
+	}
+
+	.rankings {
+		min-height: 0 !important;
+		gap: clamp(6px, 1.2vh, 10px) !important;
+	}
+
+	.panel {
+		min-height: 0 !important;
+		padding: clamp(9px, 1.7vh, 13px) !important;
+		border-radius: 18px !important;
+		overflow: hidden !important;
+	}
+
+	.panel h3 {
+		font-size: clamp(11px, 1.35vw, 16px) !important;
+		margin-bottom: 5px !important;
+	}
+
+	.panel pre {
+		font-size: clamp(9px, 1.25vw, 14px) !important;
+		line-height: 1.16 !important;
+	}
+}
+
+
+/* --------------------------------------------------
+   JetFrame Heatmap LANDSCAPE FINAL FIT
+-------------------------------------------------- */
+
+@media (orientation: landscape) {
+	#app {
+		padding: 5px 8px !important;
+	}
+
+	.card {
+		width: 98vw !important;
+		padding: 10px !important;
+		border-radius: 20px !important;
+		grid-template-columns: 1.08fr .92fr !important;
+		gap: 7px 10px !important;
+	}
+
+	.title {
+		font-size: clamp(23px, 3vw, 34px) !important;
+	}
+
+	.sub {
+		font-size: clamp(11px, 1.2vw, 14px) !important;
+	}
+
+	.stat {
+		min-height: clamp(44px, 10vh, 58px) !important;
+	}
+
+	.value {
+		font-size: clamp(24px, 3.5vw, 40px) !important;
+	}
+
+	.rush {
+		min-height: 36px !important;
+		font-size: clamp(13px, 1.55vw, 19px) !important;
+	}
+
+	.hourCard {
+		flex-basis: clamp(170px, 22vw, 235px) !important;
+		padding: 11px !important;
+	}
+
+	.hour {
+		font-size: clamp(20px, 2.3vw, 30px) !important;
+	}
+
+	.hourTotal {
+		font-size: clamp(42px, 6vw, 70px) !important;
+	}
+
+	.hourSub {
+		font-size: clamp(10px, 1.15vw, 14px) !important;
+	}
+
+	.bar {
+		height: clamp(26px, 5.5vh, 36px) !important;
+		font-size: clamp(9px, 1.05vw, 12px) !important;
+	}
+
+	.panel {
+		padding: 10px !important;
+	}
+
+	.panel h3 {
+		font-size: clamp(10px, 1.25vw, 14px) !important;
+		margin-bottom: 4px !important;
+	}
+
+	.panel pre {
+		font-size: clamp(8.5px, 1.12vw, 12.5px) !important;
+		line-height: 1.12 !important;
+	}
+
+	.rankings {
+		gap: 7px !important;
+	}
+}
+
+
+
+
+
+/* JetFrame Back Button Compact */
+
+.backBtn {
+	position: fixed !important;
+	top: calc(env(safe-area-inset-top) + 10px) !important;
+	left: calc(env(safe-area-inset-left) + 10px) !important;
+	width: 34px !important;
+	height: 34px !important;
+	border-radius: 999px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	background: rgba(0,0,0,.22) !important;
+	backdrop-filter: blur(16px) !important;
+	-webkit-backdrop-filter: blur(16px) !important;
+	border: 1px solid rgba(255,255,255,.10) !important;
+	color: rgba(255,255,255,.86) !important;
+	font-size: 24px !important;
+	font-weight: 900 !important;
+	text-decoration: none !important;
+	z-index: 9999 !important;
+	opacity: .72 !important;
+}
+
+.backBtn:active {
+	transform: scale(.94) !important;
+	opacity: 1 !important;
+}
+
+@media (orientation: landscape) {
+	.backBtn {
+		width: 30px !important;
+		height: 30px !important;
+		font-size: 22px !important;
+		top: calc(env(safe-area-inset-top) + 8px) !important;
+		left: calc(env(safe-area-inset-left) + 8px) !important;
+	}
+}
+
+</style>
+</head>
+<body>
+
+<a class="backBtn" href="index.html">‹</a>
+
+	<div id="app">
+		<div class="card">
+			<div class="header">
+				<div>
+					<div class="title">✈️ JetFrame<br>Heatmap</div>
+					<div id="dateText" class="sub">Heute</div>
+				</div>
+				<div id="livePill" class="livePill">LIVE</div>
+			</div>
+
+			<div class="stats">
+				<div class="stat">
+					<div id="totalFlights" class="value">–</div>
+					<div class="label">FLÜGE</div>
+				</div>
+				<div class="stat">
+					<div id="landings" class="value">–</div>
+					<div class="label">LANDUNGEN</div>
+				</div>
+				<div class="stat">
+					<div id="departures" class="value">–</div>
+					<div class="label">STARTS</div>
+				</div>
+				<div class="stat">
+					<div id="overflights" class="value">–</div>
+					<div class="label">ÜBERFLÜGE</div>
+				</div>
+			</div>
+
+			<div id="rushBox" class="rush">
+				<span id="rushText">Lade Traffic…</span>
+				<span id="bestText">Beste Zeit: –</span>
+			</div>
+
+			<div id="hourScroller" class="scroller"></div>
+
+			<div class="rankings">
+				<div class="panel">
+					<h3>Top Airlines</h3>
+					<pre id="airlineRanking">–</pre>
+				</div>
+				<div class="panel">
+					<h3>Top Routen</h3>
+					<pre id="routeRanking">–</pre>
+				</div>
+			</div>
+
+			<div id="footer" class="footer">Auto-Refresh alle 10 Sekunden</div>
+		</div>
+	</div>
+
+	<script>
+		let API_BASE = (() => {
+			const proto = window.location.protocol || 'http:';
+			const host = window.location.hostname || '127.0.0.1';
+			const url = new URL(window.location.href);
+			const apiHost = url.searchParams.get('apiHost') || host;
+			const apiPort = url.searchParams.get('apiPort') || '8087';
+			return proto + '//' + apiHost + ':' + apiPort;
+		})();
+
+		const DP_ROOT = (() => {
+			const url = new URL(window.location.href);
+			const instance = url.searchParams.get('instance') || '0';
+			return 'jetframe.' + String(instance).replace(/[^0-9]/g, '');
+		})();
+
+		const BASE = DP_ROOT + '.statistics.today';
+
+		const IDS = {
+			date: BASE + '.date',
+			totalFlights: BASE + '.totalFlights',
+			landings: BASE + '.landings',
+			departures: BASE + '.departures',
+			overflights: BASE + '.overflights',
+			hourly: BASE + '.hourly',
+			bestSpotterHour: BASE + '.bestSpotterHour',
+			currentHourFlights: BASE + '.currentHourFlights',
+			rushHourNow: BASE + '.rushHourNow',
+			rushHourText: BASE + '.rushHourText',
+			airlineRankingText: BASE + '.airlineRankingText',
+			routeRankingText: BASE + '.routeRankingText',
+		};
+
+		function $(id) {
+			return document.getElementById(id);
+		}
+
+		function clean(v) {
+			if (v === null || v === undefined) return '';
+			v = String(v).trim();
+			if (v === 'null' || v === 'undefined') return '';
+			if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+				v = v.slice(1, -1);
+			}
+			return v.replace(/\\"/g, '"').replace(/\\n/g, '\n').trim();
+		}
+
+		async function readState(id) {
+			try {
+				const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(id), {
+					cache: 'no-store',
+				});
+				if (!res.ok) return '';
+				return clean(await res.text());
+			} catch {
+				return '';
+			}
+		}
+
+		async function readAll() {
+			const entries = await Promise.all(
+				Object.entries(IDS).map(async ([k, id]) => [k, await readState(id)]),
+			);
+			return Object.fromEntries(entries);
+		}
+
+		function num(v) {
+			const n = Number(String(v).replace(',', '.'));
+			return Number.isFinite(n) ? n : 0;
+		}
+
+		function parseHourly(raw) {
+			try {
+				const data = JSON.parse(raw || '{}');
+				const result = {};
+
+				for (let h = 0; h < 24; h++) {
+					const key = String(h).padStart(2, '0');
+					const v = data[key] || {};
+					result[key] = {
+						total: Number(v.total || 0),
+						landings: Number(v.landings || 0),
+						departures: Number(v.departures || 0),
+						overflights: Number(v.overflights || 0),
+					};
+				}
+
+				return result;
+			} catch {
+				const result = {};
+				for (let h = 0; h < 24; h++) {
+					result[String(h).padStart(2, '0')] = { total: 0, landings: 0, departures: 0, overflights: 0 };
+				}
+				return result;
+			}
+		}
+
+		function renderHours(hourly) {
+			const scroller = $('hourScroller');
+			const nowHour = String(new Date().getHours()).padStart(2, '0');
+			const max = Math.max(1, ...Object.values(hourly).map(v => v.total));
+			const bestHour = Object.entries(hourly).sort((a, b) => b[1].total - a[1].total)[0]?.[0] || '';
+
+			scroller.innerHTML = '';
+
+			for (let h = 0; h < 24; h++) {
+				const key = String(h).padStart(2, '0');
+				const v = hourly[key] || { total: 0, landings: 0, departures: 0, overflights: 0 };
+				const heat = Math.min(0.72, Math.max(0.06, v.total / max * 0.72));
+
+				const card = document.createElement('div');
+				card.className = 'hourCard';
+				if (key === nowHour) card.classList.add('now');
+				if (key === bestHour && v.total > 0) card.classList.add('best');
+				card.style.setProperty('--heat', heat.toFixed(2));
+
+				card.innerHTML = `
+					<div class="hourInner">
+						<div class="hourTop">
+							<div class="hour">${key}:00</div>
+							<div class="badge">${key === nowHour ? 'JETZT' : key === bestHour && v.total > 0 ? 'PEAK' : 'HOUR'}</div>
+						</div>
+						<div class="hourTotal">${v.total}</div>
+						<div class="hourSub">Flugbewegungen</div>
+						<div class="bars">
+							<div class="bar">🛬 ${v.landings}</div>
+							<div class="bar">🛫 ${v.departures}</div>
+							<div class="bar">🛩️ ${v.overflights}</div>
+						</div>
+					</div>
+				`;
+
+				scroller.appendChild(card);
+			}
+
+			setTimeout(() => {
+				const now = scroller.querySelector('.hourCard.now');
+				if (now) now.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+			}, 200);
+		}
+
+		function render(data) {
+			$('dateText').textContent = data.date ? 'Heute · ' + data.date : 'Heute';
+			$('totalFlights').textContent = num(data.totalFlights);
+			$('landings').textContent = num(data.landings);
+			$('departures').textContent = num(data.departures);
+			$('overflights').textContent = num(data.overflights);
+
+			const rush = clean(data.rushHourNow) === 'true';
+			$('rushBox').classList.toggle('hot', rush);
+			$('rushText').textContent = clean(data.rushHourText) || 'Noch keine Rushhour erkannt';
+			$('bestText').textContent = clean(data.bestSpotterHour) ? 'Beste Zeit: ' + clean(data.bestSpotterHour) : 'Beste Zeit: –';
+
+			$('airlineRanking').textContent = clean(data.airlineRankingText) || '–';
+			$('routeRanking').textContent = clean(data.routeRankingText) || '–';
+
+			renderHours(parseHourly(data.hourly));
+		}
+
+		async function poll() {
+			const data = await readAll();
+			render(data);
+		}
+
+		poll();
+		setInterval(poll, 10000);
+	</script>
+</body>
+</html>
+

@@ -1,0 +1,146 @@
+{
+  "common": {
+    "webExtension": true,
+    "name": "jetframe",
+    "version": "0.6.0",
+    "news": {
+      "0.5.0": {
+        "en": "Added configurable visualization settings, visual source selection, aircraft prioritization, squawk/emergency detection, improved admin map behavior and mobile layout fixes.",
+        "de": "Konfigurierbare Visualisierung, auswählbare Anzeigequelle, Flugzeug-Priorisierung, Squawk-/Notfall-Erkennung sowie Verbesserungen an Admin-Karte und mobilem Layout hinzugefügt.",
+        "ru": "Добавлены настраиваемая визуализация, выбор источника отображения, приоритизация воздушных судов, обнаружение squawk/аварийных кодов, улучшения карты администратора и мобильной раскладки.",
+        "pt": "Adicionadas configurações de visualização, seleção da fonte exibida, priorização de aeronaves, detecção de squawk/emergência e melhorias no mapa/admin mobile.",
+        "nl": "Configureerbare visualisatie, selecteerbare weergavebron, vliegtuigprioritering, squawk/nooddetectie en verbeteringen aan admin-kaart en mobiele layout toegevoegd.",
+        "fr": "Ajout de paramètres de visualisation configurables, sélection de la source affichée, priorisation des avions, détection squawk/urgence et améliorations de la carte admin/mobile.",
+        "it": "Aggiunte impostazioni di visualizzazione configurabili, selezione della sorgente visualizzata, priorità degli aeromobili, rilevamento squawk/emergenza e miglioramenti alla mappa admin/mobile.",
+        "es": "Añadida visualización configurable, selección de fuente visual, priorización de aeronaves, detección de squawk/emergencia y mejoras del mapa admin/móvil.",
+        "pl": "Dodano konfigurowalną wizualizację, wybór źródła widoku, priorytetyzację samolotów, wykrywanie squawk/awarii oraz poprawki mapy admina i widoku mobilnego.",
+        "uk": "Додано налаштовувану візуалізацію, вибір джерела відображення, пріоритизацію літаків, виявлення squawk/аварійних кодів та покращення карти адміністратора і мобільного вигляду.",
+        "zh-cn": "新增可配置的可视化设置、显示来源选择、飞机优先级、Squawk/紧急状态检测，并改进了管理界面地图和移动端布局。"
+      },
+      "0.1.0": {
+        "en": "initial release",
+        "de": "Erstveröffentlichung",
+        "ru": "Начальная версия",
+        "pt": "lançamento inicial",
+        "nl": "Eerste uitgave",
+        "fr": "Première version",
+        "it": "Versione iniziale",
+        "es": "Versión inicial",
+        "pl": "Pierwsze wydanie",
+        "uk": "Початкова версія",
+        "zh-cn": "首次出版"
+      },
+      "0.2.0": {
+        "en": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
+        "de": "Beta-Release mit HexDB-Routen/Bildern, deutschen Flughafen-Ortsnamen, verbesserter Sprachausgabe-Triggerlogik, Nur-Überflug-Modus und Admin-UI-Fixes."
+      }
+    },
+    "titleLang": {
+      "en": "JetFrame",
+      "de": "JetFrame",
+      "ru": "ПолетСтена",
+      "pt": "Parede de voo",
+      "nl": "VluchtWall",
+      "fr": "Mur de Vol",
+      "it": "JetFrame",
+      "es": "Muro de vuelo",
+      "pl": "Ściana lotu",
+      "uk": "JetFrame",
+      "zh-cn": "飞行墙"
+    },
+    "desc": {
+      "en": "Flight tracking and visualization for window-based aircraft detection",
+      "de": "Flugverfolgung und -visualisierung zur fensterbasierten Flugzeugerkennung",
+      "ru": "Отслеживание полета и визуализация для обнаружения самолетов через окно",
+      "pt": "Rastreamento e visualização de voo para detecção de aeronaves baseada em janela",
+      "nl": "Vluchttracking en -visualisatie voor raamgebaseerde vliegtuigdetectie",
+      "fr": "Suivi et visualisation des vols pour la détection des avions par fenêtre",
+      "it": "Tracciamento e visualizzazione del volo per il rilevamento degli aerei basato su finestre",
+      "es": "Seguimiento y visualización de vuelos para la detección de aeronaves mediante ventanas",
+      "pl": "Śledzenie lotu i wizualizacja do wykrywania samolotów za pomocą okien",
+      "uk": "Відстеження польоту та візуалізація для виявлення літака через вікно",
+      "zh-cn": "基于窗口的飞机检测的飞行跟踪和可视化"
+    },
+    "authors": [
+      "backfisch88 <h@h.de>"
+    ],
+    "keywords": [
+      "flight",
+      "adsb",
+      "aircraft",
+      "tracking",
+      "fr24"
+    ],
+    "licenseInformation": {
+      "type": "free",
+      "license": "MIT"
+    },
+    "platform": "Javascript/Node.js",
+    "icon": "jetframe.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/backfisch88/ioBroker.jetframe/main/admin/jetframe.png",
+    "readme": "https://github.com/backfisch88/ioBroker.jetframe/blob/main/README.md",
+    "loglevel": "info",
+    "tier": 3,
+    "mode": "daemon",
+    "type": "visualization",
+    "compact": true,
+    "connectionType": "cloud",
+    "dataSource": "poll",
+    "adminUI": {
+      "config": "materialize"
+    },
+    "dependencies": [
+      {
+        "js-controller": ">=6.0.11"
+      }
+    ],
+    "globalDependencies": [
+      {
+        "admin": ">=7.0.23"
+      }
+    ],
+    "native": {
+      "speechEnabled": true
+    }
+  },
+  "native": {
+    "enabled": true,
+    "airportIata": "FRA",
+    "airportName": "Frankfurt",
+    "airportLat": 50.035686,
+    "airportLon": 8.562813,
+    "homeLat": 50.08637,
+    "homeLon": 8.69163,
+    "windowBearingDeg": 184,
+    "windowFovDeg": 120,
+    "maxHomeDistanceNm": 3.5,
+    "radiusNm": 15,
+    "minAltitudeFt": 1000,
+    "maxAltitudeFt": 5000,
+    "autoRunwayTrackToleranceDeg": 65,
+    "minClimbRate": 60,
+    "minSinkRate": -60,
+    "searchPollSeconds": 20,
+    "livePollSeconds": 5,
+    "liveMaxSeconds": 120,
+    "overflightEnabled": false,
+    "overflightMaxDistanceNm": 1.2,
+    "overflightMinAltitudeFt": 4000,
+    "overflightMaxAltitudeFt": 45000,
+    "speechMode": "browser",
+    "speechTemplate": "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuß. {windowPositionSpeechText}.",
+    "overflightRequiresWindow": false,
+    "overflightOnly": false,
+    "simpleApiHost": "",
+    "simpleApiPort": 8087,
+    "visualSource": "current",
+    "externalManufacturerLogos": false,
+    "manufacturerLogoUrls": "",
+    "externalAirlineLogos": false,
+    "airlineLogoBaseUrl": ""
+  },
+  "objects": [],
+  "instanceObjects": [],
+  "version": "0.6.0"
+}

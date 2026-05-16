@@ -22,6 +22,8 @@ __export(adsb_exports, {
   parseAircraft: () => parseAircraft
 });
 module.exports = __toCommonJS(adsb_exports);
+const ADSB_ERROR_STATE = {};
+const ADSB_503_STATE = {};
 function clean(v) {
   return String(v || "").trim();
 }
@@ -46,21 +48,61 @@ function parseAltitude(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
-async function fetchAdsb(config, httpJsonRaw, logWarn) {
+async function fetchAdsb(config, httpJsonRaw, logWarn, logDebug) {
   const urls = buildAdsbUrls(config);
   const aircraftByKey = {};
-  for (const url of urls) {
+  for (const primaryUrl of urls) {
+    const sources = [{ name: "adsb.lol", url: primaryUrl }];
+    const fallbackUrl = buildAdsbFiFallbackUrl(primaryUrl);
+    if (fallbackUrl) {
+      sources.push({ name: "adsb.fi", url: fallbackUrl });
+    }
     let body = null;
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        body = await httpJsonRaw(url);
-        break;
-      } catch (e) {
-        logWarn(`ADSB Fehler Versuch ${attempt}: ${errorText(e)} | ${url}`);
-        if (attempt < 2) {
-          await sleep(1500);
+    let usedSource = "";
+    for (const source of sources) {
+      const maxAttempts = source.name === "adsb.lol" ? 1 : 2;
+      if (source.name !== "adsb.lol") {
+        logDebug == null ? void 0 : logDebug(`ADSB adsb.lol fehlgeschlagen \u2013 versuche ${source.name} Fallback`);
+      }
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          body = await httpJsonRaw(source.url);
+          usedSource = source.name;
+          if (source.name !== "adsb.lol") {
+            logDebug == null ? void 0 : logDebug(`ADSB Fallback aktiv: ${source.name}`);
+          }
+          logDebug == null ? void 0 : logDebug(`ADSB Quelle: ${source.name}`);
+          break;
+        } catch (e) {
+          const errText = errorText(e);
+          const isSoftAdsbError = errText.includes("HTTP 502") || errText.includes("HTTP 503") || errText.toLowerCase().includes("timeout") || errText.includes("HTML statt JSON");
+          const key = `${source.name}:${source.url}`;
+          const now = Date.now();
+          const st = ADSB_ERROR_STATE[key] || { count: 0, lastWarn: 0 };
+          st.count++;
+          if (!isSoftAdsbError || now - st.lastWarn > 3e5) {
+            if (isSoftAdsbError) {
+              logDebug == null ? void 0 : logDebug(`ADSB ${source.name} tempor\xE4r nicht erreichbar (${errText})`);
+            } else {
+              logDebug == null ? void 0 : logDebug(`ADSB ${source.name} Fehler Versuch ${attempt}: ${errText}`);
+            }
+            st.lastWarn = now;
+          }
+          ADSB_ERROR_STATE[key] = st;
+          if (attempt < maxAttempts) {
+            await sleep(1500);
+          }
         }
       }
+      if (body) {
+        break;
+      }
+    }
+    if (!body) {
+      continue;
+    }
+    if (usedSource) {
+      logDebug == null ? void 0 : logDebug(`ADSB Daten empfangen \xFCber ${usedSource}`);
     }
     const arr = Array.isArray(body == null ? void 0 : body.aircraft) ? body.aircraft : Array.isArray(body == null ? void 0 : body.ac) ? body.ac : [];
     for (const item of arr) {
@@ -96,6 +138,19 @@ function buildAdsbUrls(config) {
     }
   }
   return urls;
+}
+function buildAdsbFiFallbackUrl(url) {
+  const m = String(url || "").match(/\/lat\/([^/]+)\/lon\/([^/]+)\/dist\/([^/?#]+)/);
+  if (!m) {
+    return "";
+  }
+  const lat = m[1];
+  const lon = m[2];
+  const dist = m[3];
+  if (!lat || !lon || !dist) {
+    return "";
+  }
+  return `https://opendata.adsb.fi/api/v3/lat/${lat}/lon/${lon}/dist/${dist}`;
 }
 function replaceAdsbUrlTokens(url, config) {
   var _a, _b, _c, _d, _e, _f;
@@ -154,6 +209,21 @@ function errorText(e) {
   } catch {
     return String(e);
   }
+}
+function shouldWarn503(url) {
+  const now = Date.now();
+  const item = ADSB_503_STATE[url] || { count: 0, lastWarn: 0 };
+  item.count += 1;
+  const first = item.count === 1;
+  const everyTen = item.count % 10 === 0;
+  const olderThanFiveMin = now - item.lastWarn > 5 * 60 * 1e3;
+  if (first || everyTen || olderThanFiveMin) {
+    item.lastWarn = now;
+    ADSB_503_STATE[url] = item;
+    return true;
+  }
+  ADSB_503_STATE[url] = item;
+  return false;
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

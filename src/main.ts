@@ -11,7 +11,7 @@ import { fetchAdsb, parseAircraft } from './lib/adsb';
 import { getMatches } from './lib/classify';
 import { ensureStates, writeFlight, clearFlight } from './lib/states';
 
-import { ensureImageDirs, saveImages } from './lib/images';
+import { clearImageCache, ensureImageDirs, saveImages } from './lib/images';
 import { writeVisConfig } from './lib/visConfig';
 
 import { enrichFlightInfo } from './lib/flightInfo';
@@ -23,6 +23,8 @@ class Jetframe extends utils.Adapter {
 	private liveStarted = 0;
 	private lastStartKey = '';
 	private lastStartTs = 0;
+	private lastImageSaveKey = '';
+	private lastIdleRunwayText = '';
 
 	public constructor(options: Partial<utils.AdapterOptions> = {}) {
 		super({
@@ -32,6 +34,7 @@ class Jetframe extends utils.Adapter {
 
 		this.on('ready', this.onReady.bind(this));
 		this.on('unload', this.onUnload.bind(this));
+		this.on('stateChange', this.onStateChange.bind(this));
 	}
 
 	private async onReady(): Promise<void> {
@@ -42,6 +45,10 @@ class Jetframe extends utils.Adapter {
 			const config = readConfig(this);
 
 			await ensureStates(this, config);
+			await this.ensureStatisticsStates(config.dpRoot);
+			await this.ensureProbableRunwayStates(config.dpRoot);
+			await this.ensureIdleRunwayState(config.dpRoot);
+			this.subscribeStates('clearImageCache');
 			this.log.debug('[JetFrame] States OK');
 
 			await ensureImageDirs(this, this.logDebug.bind(this), this.logWarn.bind(this));
@@ -64,6 +71,826 @@ class Jetframe extends utils.Adapter {
 		} catch (e) {
 			this.logError(`onReady Fehler: ${this.errorText(e)}`);
 		}
+	}
+
+	private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
+		if (!state || state.ack || state.val !== true) {
+			return;
+		}
+
+		const config = readConfig(this);
+
+		if (id !== `${config.dpRoot}.clearImageCache`) {
+			return;
+		}
+
+		try {
+			await clearImageCache(this, this.logDebug.bind(this), this.logWarn.bind(this));
+			await this.setForeignStateAsync(`${config.dpRoot}.clearImageCache`, false, true);
+			this.log.info('JetFrame Bild-/Logo-Cache wurde geleert');
+		} catch (e) {
+			this.logWarn(`Cache leeren fehlgeschlagen: ${this.errorText(e)}`);
+			await this.setForeignStateAsync(`${config.dpRoot}.clearImageCache`, false, true);
+		}
+	}
+
+	private async ensureIdleRunwayState(dpRoot: string): Promise<void> {
+		try {
+			await (this as any).setForeignObjectNotExistsAsync(`${dpRoot}.idleRunwayText`, {
+				type: 'state',
+				common: {
+					name: 'Idle active runway text',
+					type: 'string',
+					role: 'text',
+					read: true,
+					write: false,
+				},
+				native: {},
+			});
+		} catch (e) {
+			this.logWarn(`idleRunwayText State konnte nicht erstellt werden: ${this.errorText(e)}`);
+		}
+	}
+
+	private async updateIdleRunway(a: Aircraft, config: any): Promise<void> {
+		const track = Number((a as any).trackDeg || (a as any).track || 0);
+
+		if (!Number.isFinite(track) || !track) {
+			return;
+		}
+
+		let runways: any[] = [];
+
+		try {
+			const st = await this.getForeignStateAsync(`${config.dpRoot}.airportjson`);
+			const airports = JSON.parse(String(st?.val || '[]'));
+
+			const airportIata = String(config.airport?.iata || '')
+				.trim()
+				.toUpperCase();
+
+			const airport = Array.isArray(airports)
+				? airports.find(
+						(x: any) =>
+							String(x.iata || x.IATA || '')
+								.trim()
+								.toUpperCase() === airportIata,
+					)
+				: null;
+
+			runways = Array.isArray(airport?.runways) ? airport.runways : [];
+		} catch {
+			runways = [];
+		}
+
+		let bestName = '';
+		let bestGroup = '';
+		let bestDiff = 999;
+
+		for (const rw of runways) {
+			const sides = [
+				{ name: rw.leIdent, heading: rw.leHeadingDeg },
+				{ name: rw.heIdent, heading: rw.heHeadingDeg },
+			];
+
+			for (const side of sides) {
+				const name = String(side.name || '')
+					.trim()
+					.toUpperCase();
+				const heading = Number(side.heading);
+
+				if (!name || !Number.isFinite(heading)) {
+					continue;
+				}
+
+				let diff = Math.abs(track - heading);
+
+				if (diff > 180) {
+					diff = 360 - diff;
+				}
+
+				if (diff < bestDiff) {
+					bestDiff = diff;
+					bestName = name;
+					bestGroup = name.replace(/[LCR]$/i, '');
+				}
+			}
+		}
+
+		let runway = '';
+
+		if (bestName && bestDiff <= 35) {
+			runway = `RWY ${bestGroup || bestName} aktiv`;
+		} else {
+			runway = `Aktive Richtung ${Math.round(track)}°`;
+		}
+
+		const mode = a.mode === 'LANDING' ? 'Landungen' : a.mode === 'TAKEOFF' ? 'Starts' : 'Traffic';
+
+		const text = `${runway} · ${mode}`;
+
+		if (text === this.lastIdleRunwayText) {
+			return;
+		}
+
+		this.lastIdleRunwayText = text;
+		await this.setForeignStateAsync(`${config.dpRoot}.idleRunwayText`, text, true);
+	}
+
+	private async ensureProbableRunwayStates(dpRoot: string): Promise<void> {
+		const bases = [`${dpRoot}.current`, `${dpRoot}.airport`, `${dpRoot}.overflight`];
+
+		for (const base of bases) {
+			await this.ensureSimpleState(`${base}.probableRunway`, 'Probable runway', 'string', 'text');
+			await this.ensureSimpleState(`${base}.probableRunwayText`, 'Probable runway text', 'string', 'text');
+			await this.ensureSimpleState(`${base}.probableRunwayHeading`, 'Probable runway heading', 'number', 'value');
+			await this.ensureSimpleState(
+				`${base}.probableRunwayDiffDeg`,
+				'Probable runway difference degrees',
+				'number',
+				'value',
+			);
+		}
+	}
+
+	private async ensureSimpleState(id: string, name: string, type: ioBroker.CommonType, role: string): Promise<void> {
+		try {
+			await (this as any).setForeignObjectNotExistsAsync(id, {
+				type: 'state',
+				common: {
+					name,
+					type,
+					role,
+					read: true,
+					write: false,
+				},
+				native: {},
+			});
+
+			const st = await this.getForeignStateAsync(id);
+
+			if (!st) {
+				await this.setForeignStateAsync(id, type === 'number' ? 0 : '', true);
+			}
+		} catch (e) {
+			this.logWarn(`State konnte nicht erstellt/initialisiert werden: ${id} | ${this.errorText(e)}`);
+		}
+	}
+
+	private async applyProbableRunway(a: Aircraft, config: any): Promise<void> {
+		const track = Number((a as any).trackDeg || (a as any).track || 0);
+
+		if (!Number.isFinite(track) || !track) {
+			return;
+		}
+
+		let runways: any[] = [];
+
+		try {
+			const st = await this.getForeignStateAsync(`${config.dpRoot}.airportjson`);
+			const airports = JSON.parse(String(st?.val || '[]'));
+
+			const airportIata = String(config.airport?.iata || '')
+				.trim()
+				.toUpperCase();
+
+			const airport = Array.isArray(airports)
+				? airports.find(
+						(x: any) =>
+							String(x.iata || x.IATA || '')
+								.trim()
+								.toUpperCase() === airportIata,
+					)
+				: null;
+
+			runways = Array.isArray(airport?.runways) ? airport.runways : [];
+		} catch {
+			runways = [];
+		}
+
+		let bestName = '';
+		let bestGroup = '';
+		let bestHeading = 0;
+		let bestDiff = 999;
+
+		for (const rw of runways) {
+			const sides = [
+				{ name: rw.leIdent, heading: rw.leHeadingDeg },
+				{ name: rw.heIdent, heading: rw.heHeadingDeg },
+			];
+
+			for (const side of sides) {
+				const name = String(side.name || '')
+					.trim()
+					.toUpperCase();
+				const heading = Number(side.heading);
+
+				if (!name || !Number.isFinite(heading)) {
+					continue;
+				}
+
+				let diff = Math.abs(track - heading);
+
+				if (diff > 180) {
+					diff = 360 - diff;
+				}
+
+				if (diff < bestDiff) {
+					bestDiff = diff;
+					bestName = name;
+					bestGroup = name.replace(/[LCR]$/i, '');
+					bestHeading = heading;
+				}
+			}
+		}
+
+		if (!bestName || bestDiff > 35) {
+			(a as any).probableRunway = '';
+			(a as any).probableRunwayText = '';
+			(a as any).probableRunwayHeading = 0;
+			(a as any).probableRunwayDiffDeg = 0;
+			(a as any).runwayConfidence = 0;
+			return;
+		}
+
+		const modeIcon = a.mode === 'LANDING' ? '🛬' : a.mode === 'TAKEOFF' ? '🛫' : '📡';
+		const modeText = a.mode === 'LANDING' ? 'Landung' : a.mode === 'TAKEOFF' ? 'Start' : 'Traffic';
+
+		const confidence = Math.max(0, Math.min(100, Math.round(100 - (bestDiff / 35) * 100)));
+
+		(a as any).probableRunway = bestGroup || bestName;
+		(a as any).probableRunwayHeading = Math.round(bestHeading);
+		(a as any).probableRunwayDiffDeg = Math.round(bestDiff);
+		(a as any).runwayConfidence = confidence;
+		(a as any).probableRunwayText = `${modeIcon} vermutlich RWY ${bestGroup || bestName} · ${modeText}`;
+	}
+
+	private async ensureStatisticsStates(dpRoot: string): Promise<void> {
+		const base = `${dpRoot}.statistics`;
+
+		await this.ensureSimpleState(`${base}.totalFlightsSeen`, 'Total flights seen', 'number', 'value');
+		await this.ensureSimpleState(`${base}.landings`, 'Landings', 'number', 'value');
+		await this.ensureSimpleState(`${base}.departures`, 'Departures', 'number', 'value');
+		await this.ensureSimpleState(`${base}.overflights`, 'Overflights', 'number', 'value');
+
+		await this.ensureSimpleState(`${base}.lastFlight`, 'Last flight', 'string', 'text');
+		await this.ensureSimpleState(`${base}.lastAirline`, 'Last airline', 'string', 'text');
+		await this.ensureSimpleState(`${base}.lastRoute`, 'Last route', 'string', 'text');
+		await this.ensureSimpleState(`${base}.lastRegistration`, 'Last registration', 'string', 'text');
+		await this.ensureSimpleState(`${base}.lastSeen`, 'Last seen', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.airlineRanking`, 'Airline ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.airlineRankingText`, 'Airline ranking text', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.aircraftTypeRanking`, 'Aircraft type ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.aircraftTypeRankingText`, 'Aircraft type ranking text', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.registrationRanking`, 'Registration ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.registrationRankingText`, 'Registration ranking text', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.runwayUsageRanking`, 'Runway usage ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.runwayUsageRankingText`, 'Runway usage ranking text', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.airlineRunwayRanking`, 'Airline runway ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(
+			`${base}.airlineRunwayRankingText`,
+			'Airline runway ranking text',
+			'string',
+			'text',
+		);
+
+		await this.ensureSimpleState(`${base}.flightLogHistory`, 'Flight log history JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.flightLogHistoryText`, 'Flight log history text', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.date`, 'Today date', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.totalFlights`, 'Today total flights', 'number', 'value');
+		await this.ensureSimpleState(`${base}.today.landings`, 'Today landings', 'number', 'value');
+		await this.ensureSimpleState(`${base}.today.departures`, 'Today departures', 'number', 'value');
+		await this.ensureSimpleState(`${base}.today.overflights`, 'Today overflights', 'number', 'value');
+
+		await this.ensureSimpleState(`${base}.today.firstSeen`, 'Today first seen', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.lastSeen`, 'Today last seen', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.lastFlight`, 'Today last flight', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.lastAirline`, 'Today last airline', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.lastRoute`, 'Today last route', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.lastRegistration`, 'Today last registration', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.topAirline`, 'Today top airline', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.topRoute`, 'Today top route', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.airlineRanking`, 'Today airline ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(
+			`${base}.today.airlineRankingText`,
+			'Today airline ranking text',
+			'string',
+			'text',
+		);
+		await this.ensureSimpleState(`${base}.today.routeRanking`, 'Today route ranking JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.today.routeRankingText`, 'Today route ranking text', 'string', 'text');
+
+		await this.ensureSimpleState(`${base}.today.hourly`, 'Today hourly flights JSON', 'string', 'json');
+		await this.ensureSimpleState(`${base}.today.hourlyText`, 'Today hourly flights text', 'string', 'text');
+		await this.ensureSimpleState(`${base}.today.bestSpotterHour`, 'Today best spotter hour', 'string', 'text');
+		await this.ensureSimpleState(
+			`${base}.today.currentHourFlights`,
+			'Today current hour flights',
+			'number',
+			'value',
+		);
+		await this.ensureSimpleState(`${base}.today.rushHourNow`, 'Rush hour now', 'boolean', 'indicator');
+		await this.ensureSimpleState(`${base}.today.rushHourText`, 'Rush hour text', 'string', 'text');
+	}
+
+	private async readNumberState(id: string): Promise<number> {
+		try {
+			const st = await this.getForeignStateAsync(id);
+			const n = Number(st?.val || 0);
+			return Number.isFinite(n) ? n : 0;
+		} catch {
+			return 0;
+		}
+	}
+
+	private async readJsonState<T>(id: string, fallback: T): Promise<T> {
+		try {
+			const st = await this.getForeignStateAsync(id);
+			const raw = String(st?.val || '').trim();
+
+			if (!raw) {
+				return fallback;
+			}
+
+			return JSON.parse(raw) as T;
+		} catch {
+			return fallback;
+		}
+	}
+
+	private topRankingText(entries: Array<[string, number]>, limit = 5): string {
+		return entries
+			.slice(0, limit)
+			.map(([name, count], index) => `${index + 1}. ${name} · ${count}`)
+			.join('\n');
+	}
+
+	private sortedRanking(data: Record<string, number>, limit = 30): Array<[string, number]> {
+		return Object.entries(data)
+			.filter(([name]) => !!this.clean(name))
+			.sort((aEntry, bEntry) => bEntry[1] - aEntry[1] || aEntry[0].localeCompare(bEntry[0]))
+			.slice(0, limit);
+	}
+
+	private async incrementRankingState(
+		id: string,
+		textId: string,
+		key: string,
+		limit = 30,
+		textLimit = 5,
+	): Promise<Array<[string, number]>> {
+		const cleanKey = this.clean(key);
+
+		if (!cleanKey) {
+			return [];
+		}
+
+		const ranking = await this.readJsonState<Record<string, number>>(id, {});
+		ranking[cleanKey] = (ranking[cleanKey] || 0) + 1;
+
+		const sorted = this.sortedRanking(ranking, limit);
+
+		await this.setForeignStateAsync(id, JSON.stringify(Object.fromEntries(sorted)), true);
+		await this.setForeignStateAsync(textId, this.topRankingText(sorted, textLimit), true);
+
+		return sorted;
+	}
+
+	private async updateGlobalDetailedStatistics(
+		base: string,
+		a: Aircraft,
+		info: {
+			mode: string;
+			callsign: string;
+			airline: string;
+			registration: string;
+			route: string;
+		},
+	): Promise<void> {
+		const type =
+			this.clean((a as any).aircraftTypeText) ||
+			this.clean(a.aircraftModel) ||
+			this.clean(a.aircraftType) ||
+			this.clean((a as any).type) ||
+			'Unbekannt';
+
+		await this.incrementRankingState(`${base}.aircraftTypeRanking`, `${base}.aircraftTypeRankingText`, type, 40, 8);
+
+		if (info.registration) {
+			await this.incrementRankingState(
+				`${base}.registrationRanking`,
+				`${base}.registrationRankingText`,
+				info.registration,
+				50,
+				8,
+			);
+		}
+
+		const runway = this.clean((a as any).probableRunway || '');
+		const runwayConfidence = Number((a as any).runwayConfidence || 0);
+
+		if (runway && runwayConfidence >= 40) {
+			await this.incrementRankingState(
+				`${base}.runwayUsageRanking`,
+				`${base}.runwayUsageRankingText`,
+				runway,
+				30,
+				8,
+			);
+
+			const airlineRunwayKey = `${info.airline} → RWY ${runway}`;
+
+			await this.incrementRankingState(
+				`${base}.airlineRunwayRanking`,
+				`${base}.airlineRunwayRankingText`,
+				airlineRunwayKey,
+				50,
+				8,
+			);
+		}
+
+		const historyId = `${base}.flightLogHistory`;
+		const historyTextId = `${base}.flightLogHistoryText`;
+
+		const history = await this.readJsonState<any[]>(historyId, []);
+
+		const entry = {
+			ts: new Date().toISOString(),
+			mode: info.mode,
+			phase: this.clean((a as any).flightPhase || ''),
+			callsign: info.callsign,
+			airline: info.airline,
+			route: info.route,
+			originIata: this.clean(a.originIata || ''),
+			destIata: this.clean(a.destIata || ''),
+			registration: info.registration,
+			aircraftType: type,
+			runway,
+			runwayConfidence: Number.isFinite(runwayConfidence) ? runwayConfidence : 0,
+		};
+
+		history.unshift(entry);
+
+		const limitedHistory = history.slice(0, 200);
+
+		const historyText = limitedHistory
+			.slice(0, 10)
+			.map(item => {
+				const d = new Date(item.ts);
+				const hh = String(d.getHours()).padStart(2, '0');
+				const mm = String(d.getMinutes()).padStart(2, '0');
+				const icon = item.mode === 'LANDING' ? '🛬' : item.mode === 'TAKEOFF' ? '🛫' : '🛩️';
+				const rw = item.runway ? ` · RWY ${item.runway}` : '';
+				const routeText = item.route ? ` · ${item.route}` : '';
+
+				return `${hh}:${mm} ${icon} ${item.callsign || '?'} · ${item.airline || '?'}${routeText}${rw}`;
+			})
+			.join('\n');
+
+		await this.setForeignStateAsync(historyId, JSON.stringify(limitedHistory), true);
+		await this.setForeignStateAsync(historyTextId, historyText, true);
+	}
+
+	private todayDateKey(): string {
+		const d = new Date();
+		const yyyy = d.getFullYear();
+		const mm = String(d.getMonth() + 1).padStart(2, '0');
+		const dd = String(d.getDate()).padStart(2, '0');
+
+		return `${yyyy}-${mm}-${dd}`;
+	}
+
+	private async resetTodayStatisticsIfNeeded(base: string): Promise<void> {
+		const todayBase = `${base}.today`;
+		const today = this.todayDateKey();
+
+		let storedDate = '';
+
+		try {
+			const st = await this.getForeignStateAsync(`${todayBase}.date`);
+			storedDate = this.clean(st?.val);
+		} catch {
+			storedDate = '';
+		}
+
+		if (storedDate === today) {
+			return;
+		}
+
+		await this.setForeignStateAsync(`${todayBase}.date`, today, true);
+		await this.setForeignStateAsync(`${todayBase}.totalFlights`, 0, true);
+		await this.setForeignStateAsync(`${todayBase}.landings`, 0, true);
+		await this.setForeignStateAsync(`${todayBase}.departures`, 0, true);
+		await this.setForeignStateAsync(`${todayBase}.overflights`, 0, true);
+
+		await this.setForeignStateAsync(`${todayBase}.firstSeen`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.lastSeen`, '', true);
+
+		await this.setForeignStateAsync(`${todayBase}.lastFlight`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.lastAirline`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.lastRoute`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.lastRegistration`, '', true);
+
+		await this.setForeignStateAsync(`${todayBase}.topAirline`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.topRoute`, '', true);
+
+		await this.setForeignStateAsync(`${todayBase}.airlineRanking`, '{}', true);
+		await this.setForeignStateAsync(`${todayBase}.airlineRankingText`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.routeRanking`, '{}', true);
+		await this.setForeignStateAsync(`${todayBase}.routeRankingText`, '', true);
+
+		await this.setForeignStateAsync(`${todayBase}.hourly`, JSON.stringify(this.emptyHourlyStats()), true);
+		await this.setForeignStateAsync(`${todayBase}.hourlyText`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.bestSpotterHour`, '', true);
+		await this.setForeignStateAsync(`${todayBase}.currentHourFlights`, 0, true);
+		await this.setForeignStateAsync(`${todayBase}.rushHourNow`, false, true);
+		await this.setForeignStateAsync(`${todayBase}.rushHourText`, '', true);
+	}
+
+	private emptyHourlyStats(): Record<
+		string,
+		{ total: number; landings: number; departures: number; overflights: number }
+	> {
+		const result: Record<string, { total: number; landings: number; departures: number; overflights: number }> = {};
+
+		for (let h = 0; h < 24; h++) {
+			const key = String(h).padStart(2, '0');
+			result[key] = {
+				total: 0,
+				landings: 0,
+				departures: 0,
+				overflights: 0,
+			};
+		}
+
+		return result;
+	}
+
+	private async updateTodayHourlyStatistics(todayBase: string, mode: string): Promise<void> {
+		const now = new Date();
+		const hour = String(now.getHours()).padStart(2, '0');
+
+		const hourly = await this.readJsonState<
+			Record<string, { total: number; landings: number; departures: number; overflights: number }>
+		>(`${todayBase}.hourly`, this.emptyHourlyStats());
+
+		if (!hourly[hour]) {
+			hourly[hour] = {
+				total: 0,
+				landings: 0,
+				departures: 0,
+				overflights: 0,
+			};
+		}
+
+		hourly[hour].total += 1;
+
+		if (mode === 'LANDING') {
+			hourly[hour].landings += 1;
+		} else if (mode === 'TAKEOFF') {
+			hourly[hour].departures += 1;
+		} else if (mode === 'OVERFLIGHT') {
+			hourly[hour].overflights += 1;
+		}
+
+		const entries = Object.entries(hourly).sort((a, b) => Number(a[0]) - Number(b[0]));
+
+		const activeEntries = entries.filter(([, v]) => v.total > 0);
+
+		const hourlyText = activeEntries
+			.map(([h, v]) => `${h}:00 · ${v.total} (${v.landings}🛬 ${v.departures}🛫 ${v.overflights}🛩️)`)
+			.join('\n');
+
+		const best = activeEntries.slice().sort((a, b) => b[1].total - a[1].total || Number(a[0]) - Number(b[0]))[0];
+
+		const currentHourTotal = hourly[hour]?.total || 0;
+		const avgActive =
+			activeEntries.length > 0
+				? activeEntries.reduce((sum, [, v]) => sum + v.total, 0) / activeEntries.length
+				: 0;
+
+		const rushHourNow = currentHourTotal >= 5 && currentHourTotal >= Math.max(3, Math.ceil(avgActive * 1.35));
+
+		const rushHourText = rushHourNow
+			? `🔥 Rushhour: ${currentHourTotal} Flüge seit ${hour}:00`
+			: currentHourTotal > 0
+				? `Aktuelle Stunde: ${currentHourTotal} Flüge`
+				: '';
+
+		await this.setForeignStateAsync(`${todayBase}.hourly`, JSON.stringify(hourly), true);
+		await this.setForeignStateAsync(`${todayBase}.hourlyText`, hourlyText, true);
+		await this.setForeignStateAsync(
+			`${todayBase}.bestSpotterHour`,
+			best ? `${best[0]}:00 · ${best[1].total} Flüge` : '',
+			true,
+		);
+		await this.setForeignStateAsync(`${todayBase}.currentHourFlights`, currentHourTotal, true);
+		await this.setForeignStateAsync(`${todayBase}.rushHourNow`, rushHourNow, true);
+		await this.setForeignStateAsync(`${todayBase}.rushHourText`, rushHourText, true);
+	}
+
+	private async updateTodayStatistics(
+		base: string,
+		a: Aircraft,
+		info: {
+			mode: string;
+			callsign: string;
+			airline: string;
+			registration: string;
+			route: string;
+		},
+	): Promise<void> {
+		await this.resetTodayStatisticsIfNeeded(base);
+
+		const todayBase = `${base}.today`;
+		const nowIso = new Date().toISOString();
+
+		const total = (await this.readNumberState(`${todayBase}.totalFlights`)) + 1;
+
+		await this.setForeignStateAsync(`${todayBase}.totalFlights`, total, true);
+
+		if (info.mode === 'LANDING') {
+			await this.setForeignStateAsync(
+				`${todayBase}.landings`,
+				(await this.readNumberState(`${todayBase}.landings`)) + 1,
+				true,
+			);
+		} else if (info.mode === 'TAKEOFF') {
+			await this.setForeignStateAsync(
+				`${todayBase}.departures`,
+				(await this.readNumberState(`${todayBase}.departures`)) + 1,
+				true,
+			);
+		} else if (info.mode === 'OVERFLIGHT') {
+			await this.setForeignStateAsync(
+				`${todayBase}.overflights`,
+				(await this.readNumberState(`${todayBase}.overflights`)) + 1,
+				true,
+			);
+		}
+
+		try {
+			const firstSeen = this.clean((await this.getForeignStateAsync(`${todayBase}.firstSeen`))?.val);
+
+			if (!firstSeen) {
+				await this.setForeignStateAsync(`${todayBase}.firstSeen`, nowIso, true);
+			}
+		} catch {
+			await this.setForeignStateAsync(`${todayBase}.firstSeen`, nowIso, true);
+		}
+
+		await this.setForeignStateAsync(`${todayBase}.lastSeen`, nowIso, true);
+		await this.setForeignStateAsync(`${todayBase}.lastFlight`, info.callsign, true);
+		await this.setForeignStateAsync(`${todayBase}.lastAirline`, info.airline, true);
+		await this.setForeignStateAsync(`${todayBase}.lastRoute`, info.route, true);
+		await this.setForeignStateAsync(`${todayBase}.lastRegistration`, info.registration, true);
+
+		const airlineRanking = await this.readJsonState<Record<string, number>>(`${todayBase}.airlineRanking`, {});
+		airlineRanking[info.airline] = (airlineRanking[info.airline] || 0) + 1;
+
+		const airlineSorted = Object.entries(airlineRanking)
+			.sort((aEntry, bEntry) => bEntry[1] - aEntry[1] || aEntry[0].localeCompare(bEntry[0]))
+			.slice(0, 20);
+
+		const airlineText = airlineSorted
+			.slice(0, 5)
+			.map(([name, count], index) => `${index + 1}. ${name} · ${count}`)
+			.join('\n');
+
+		await this.setForeignStateAsync(
+			`${todayBase}.airlineRanking`,
+			JSON.stringify(Object.fromEntries(airlineSorted)),
+			true,
+		);
+		await this.setForeignStateAsync(`${todayBase}.airlineRankingText`, airlineText, true);
+		await this.setForeignStateAsync(
+			`${todayBase}.topAirline`,
+			airlineSorted.length ? `${airlineSorted[0][0]} · ${airlineSorted[0][1]}` : '',
+			true,
+		);
+
+		if (info.route) {
+			const routeRanking = await this.readJsonState<Record<string, number>>(`${todayBase}.routeRanking`, {});
+			routeRanking[info.route] = (routeRanking[info.route] || 0) + 1;
+
+			const routeSorted = Object.entries(routeRanking)
+				.filter(([routeName]) => {
+					const r = this.clean(routeName);
+					return r && !r.includes('?') && r.includes('→');
+				})
+				.sort((aEntry, bEntry) => bEntry[1] - aEntry[1] || aEntry[0].localeCompare(bEntry[0]))
+				.slice(0, 20);
+
+			const routeText = routeSorted
+				.slice(0, 5)
+				.map(([name, count], index) => `${index + 1}. ${name} · ${count}`)
+				.join('\n');
+
+			await this.setForeignStateAsync(
+				`${todayBase}.routeRanking`,
+				JSON.stringify(Object.fromEntries(routeSorted)),
+				true,
+			);
+			await this.setForeignStateAsync(`${todayBase}.routeRankingText`, routeText, true);
+			await this.setForeignStateAsync(
+				`${todayBase}.topRoute`,
+				routeSorted.length ? `${routeSorted[0][0]} · ${routeSorted[0][1]}` : '',
+				true,
+			);
+		}
+
+		await this.updateTodayHourlyStatistics(todayBase, info.mode);
+	}
+
+	private async updateStatistics(dpRoot: string, a: Aircraft): Promise<void> {
+		const base = `${dpRoot}.statistics`;
+		const mode = String(a.mode || '').toUpperCase();
+
+		const callsign = this.clean(a.routeCallsign || a.callsign || a.hex || '');
+		const airline = this.clean(a.airlineName || 'Unbekannte Airline');
+		const registration = this.clean(a.registration || '');
+
+		const origin = this.clean(a.originIata || '');
+		const dest = this.clean(a.destIata || '');
+
+		// Route nur verwenden, wenn Start UND Ziel bekannt sind.
+		// Unvollständige Routen wie "? → FRA" oder "FCO → ?" werden ignoriert.
+		const route = origin && dest ? `${origin} → ${dest}` : '';
+
+		await this.setForeignStateAsync(
+			`${base}.totalFlightsSeen`,
+			(await this.readNumberState(`${base}.totalFlightsSeen`)) + 1,
+			true,
+		);
+
+		if (mode === 'LANDING') {
+			await this.setForeignStateAsync(
+				`${base}.landings`,
+				(await this.readNumberState(`${base}.landings`)) + 1,
+				true,
+			);
+		} else if (mode === 'TAKEOFF') {
+			await this.setForeignStateAsync(
+				`${base}.departures`,
+				(await this.readNumberState(`${base}.departures`)) + 1,
+				true,
+			);
+		} else if (mode === 'OVERFLIGHT') {
+			await this.setForeignStateAsync(
+				`${base}.overflights`,
+				(await this.readNumberState(`${base}.overflights`)) + 1,
+				true,
+			);
+		}
+
+		await this.setForeignStateAsync(`${base}.lastFlight`, callsign, true);
+		await this.setForeignStateAsync(`${base}.lastAirline`, airline, true);
+		await this.setForeignStateAsync(`${base}.lastRoute`, route, true);
+		await this.setForeignStateAsync(`${base}.lastRegistration`, registration, true);
+		await this.setForeignStateAsync(`${base}.lastSeen`, new Date().toISOString(), true);
+
+		const ranking = await this.readJsonState<Record<string, number>>(`${base}.airlineRanking`, {});
+
+		ranking[airline] = (ranking[airline] || 0) + 1;
+
+		const sorted = Object.entries(ranking)
+			.sort((aEntry, bEntry) => bEntry[1] - aEntry[1] || aEntry[0].localeCompare(bEntry[0]))
+			.slice(0, 20);
+
+		const rankingJson = Object.fromEntries(sorted);
+
+		const rankingText = sorted
+			.slice(0, 5)
+			.map(([name, count], index) => `${index + 1}. ${name} · ${count}`)
+			.join('\n');
+
+		await this.setForeignStateAsync(`${base}.airlineRanking`, JSON.stringify(rankingJson), true);
+		await this.setForeignStateAsync(`${base}.airlineRankingText`, rankingText, true);
+
+		await this.updateGlobalDetailedStatistics(base, a, {
+			mode,
+			callsign,
+			airline,
+			registration,
+			route,
+		});
+
+		await this.updateTodayStatistics(base, a, {
+			mode,
+			callsign,
+			airline,
+			registration,
+			route,
+		});
 	}
 
 	private async loop(): Promise<void> {
@@ -99,7 +926,12 @@ class Jetframe extends utils.Adapter {
 
 		await this.setForeignStateAsync(`${config.dpRoot}.status`, 'searching', true);
 
-		const data = await fetchAdsb(config, this.httpJsonRaw.bind(this), this.logWarn.bind(this));
+		const data = await fetchAdsb(
+			config,
+			this.httpJsonRaw.bind(this),
+			this.logWarn.bind(this),
+			this.logDebug.bind(this),
+		);
 
 		this.log.debug('[JetFrame] ADSB Fetch OK');
 
@@ -108,6 +940,10 @@ class Jetframe extends utils.Adapter {
 		this.log.debug(`Aircraft parsed: ${aircraft.length}`);
 
 		const matches = getMatches(config, aircraft);
+
+		if (matches.length) {
+			await this.updateIdleRunway(matches[0], config);
+		}
 
 		this.log.debug(`Matches gefunden: ${matches.length}`);
 
@@ -140,7 +976,12 @@ class Jetframe extends utils.Adapter {
 
 		const elapsed = (Date.now() - this.liveStarted) / 1000;
 
-		const data = await fetchAdsb(config, this.httpJsonRaw.bind(this), this.logWarn.bind(this));
+		const data = await fetchAdsb(
+			config,
+			this.httpJsonRaw.bind(this),
+			this.logWarn.bind(this),
+			this.logDebug.bind(this),
+		);
 
 		const aircraft = parseAircraft(data);
 
@@ -212,9 +1053,7 @@ class Jetframe extends utils.Adapter {
 			aircraftModel: this.liveInfo?.aircraftModel || live.aircraftModel || live.aircraftType || live.type || '',
 		};
 
-		this.liveInfo = {
-			...enrichedLive,
-		};
+		await this.applyProbableRunway(enrichedLive, config);
 
 		this.liveInfo = {
 			...enrichedLive,
@@ -257,15 +1096,27 @@ class Jetframe extends utils.Adapter {
 			this.logWarn.bind(this),
 		);
 
+		await this.applyProbableRunway(best, config);
+
 		this.log.info(
-			`Neuer Flug: callsign=${best.callsign || ''} route=${best.originIata || '?'} → ${best.destIata || '?'} | ${best.originName || '?'} → ${best.destName || '?'}`,
+			`Neuer Flug: callsign=${best.callsign || ''} route=${best.originIata || '?'} → ${best.destIata || '?'} | ${best.originName || '?'} → ${best.destName || '?'}${best.probableRunwayText ? ` | ${best.probableRunwayText}` : ''}`,
 		);
+
+		await this.updateStatistics(config.dpRoot, best);
 
 		this.liveTarget = {
 			hex: best.hex,
 			callsign: best.callsign,
 			mode: best.mode,
 		};
+
+		// Bilder/Logos nur EINMAL pro Flug behandeln.
+		const imageSaveKey = this.flightKey(best);
+
+		if (imageSaveKey && imageSaveKey !== this.lastImageSaveKey) {
+			await saveImages(this, config, best, this.logDebug.bind(this), this.logWarn.bind(this));
+			this.lastImageSaveKey = imageSaveKey;
+		}
 
 		this.liveInfo = {
 			...best,
@@ -280,8 +1131,6 @@ class Jetframe extends utils.Adapter {
 		} else {
 			await writeFlight(this, `${config.dpRoot}.airport`, best);
 		}
-
-		await saveImages(this, config, best, this.logDebug.bind(this), this.logWarn.bind(this));
 
 		await this.setForeignStateAsync(`${config.dpRoot}.status`, 'live', true);
 
@@ -370,8 +1219,12 @@ class Jetframe extends utils.Adapter {
 		const res = await this.httpRequest(url, {
 			timeout: 12000,
 			headers: {
-				'User-Agent': 'Mozilla/5.0',
+				'User-Agent':
+					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
 				Accept: 'application/json,text/plain,*/*',
+				'Accept-Language': 'de-DE,de;q=0.9,en;q=0.8',
+				'Cache-Control': 'no-cache',
+				Pragma: 'no-cache',
 			},
 		});
 

@@ -2,7 +2,7 @@
   "common": {
     "webExtension": true,
     "name": "jetframe",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "news": {
       "0.5.0": {
         "en": "Added configurable visualization settings, visual source selection, aircraft prioritization, squawk/emergency detection, improved admin map behavior and mobile layout fixes.",
@@ -134,9 +134,14 @@
     "overflightOnly": false,
     "simpleApiHost": "",
     "simpleApiPort": 8087,
-    "visualSource": "current"
+    "visualSource": "current",
+    "externalManufacturerLogos": false,
+    "manufacturerLogoUrls": "",
+    "externalAirlineLogos": false,
+    "airlineLogoBaseUrl": "",
+    "cacheExternalImages": false
   },
   "objects": [],
   "instanceObjects": [],
-  "version": "0.4.0"
+  "version": "0.6.0"
 }

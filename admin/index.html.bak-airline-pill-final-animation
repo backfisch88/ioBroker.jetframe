@@ -1,0 +1,2026 @@
+<!doctype html>
+<html lang="de">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, viewport-fit=cover"
+		/>
+		<meta
+			name="apple-mobile-web-app-capable"
+			content="yes"
+		/>
+		<meta
+			name="apple-mobile-web-app-status-bar-style"
+			content="black-translucent"
+		/>
+		<meta
+			name="apple-mobile-web-app-title"
+			content="JetFrame"
+		/>
+		<link
+			rel="icon"
+			type="image/png"
+			href="/jetframe.admin/jetframe.png"
+		/>
+		<link
+			rel="apple-touch-icon"
+			href="/jetframe.admin/jetframe.png"
+		/>
+
+		<title>JetFrame</title>
+
+		<style>
+			:root {
+				--bg: #05060a;
+				--muted: rgba(255, 255, 255, 0.62);
+				--yellow: #ffd84d;
+				--green: #35e66b;
+				--blue: #56a8ff;
+			}
+
+			* {
+				box-sizing: border-box;
+				-webkit-tap-highlight-color: transparent;
+			}
+
+			html,
+			body {
+				margin: 0;
+				width: 100%;
+				height: 100%;
+				min-height: 100dvh;
+				overflow: hidden;
+				background: var(--bg);
+				color: #fff;
+				font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+			}
+
+			body {
+				background:
+					radial-gradient(circle at 15% 8%, rgba(70, 110, 180, 0.32), transparent 38%),
+					radial-gradient(circle at 86% 22%, rgba(255, 150, 60, 0.16), transparent 34%),
+					linear-gradient(145deg, #090b11, #020306 72%);
+			}
+
+			#app {
+				position: relative;
+				width: 100vw;
+				height: 100dvh;
+				padding: calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)) 14px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+
+			.wall {
+				width: min(760px, 94vw);
+				height: min(1180px, 92dvh);
+				max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+				border-radius: 40px;
+				padding: 26px;
+				background: linear-gradient(145deg, rgba(62, 70, 90, 0.56), rgba(18, 18, 20, 0.78));
+				border: 1px solid rgba(255, 255, 255, 0.18);
+				box-shadow:
+					0 35px 100px rgba(0, 0, 0, 0.58),
+					inset 0 1px 0 rgba(255, 255, 255, 0.22);
+				backdrop-filter: blur(24px);
+				-webkit-backdrop-filter: blur(24px);
+				overflow: hidden;
+				position: relative;
+			}
+
+			.header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 10px;
+				color: var(--muted);
+				font-size: clamp(17px, 4.6vw, 24px);
+				margin-bottom: 16px;
+			}
+
+			.title {
+				flex: 1 1 auto;
+				min-width: 0;
+				overflow: hidden;
+				white-space: nowrap;
+				text-overflow: ellipsis;
+			}
+
+			.live {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				white-space: nowrap;
+			}
+
+			.toggleBtn {
+				border: 1px solid rgba(255, 255, 255, 0.16);
+				background: rgba(255, 255, 255, 0.08);
+				color: rgba(255, 255, 255, 0.62);
+				border-radius: 999px;
+				padding: 7px 14px;
+				font-size: 14px;
+				font-weight: 800;
+				letter-spacing: 0.08em;
+				line-height: 1;
+			}
+
+			.toggleBtn.on {
+				background: rgba(53, 230, 107, 0.16);
+				color: #35e66b;
+				border-color: rgba(53, 230, 107, 0.35);
+				box-shadow: 0 0 16px rgba(53, 230, 107, 0.22);
+			}
+
+			.speechBtn.on {
+				background: rgba(86, 168, 255, 0.16);
+				color: #8fc5ff;
+				border-color: rgba(86, 168, 255, 0.36);
+				box-shadow: 0 0 16px rgba(86, 168, 255, 0.22);
+			}
+
+			.dot {
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: var(--green);
+				box-shadow: 0 0 16px rgba(53, 230, 107, 0.85);
+			}
+
+			.empty .dot {
+				background: #777;
+				box-shadow: none;
+			}
+
+			.photoWrap {
+				position: relative;
+				width: 100%;
+				height: 34%;
+				min-height: 210px;
+				border-radius: 30px;
+				overflow: hidden;
+				background: rgba(255, 255, 255, 0.055);
+				border: 1px solid rgba(255, 255, 255, 0.13);
+			}
+
+			.photoWrap img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+
+			.placeholder {
+				width: 100%;
+				height: 100%;
+				display: grid;
+				place-items: center;
+				position: relative;
+				overflow: hidden;
+				background:
+					radial-gradient(circle at 50% 50%, rgba(53, 230, 107, 0.1), transparent 42%),
+					linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+			}
+
+			.radarCircle {
+				position: absolute;
+				width: 56%;
+				aspect-ratio: 1;
+				border-radius: 50%;
+				border: 1px solid rgba(53, 230, 107, 0.22);
+				box-shadow:
+					0 0 0 34px rgba(53, 230, 107, 0.035),
+					0 0 0 70px rgba(53, 230, 107, 0.018);
+			}
+
+			.radarSweep {
+				position: absolute;
+				width: 56%;
+				aspect-ratio: 1;
+				border-radius: 50%;
+				background: conic-gradient(
+					from 0deg,
+					rgba(53, 230, 107, 0.35),
+					rgba(53, 230, 107, 0.1) 22deg,
+					transparent 70deg
+				);
+				animation: radarSpin 3.8s linear infinite;
+				opacity: 0.75;
+			}
+
+			.idlePlane {
+				position: relative;
+				z-index: 2;
+				font-size: 76px;
+				filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.45));
+				animation: idleFloat 3.2s ease-in-out infinite;
+			}
+
+			.idleText {
+				position: absolute;
+				bottom: 18px;
+				z-index: 2;
+				font-size: 16px;
+				color: rgba(255, 255, 255, 0.55);
+				font-weight: 650;
+			}
+
+			.idleSkyPlane {
+				position: absolute;
+				z-index: 1;
+				opacity: 0.55;
+				font-size: 26px;
+				filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+				animation: idlePlaneFly linear infinite;
+			}
+
+			.idleSkyPlane.p1 {
+				top: 18%;
+				left: -15%;
+				animation-duration: 14s;
+				animation-delay: 0s;
+			}
+			.idleSkyPlane.p2 {
+				top: 55%;
+				left: -20%;
+				animation-duration: 19s;
+				animation-delay: 4s;
+				font-size: 20px;
+				opacity: 0.38;
+			}
+			.idleSkyPlane.p3 {
+				top: 34%;
+				left: -25%;
+				animation-duration: 23s;
+				animation-delay: 8s;
+				font-size: 32px;
+				opacity: 0.3;
+			}
+
+			@keyframes radarSpin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+			@keyframes idleFloat {
+				0%,
+				100% {
+					transform: translateY(0) rotate(-8deg);
+				}
+				50% {
+					transform: translateY(-9px) rotate(-2deg);
+				}
+			}
+			@keyframes idlePlaneFly {
+				0% {
+					transform: translateX(0) translateY(10px) rotate(12deg);
+					opacity: 0;
+				}
+				12% {
+					opacity: 0.55;
+				}
+				80% {
+					opacity: 0.55;
+				}
+				100% {
+					transform: translateX(130vw) translateY(-25px) rotate(12deg);
+					opacity: 0;
+				}
+			}
+
+			.jf-airline-pill {
+				position: absolute;
+				left: 50%;
+				bottom: calc(env(safe-area-inset-bottom) + 34px);
+				transform: translateX(-50%);
+
+				min-width: 220px;
+				max-width: 58vw;
+				height: 56px;
+
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.96);
+
+				display: flex;
+				align-items: center;
+				justify-content: center;
+
+				z-index: 50;
+
+				box-shadow:
+					0 14px 34px rgba(0, 0, 0, 0.42),
+					inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
+				backdrop-filter: blur(12px);
+				-webkit-backdrop-filter: blur(12px);
+			}
+
+			.jf-airline-pill img {
+				display: block;
+				max-width: 50%;
+				max-height: 45px;
+				object-fit: contain;
+			}
+
+			.jf-airline-pill span {
+				color: #111;
+				font-weight: 800;
+				font-size: 20px;
+				line-height: 1;
+			}
+
+			.info {
+				padding-top: 16px;
+			}
+
+			.mode {
+				color: var(--muted);
+				font-size: 21px;
+				margin-bottom: 4px;
+			}
+
+			.windowInfo {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				margin-top: 5px;
+				margin-bottom: 8px;
+				padding: 5px 10px;
+				border-radius: 999px;
+				background: rgba(86, 168, 255, 0.12);
+				border: 1px solid rgba(86, 168, 255, 0.2);
+				color: rgba(255, 255, 255, 0.72);
+				font-size: 14px;
+				font-weight: 700;
+				white-space: nowrap;
+			}
+
+			.windowInfo.center {
+				background: rgba(53, 230, 107, 0.12);
+				border-color: rgba(53, 230, 107, 0.25);
+				color: rgba(210, 255, 225, 0.9);
+			}
+
+			.windowInfo.side {
+				background: rgba(255, 216, 77, 0.1);
+				border-color: rgba(255, 216, 77, 0.22);
+				color: rgba(255, 238, 160, 0.9);
+			}
+
+			.iataCallsign {
+				font-size: 38px !important;
+				font-weight: 850;
+				letter-spacing: -0.04em;
+				line-height: 0.95;
+			}
+
+			.operatorCallsign {
+				margin-top: 4px;
+				font-size: 17px;
+				color: var(--muted);
+			}
+
+			.routeBig {
+				margin-top: 6px;
+				margin-bottom: 10px;
+				width: 100%;
+				min-width: 0;
+				overflow: hidden;
+			}
+
+			.routeCities {
+				display: block;
+				width: 100%;
+				min-width: 0;
+				max-width: 100%;
+				font-size: 38px !important;
+				font-weight: 850;
+				line-height: 0.96;
+				letter-spacing: -0.055em;
+				overflow: hidden;
+				white-space: nowrap;
+				text-overflow: ellipsis;
+				word-break: normal;
+				overflow-wrap: anywhere;
+				text-rendering: optimizeLegibility;
+			}
+
+			.routeCodes {
+				margin-top: 4px;
+				color: var(--muted);
+				font-size: 17px;
+			}
+
+			.airline {
+				margin-top: 12px;
+				font-size: 19px;
+				color: var(--muted);
+			}
+
+			.aircraftCard {
+				margin-top: 7px;
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				max-width: 100%;
+				padding: 6px 10px;
+				border-radius: 999px;
+				background: rgba(255, 255, 255, 0.075);
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				color: rgba(255, 255, 255, 0.72);
+				font-size: 14px;
+				font-weight: 700;
+				white-space: nowrap;
+			}
+
+			.manufacturerLogo {
+				width: 25px;
+				height: 25px;
+				border-radius: 50%;
+				display: grid;
+				place-items: center;
+				font-size: 13px;
+				font-weight: 900;
+				background: rgba(255, 255, 255, 0.92);
+				color: #111;
+				border: 1px solid rgba(255, 255, 255, 0.28);
+				overflow: hidden;
+				flex: 0 0 auto;
+			}
+
+			.manufacturerLogo img {
+				width: 82%;
+				height: 82%;
+				object-fit: contain;
+				display: none;
+			}
+
+			.manufacturerLogoText {
+				display: block;
+				line-height: 1;
+			}
+
+			.aircraftSize {
+				color: var(--yellow);
+				font-size: 13px;
+				font-weight: 800;
+			}
+
+			.reg {
+				margin-top: 7px;
+				font-size: 15px;
+				color: var(--muted);
+			}
+
+			.special {
+				margin-top: 10px;
+				font-size: 17px;
+				color: var(--yellow);
+			}
+
+			.special.emergency {
+				color: #ff4d4d !important;
+				font-weight: 900;
+				text-shadow: 0 0 18px rgba(255, 77, 77, 0.55);
+			}
+
+			.metrics {
+				position: absolute;
+				left: 22px;
+				right: 22px;
+				bottom: 22px;
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 8px;
+			}
+
+			.metric {
+				min-height: 68px;
+				border-radius: 18px;
+				background: rgba(255, 255, 255, 0.08);
+				border: 1px solid rgba(255, 255, 255, 0.12);
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+			}
+
+			.metricValue {
+				font-size: clamp(18px, 3vw, 30px);
+				font-weight: 850;
+			}
+
+			.metricLabel {
+				margin-top: 3px;
+				font-size: 9px;
+				letter-spacing: 0.14em;
+				color: var(--muted);
+			}
+
+			.flyover {
+				position: fixed;
+				inset: 0;
+				pointer-events: none;
+				overflow: hidden;
+				z-index: 9999;
+				background: rgba(0, 0, 0, 0);
+				transition: background 0.25s ease;
+			}
+
+			.flyover.active {
+				background: rgba(0, 0, 0, 0.4);
+			}
+
+			.flyover img {
+				position: absolute;
+				width: 130vw;
+				max-width: none;
+				min-width: 900px;
+				top: 50%;
+				left: -150vw;
+				opacity: 0;
+				filter: drop-shadow(0 45px 80px rgba(0, 0, 0, 0.75));
+				transform: translateY(-50%) rotate(90deg) scale(0.85);
+			}
+
+			.flyover.active img {
+				animation: planeFly 3.2s ease forwards;
+			}
+
+			@keyframes planeFly {
+				0% {
+					left: -150vw;
+					opacity: 0;
+				}
+				10% {
+					opacity: 1;
+				}
+				92% {
+					opacity: 1;
+				}
+				100% {
+					left: 120vw;
+					opacity: 0;
+				}
+			}
+
+			.empty .iataCallsign,
+			.empty .operatorCallsign,
+			.empty .routeCities,
+			.empty .routeCodes,
+			.empty .airline,
+			.empty .aircraftCard,
+			.empty .reg,
+			.empty .special {
+				color: rgba(255, 255, 255, 0.34);
+			}
+
+			.empty .windowInfo {
+				display: none;
+			}
+
+			.night {
+				filter: brightness(0.72) contrast(0.92);
+			}
+
+			.night .metric {
+				background: rgba(255, 255, 255, 0.05);
+			}
+
+			@media (orientation: landscape) {
+				#app {
+					padding: 18px;
+				}
+
+				.wall {
+					width: min(1120px, 94vw);
+					height: min(660px, 90vh);
+					padding: 24px;
+					border-radius: 34px;
+				}
+
+				.header {
+					font-size: 20px;
+					margin-bottom: 0;
+					height: 40px;
+				}
+
+				.toggleBtn {
+					padding: 6px 12px;
+					font-size: 12px;
+				}
+
+				.photoWrap {
+					position: absolute;
+					left: 24px;
+					top: 82px;
+					width: 45%;
+					height: 48%;
+					min-height: 0;
+					border-radius: 26px;
+				}
+
+				.info {
+					position: absolute;
+					left: 51%;
+					right: 24px;
+					top: 82px;
+					padding-top: 0;
+				}
+
+				.mode {
+					font-size: 20px;
+					margin-bottom: 4px;
+				}
+				.windowInfo {
+					font-size: 13px;
+					margin-top: 4px;
+					margin-bottom: 7px;
+				}
+				.iataCallsign {
+					font-size: clamp(40px, 6vw, 72px);
+				}
+				.operatorCallsign {
+					font-size: 17px;
+				}
+				.routeCities {
+					font-size: clamp(28px, 4vw, 46px);
+				}
+				.routeCodes {
+					font-size: 17px;
+				}
+				.airline {
+					margin-top: 10px;
+					font-size: 18px;
+				}
+				.aircraftCard {
+					font-size: 13px;
+					padding: 5px 9px;
+				}
+				.reg {
+					font-size: 14px;
+				}
+				.special {
+					margin-top: 8px;
+					font-size: 16px;
+				}
+
+				.metrics {
+					left: 24px;
+					right: 24px;
+					bottom: 22px;
+					gap: 10px;
+				}
+
+				.metric {
+					min-height: 70px;
+					border-radius: 18px;
+				}
+
+				.metricValue {
+					font-size: clamp(22px, 3.2vw, 34px);
+				}
+			}
+
+			@media (max-width: 820px) {
+				#app {
+					padding: 14px;
+				}
+
+				.wall {
+					padding: 20px;
+					height: 94vh;
+					border-radius: 36px;
+				}
+
+				.header {
+					font-size: 22px;
+					margin-bottom: 14px;
+				}
+
+				.toggleBtn {
+					padding: 6px 11px;
+					font-size: 12px;
+				}
+
+				.photoWrap {
+					height: 30%;
+					min-height: 185px;
+				}
+
+				.info {
+					padding-top: 14px;
+				}
+
+				.iataCallsign {
+					font-size: clamp(34px, 10vw, 54px);
+				}
+
+				.routeCities {
+					font-size: clamp(22px, 8vw, 34px);
+				}
+
+				.metrics {
+					left: 20px;
+					right: 20px;
+					bottom: 20px;
+				}
+
+				.metric {
+					min-height: 64px;
+				}
+			}
+
+			@media (orientation: landscape) and (max-height: 520px) {
+				#app {
+					padding: calc(8px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right))
+						calc(18px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+					align-items: center;
+				}
+
+				.wall {
+					width: 96vw;
+					height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
+					max-height: none;
+					padding: 16px;
+					border-radius: 26px;
+				}
+
+				.header {
+					height: 34px;
+					font-size: clamp(16px, 2.8vw, 22px);
+					margin-bottom: 10px;
+				}
+
+				.live {
+					flex: 0 0 auto;
+					font-size: clamp(16px, 2.8vw, 22px);
+				}
+
+				.toggleBtn {
+					flex: 0 0 auto;
+					padding: 5px 9px;
+					font-size: 11px;
+				}
+
+				.photoWrap {
+					position: absolute;
+					left: 16px;
+					top: 62px;
+					width: 48%;
+					height: 43%;
+					min-height: 0;
+					border-radius: 22px;
+				}
+
+				.info {
+					position: absolute;
+					left: 53%;
+					right: 16px;
+					top: 62px;
+					bottom: 100px;
+					padding-top: 0;
+					overflow: hidden;
+				}
+
+				.mode {
+					font-size: 17px;
+				}
+				.windowInfo {
+					font-size: 11px;
+					padding: 4px 8px;
+					margin-bottom: 5px;
+				}
+				.iataCallsign {
+					font-size: clamp(30px, 5vw, 48px);
+				}
+				.operatorCallsign {
+					font-size: 13px;
+				}
+				.routeCities {
+					font-size: clamp(22px, 4vw, 34px);
+				}
+				.routeCodes {
+					font-size: 13px;
+				}
+				.airline {
+					font-size: 15px;
+					margin-top: 8px;
+				}
+				.aircraftCard {
+					font-size: 12px;
+					padding: 4px 8px;
+				}
+				.reg {
+					font-size: 12px;
+				}
+				.special {
+					font-size: 13px;
+					margin-top: 6px;
+				}
+
+				.metrics {
+					left: 16px;
+					right: 16px;
+					bottom: 16px;
+					gap: 8px;
+					grid-template-columns: repeat(4, 1fr);
+				}
+
+				.metric {
+					min-height: 62px;
+					border-radius: 16px;
+				}
+
+				.metricValue {
+					font-size: clamp(18px, 3vw, 28px);
+				}
+
+				.metricLabel {
+					font-size: 8px;
+				}
+			}
+
+			/* --------------------------------------------------
+   JetFrame Layout Fix:
+   Airline-Pille UNTER die Karte, nicht über Metriken
+   Mobile kompakter / Route möglichst einzeilig
+-------------------------------------------------- */
+
+			#app {
+				flex-direction: column;
+				gap: 12px;
+			}
+
+			.wall {
+				flex: 0 1 auto;
+			}
+
+			.jf-airline-pill {
+				position: relative;
+				left: auto;
+				bottom: auto;
+				transform: scaleX(0.72) translateY(8px);
+				transform-origin: center;
+				flex: 0 0 auto;
+
+				min-width: 0;
+				width: 0;
+				max-width: 0;
+				height: 58px;
+				margin: 0 auto;
+
+				opacity: 0;
+				overflow: hidden;
+				pointer-events: none;
+
+				z-index: 10;
+
+				transition:
+					width 0.38s ease,
+					max-width 0.38s ease,
+					opacity 0.25s ease,
+					transform 0.38s ease;
+			}
+
+			.jf-airline-pill.visible {
+				width: min(360px, 62vw);
+				max-width: 62vw;
+				min-width: 260px;
+				opacity: 0.96;
+				transform: scaleX(1) translateY(0);
+				pointer-events: auto;
+			}
+
+			.jf-airline-pill img {
+				max-width: 78%;
+				max-height: 46px;
+			}
+
+			@media (orientation: landscape) {
+				#app {
+					gap: 10px;
+				}
+
+				.wall {
+					height: min(640px, 82dvh);
+				}
+
+				.jf-airline-pill {
+					width: min(340px, 42vw);
+					max-width: 42vw;
+					height: 54px;
+				}
+			}
+
+			@media (max-width: 820px) {
+				#app {
+					padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom)) 10px;
+					gap: 9px;
+				}
+
+				.wall {
+					width: 96vw;
+					height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 92px);
+					max-height: none;
+					padding: 16px;
+					border-radius: 30px;
+				}
+
+				.header {
+					height: 32px;
+					font-size: clamp(16px, 4.2vw, 22px);
+					margin-bottom: 10px;
+					gap: 7px;
+				}
+
+				.toggleBtn {
+					padding: 5px 10px;
+					font-size: 11px;
+				}
+
+				.live {
+					gap: 7px;
+				}
+
+				.photoWrap {
+					height: 29%;
+					min-height: 165px;
+					border-radius: 24px;
+				}
+
+				.info {
+					padding-top: 10px;
+				}
+
+				.mode {
+					font-size: 18px;
+					margin-bottom: 3px;
+				}
+
+				.windowInfo {
+					font-size: 13px;
+					padding: 4px 9px;
+					margin-top: 4px;
+					margin-bottom: 7px;
+				}
+
+				.iataCallsign {
+					font-size: clamp(34px, 10vw, 50px) !important;
+				}
+
+				.operatorCallsign {
+					font-size: 15px;
+					margin-top: 2px;
+				}
+
+				.routeBig {
+					margin-top: 5px;
+					margin-bottom: 8px;
+				}
+
+				.routeCities {
+					font-size: clamp(26px, 7vw, 42px) !important;
+					line-height: 0.95;
+					letter-spacing: -0.06em;
+					white-space: nowrap;
+					text-overflow: ellipsis;
+					overflow: hidden;
+					max-width: 100%;
+				}
+
+				.routeCodes {
+					font-size: 15px;
+					margin-top: 3px;
+				}
+
+				.airline {
+					margin-top: 8px;
+					font-size: 17px;
+				}
+
+				.aircraftCard {
+					margin-top: 6px;
+					font-size: 13px;
+					padding: 5px 9px;
+				}
+
+				.reg {
+					margin-top: 6px;
+					font-size: 14px;
+				}
+
+				.metrics {
+					left: 16px;
+					right: 16px;
+					bottom: 14px;
+					gap: 6px;
+				}
+
+				.metric {
+					min-height: 58px;
+					border-radius: 16px;
+				}
+
+				.metricValue {
+					font-size: clamp(20px, 7vw, 30px);
+				}
+
+				.metricLabel {
+					font-size: 8px;
+				}
+
+				.jf-airline-pill {
+					width: min(340px, 78vw);
+					max-width: 78vw;
+					min-width: 230px;
+					height: 54px;
+				}
+
+				.jf-airline-pill img {
+					max-width: 78%;
+					max-height: 42px;
+				}
+			}
+
+			@media (max-width: 430px) {
+				.wall {
+					height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 86px);
+					padding: 14px;
+				}
+
+				.photoWrap {
+					height: 28%;
+					min-height: 150px;
+				}
+
+				.routeCities {
+					font-size: clamp(22px, 6.8vw, 34px) !important;
+					line-height: 0.94;
+					letter-spacing: -0.065em;
+				}
+
+				.iataCallsign {
+					font-size: clamp(32px, 9.5vw, 46px) !important;
+				}
+
+				.metrics {
+					bottom: 12px;
+				}
+
+				.metric {
+					min-height: 54px;
+				}
+
+				.jf-airline-pill {
+					height: 50px;
+					width: min(320px, 80vw);
+				}
+
+				.jf-airline-pill img {
+					max-height: 38px;
+				}
+			}
+
+			/* --------------------------------------------------
+   JetFrame Fine Tune Mobile:
+   Pille dezenter, Metriken kleiner, Callsign kleiner
+-------------------------------------------------- */
+
+			@media (max-width: 820px) {
+				.jf-airline-pill {
+					height: 44px;
+					min-width: 190px;
+					width: min(285px, 68vw);
+					max-width: 68vw;
+					opacity: 0.96;
+				}
+
+				.jf-airline-pill img {
+					max-width: 72%;
+					max-height: 32px;
+				}
+
+				.iataCallsign {
+					font-size: clamp(30px, 8.8vw, 42px) !important;
+					letter-spacing: -0.055em;
+				}
+
+				.operatorCallsign {
+					font-size: 14px;
+				}
+
+				.metric {
+					min-height: 50px;
+					border-radius: 15px;
+				}
+
+				.metricValue {
+					font-size: clamp(18px, 6vw, 25px);
+					letter-spacing: -0.035em;
+				}
+
+				.metricLabel {
+					font-size: 7px;
+					margin-top: 2px;
+				}
+			}
+
+			@media (max-width: 430px) {
+				.jf-airline-pill {
+					height: 42px;
+					width: min(270px, 70vw);
+					max-width: 70vw;
+				}
+
+				.jf-airline-pill img {
+					max-height: 30px;
+				}
+
+				.iataCallsign {
+					font-size: clamp(28px, 8.2vw, 40px) !important;
+				}
+
+				.metric {
+					min-height: 48px;
+				}
+
+				.metricValue {
+					font-size: clamp(17px, 5.7vw, 24px);
+				}
+			}
+
+			/* JetFrame route overflow final fix */
+			.routeBig {
+				width: 100% !important;
+				min-width: 0 !important;
+				overflow: hidden !important;
+			}
+
+			.routeCities {
+				display: block !important;
+				width: 100% !important;
+				min-width: 0 !important;
+				max-width: 100% !important;
+				overflow: hidden !important;
+				white-space: nowrap !important;
+				text-overflow: ellipsis !important;
+				word-break: normal !important;
+				overflow-wrap: anywhere !important;
+			}
+
+			@media (max-width: 820px) {
+				.routeCities {
+					font-size: clamp(26px, 7vw, 42px) !important;
+					line-height: 0.95 !important;
+					letter-spacing: -0.06em !important;
+				}
+			}
+
+			@media (max-width: 430px) {
+				.routeCities {
+					font-size: clamp(22px, 6.8vw, 34px) !important;
+					line-height: 0.94 !important;
+					letter-spacing: -0.065em !important;
+				}
+			}
+		</style>
+	  </head>
+
+	<body>
+		<div id="app">
+			<div
+				id="wall"
+				class="wall"
+			>
+				<div class="header">
+					<div class="title">&#9992;&#65039; JetFrame</div>
+					<button
+						id="toggleBtn"
+						class="toggleBtn"
+						type="button"
+					>
+						ON
+					</button>
+					<button
+						id="speechBtn"
+						class="toggleBtn speechBtn"
+						type="button"
+					>
+						&#128263;
+					</button>
+					<div class="live">
+						<span class="dot"></span>
+						<span id="statusText">Live</span>
+						<span>&middot;</span>
+						<span id="clock">--:--:--</span>
+					</div>
+				</div>
+
+				<div class="photoWrap">
+					<img
+						id="planePhoto"
+						src=""
+						alt=""
+					/>
+
+					<div
+						id="placeholder"
+						class="placeholder"
+					>
+						<div class="radarCircle"></div>
+						<div class="radarSweep"></div>
+						<div class="idleSkyPlane p1">&#9992;&#65039;</div>
+						<div class="idleSkyPlane p2">&#9992;&#65039;</div>
+						<div class="idleSkyPlane p3">&#9992;&#65039;</div>
+						<div class="idlePlane">&#9992;&#65039;</div>
+						<div class="idleText">Warte auf Flug</div>
+					</div>
+				</div>
+
+				<section class="info">
+					<div
+						id="mode"
+						class="mode"
+					>
+						Flight
+					</div>
+
+					<div
+						id="windowInfo"
+						class="windowInfo side"
+					></div>
+
+					<div class="callsigns">
+						<div
+							id="iataCallsign"
+							class="iataCallsign"
+						>
+							&mdash;
+						</div>
+						<div
+							id="operatorCallsign"
+							class="operatorCallsign"
+						>
+							&mdash;
+						</div>
+					</div>
+
+					<div class="routeBig">
+						<div
+							id="routeCities"
+							class="routeCities"
+						>
+							&mdash; &rarr; &mdash;
+						</div>
+						<div
+							id="routeCodes"
+							class="routeCodes"
+						>
+							&mdash; &rarr; &mdash;
+						</div>
+					</div>
+
+					<div
+						id="airline"
+						class="airline"
+					>
+						&mdash;
+					</div>
+
+					<div
+						id="aircraftCard"
+						class="aircraftCard"
+					>
+						<span
+							id="manufacturerLogo"
+							class="manufacturerLogo"
+						>
+							<img
+								id="manufacturerLogoImg"
+								src=""
+								alt=""
+							/>
+							<span
+								id="manufacturerLogoText"
+								class="manufacturerLogoText"
+								>&#9992;</span
+							>
+						</span>
+						<span id="aircraftTypeText">&mdash;</span>
+						<span
+							id="aircraftSize"
+							class="aircraftSize"
+							>&mdash;</span
+						>
+					</div>
+
+					<div
+						id="registration"
+						class="reg"
+					>
+						Kennzeichen: &mdash;
+					</div>
+					<div
+						id="special"
+						class="special"
+					></div>
+				</section>
+
+				<div class="metrics">
+					<div class="metric">
+						<div
+							id="altitude"
+							class="metricValue"
+						>
+							&ndash;
+						</div>
+						<div class="metricLabel">H&Ouml;HE FT</div>
+					</div>
+					<div class="metric">
+						<div
+							id="speed"
+							class="metricValue"
+						>
+							&ndash;
+						</div>
+						<div class="metricLabel">SPEED KT</div>
+					</div>
+					<div class="metric">
+						<div
+							id="verticalRate"
+							class="metricValue"
+						>
+							&ndash;
+						</div>
+						<div class="metricLabel">FT/MIN</div>
+					</div>
+					<div class="metric">
+						<div
+							id="track"
+							class="metricValue"
+						>
+							&ndash;
+						</div>
+						<div class="metricLabel">KURS</div>
+					</div>
+				</div>
+			</div>
+			<div
+				id="airlinePill"
+				class="jf-airline-pill"
+			>
+				<img
+					id="airlinePillImg"
+					alt=""
+				/>
+				<span id="airlinePillText">JetFrame</span>
+			</div>
+		</div>
+
+		<div
+			id="flyover"
+			class="flyover"
+		>
+			<img
+				src="https://upload.wikimedia.org/wikipedia/commons/2/23/Flugzeug_mit_Nase_nach_oben.svg"
+				alt=""
+			/>
+		</div>
+
+		<script>
+			let API_BASE = (() => {
+				const proto = window.location.protocol || 'http:';
+				const host = window.location.hostname || '127.0.0.1';
+				const url = new URL(window.location.href);
+				const apiHost = url.searchParams.get('apiHost') || host;
+				const apiPort = url.searchParams.get('apiPort') || '8087';
+
+				return proto + '//' + apiHost + ':' + apiPort;
+			})();
+
+			const DP_ROOT = (() => {
+				const url = new URL(window.location.href);
+				const instance = url.searchParams.get('instance') || '0';
+				return 'jetframe.' + String(instance).replace(/[^0-9]/g, '');
+			})();
+
+			let VIS_SOURCE = (() => {
+				const url = new URL(window.location.href);
+				const src = String(url.searchParams.get('source') || 'current').toLowerCase();
+				return ['current', 'airport', 'overflight'].includes(src) ? src : 'current';
+			})();
+
+			let CURRENT = DP_ROOT + '.' + VIS_SOURCE;
+let VIS_CONFIG_LOADED = false;
+
+			const IDS = {
+				enabled: DP_ROOT + '.enabled',
+				speechMode: DP_ROOT + '.speechMode',
+				speechText: CURRENT + '.speechText',
+				speechEnabled: DP_ROOT + '.speechEnabled',
+				speechTrigger: CURRENT + '.speechTrigger',
+
+				callsign: CURRENT + '.callsign',
+				operationalCallsign: CURRENT + '.operationalCallsign',
+				routeCallsign: CURRENT + '.routeCallsign',
+
+				modeVisText: CURRENT + '.modeVisText',
+				windowPositionText: CURRENT + '.windowPositionText',
+				windowPositionClass: CURRENT + '.windowPositionClass',
+				windowPositionSpeechText: CURRENT + '.windowPositionSpeechText',
+
+				routeDisplayText: CURRENT + '.routeDisplayText',
+				routeCodesText: CURRENT + '.routeCodesText',
+
+				airlineName: CURRENT + '.airlineName',
+				registration: CURRENT + '.registration',
+
+				specialDisplayText: CURRENT + '.specialDisplayText',
+				specialLiveryVisText: CURRENT + '.specialLiveryVisText',
+				squawk: CURRENT + '.squawk',
+				emergency: CURRENT + '.emergency',
+				emergencyText: CURRENT + '.emergencyText',
+
+				manufacturerLogoUrl: CURRENT + '.manufacturerLogoUrl',
+				manufacturerLogoText: CURRENT + '.manufacturerLogoText',
+				aircraftTypeText: CURRENT + '.aircraftTypeText',
+				aircraftSize: CURRENT + '.aircraftSize',
+
+				altitudeFt: CURRENT + '.altitudeFt',
+				speedKt: CURRENT + '.speedKt',
+				verticalRate: CURRENT + '.verticalRate',
+				trackDeg: CURRENT + '.trackDeg',
+
+				localImageUrl: CURRENT + '.localImageUrl',
+				jetphotosImageUrl: CURRENT + '.jetphotosImageUrl',
+				localLogoUrl: CURRENT + '.localLogoUrl',
+				logoUrl: CURRENT + '.logoUrl',
+			};
+
+			let lastFlightKey = '';
+			let spokenFlights = new Set();
+			let pendingSpeech = null;
+
+			let speechEnabled = true;
+			let audioCtx = null;
+			let speechUnlocked = false;
+
+			function $(id) {
+				return document.getElementById(id);
+			}
+
+			function cleanValue(v) {
+				if (v === null || v === undefined) return '';
+				v = String(v).trim();
+				if (v === 'null' || v === 'undefined') return '';
+				if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+					v = v.slice(1, -1);
+				}
+				return v.replace(/\\"/g, '"').replace(/\\n/g, ' ').trim();
+			}
+
+			async function readState(id) {
+				if (!VIS_CONFIG_LOADED) {
+					console.warn('[JetFrame] readState blockiert: vis-config.json nicht geladen');
+					return '';
+				}
+
+				try {
+					const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(id), {
+						cache: 'no-store',
+					});
+					if (!res.ok) return '';
+					return cleanValue(await res.text());
+				} catch (e) {
+					return '';
+				}
+			}
+
+			async function writeState(id, value) {
+				try {
+					await fetch(API_BASE + '/set/' + encodeURIComponent(id) + '?value=' + encodeURIComponent(value), {
+						cache: 'no-store',
+					});
+				} catch (e) {}
+			}
+
+			async function readObject(id) {
+				try {
+					const res = await fetch(API_BASE + '/getObject/' + encodeURIComponent(id), {
+						cache: 'no-store',
+					});
+
+					if (!res.ok) return null;
+					return await res.json();
+				} catch (e) {
+					return null;
+				}
+			}
+
+			function rebuildIds() {
+				CURRENT = DP_ROOT + '.' + VIS_SOURCE;
+
+				Object.keys(IDS).forEach(key => {
+					if (
+						key !== 'enabled' &&
+						key !== 'speechMode' &&
+						key !== 'speechEnabled'
+					) {
+						IDS[key] = CURRENT + '.' + key;
+					}
+				});
+			}
+
+			async function loadVisualConfig() {
+				const url = new URL(window.location.href);
+				const hasApiOverride = url.searchParams.has('apiHost') || url.searchParams.has('apiPort');
+				const hasSourceOverride = url.searchParams.has('source');
+
+				const res = await fetch('/jetframe.admin/vis-config.json?v=' + Date.now(), {
+					cache: 'no-store',
+				});
+
+				if (!res.ok) {
+					throw new Error('vis-config.json nicht gefunden');
+				}
+
+				const cfg = await res.json();
+
+				if (!hasApiOverride) {
+					const proto = window.location.protocol || 'http:';
+					const host = String(cfg.simpleApiHost || window.location.hostname || '127.0.0.1').trim();
+					const port = String(cfg.simpleApiPort || '8087').trim();
+
+					API_BASE = proto + '//' + host + ':' + port;
+				}
+
+				if (!hasSourceOverride) {
+					const src = String(cfg.visualSource || 'current').toLowerCase();
+					VIS_SOURCE = ['current', 'airport', 'overflight'].includes(src) ? src : 'current';
+				}
+
+				VIS_CONFIG_LOADED = true;
+				rebuildIds();
+
+				console.log('[JetFrame] vis-config.json geladen:', cfg, API_BASE, CURRENT);
+			}
+
+			async function readAll() {
+				const entries = await Promise.all(Object.entries(IDS).map(async ([k, id]) => [k, await readState(id)]));
+				return Object.fromEntries(entries);
+			}
+
+			function updateClock() {
+				$('clock').textContent = new Date().toLocaleTimeString('de-DE', {
+					hour: '2-digit',
+					minute: '2-digit',
+					second: '2-digit',
+				});
+			}
+			setInterval(updateClock, 1000);
+			updateClock();
+
+			function num(v) {
+				const n = Number(String(v).replace(',', '.'));
+				return Number.isFinite(n) ? n : 0;
+			}
+
+			function formatNumber(v) {
+				const n = num(v);
+				return n ? Math.round(n).toLocaleString('de-DE') : '\u2013';
+			}
+
+			function formatSigned(v) {
+				const n = num(v);
+				if (!n) return '\u2013';
+				const r = Math.round(n);
+				return (r > 0 ? '+' : '') + r.toLocaleString('de-DE');
+			}
+
+			function setImage(imgEl, url, placeholderEl) {
+				url = cleanValue(url);
+
+				if (!imgEl) return;
+
+				if (!url) {
+					imgEl.style.display = 'none';
+					imgEl.removeAttribute('src');
+					if (placeholderEl) placeholderEl.style.display = 'grid';
+					return;
+				}
+
+				imgEl.onload = function () {
+					imgEl.style.display = 'block';
+					if (placeholderEl) placeholderEl.style.display = 'none';
+				};
+
+				imgEl.onerror = function () {
+					imgEl.style.display = 'none';
+					imgEl.removeAttribute('src');
+					if (placeholderEl) placeholderEl.style.display = 'grid';
+				};
+
+				imgEl.src = url;
+			}
+
+			function setManufacturerLogo(s) {
+				const img = $('manufacturerLogoImg');
+				const txt = $('manufacturerLogoText');
+
+				const url = cleanValue(s.manufacturerLogoUrl);
+				const fallback = cleanValue(s.manufacturerLogoText) || '\u2708';
+
+				img.onload = function () {
+					img.style.display = 'block';
+					txt.style.display = 'none';
+				};
+
+				img.onerror = function () {
+					img.style.display = 'none';
+					img.removeAttribute('src');
+					txt.textContent = fallback;
+					txt.style.display = 'block';
+				};
+
+				if (url) {
+					txt.style.display = 'none';
+					img.src = url;
+				} else {
+					img.style.display = 'none';
+					img.removeAttribute('src');
+					txt.textContent = fallback;
+					txt.style.display = 'block';
+				}
+			}
+
+			function setAirlinePill(s) {
+				const pill = $('airlinePill');
+				const img = $('airlinePillImg');
+				const txt = $('airlinePillText');
+
+				const logo = cleanValue(s.localLogoUrl) || cleanValue(s.logoUrl);
+
+				if (!pill || !img || !txt) return;
+
+				if (!logo) {
+					hideAirlinePill();
+					return;
+				}
+
+				img.onload = function () {
+					img.style.display = 'block';
+					txt.style.display = 'none';
+					pill.classList.add('visible');
+				};
+
+				img.onerror = function () {
+					hideAirlinePill();
+				};
+
+				if (img.getAttribute('src') !== logo) {
+					pill.classList.remove('visible');
+					img.src = logo;
+				} else {
+					pill.classList.add('visible');
+				}
+			}
+
+			function hideAirlinePill() {
+				const pill = $('airlinePill');
+				const img = $('airlinePillImg');
+				const txt = $('airlinePillText');
+
+				if (pill) pill.classList.remove('visible');
+				if (img) {
+					img.style.display = 'none';
+					img.removeAttribute('src');
+				}
+				if (txt) txt.style.display = 'none';
+			}
+
+			function triggerFlyover() {
+				const el = $('flyover');
+				el.classList.remove('active');
+				void el.offsetWidth;
+				el.classList.add('active');
+				setTimeout(() => el.classList.remove('active'), 3400);
+			}
+
+			function applyNightMode() {
+				const hour = new Date().getHours();
+				$('wall').classList.toggle('night', hour >= 20 || hour <= 6);
+			}
+			setInterval(applyNightMode, 60000);
+			applyNightMode();
+
+			function setEnabledButton(enabled) {
+				$('toggleBtn').textContent = enabled ? 'ON' : 'OFF';
+				$('toggleBtn').classList.toggle('on', enabled);
+			}
+
+			function setSpeechButton() {
+				const btn = $('speechBtn');
+				btn.textContent = speechEnabled ? '\u{1F50A}' : '\u{1F507}';
+				btn.classList.toggle('on', speechEnabled);
+			}
+
+			function unlockAudio() {
+				try {
+					if (!audioCtx) {
+						audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+					}
+					if (audioCtx.state === 'suspended') audioCtx.resume();
+				} catch (e) {}
+			}
+
+			function unlockSpeech() {
+				if (speechUnlocked) return;
+
+				try {
+					if (!('speechSynthesis' in window)) return;
+
+					const u = new SpeechSynthesisUtterance(' ');
+					u.lang = 'de-DE';
+					u.volume = 0.01;
+					u.rate = 1;
+
+					speechSynthesis.cancel();
+					speechSynthesis.speak(u);
+					speechUnlocked = true;
+
+					if (pendingSpeech && pendingSpeech.text && !spokenFlights.has(pendingSpeech.key)) {
+						spokenFlights.add(pendingSpeech.key);
+						setTimeout(() => speakFlight(pendingSpeech.text), 250);
+						pendingSpeech = null;
+					}
+				} catch (e) {}
+			}
+
+			function playPlaneSound() {
+				if (!speechEnabled) return;
+
+				try {
+					unlockAudio();
+
+					const now = audioCtx.currentTime;
+					const duration = 1.8;
+
+					const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+					const data = noiseBuffer.getChannelData(0);
+
+					for (let i = 0; i < data.length; i++) {
+						data[i] = (Math.random() * 2 - 1) * 0.45;
+					}
+
+					const noise = audioCtx.createBufferSource();
+					noise.buffer = noiseBuffer;
+
+					const lowpass = audioCtx.createBiquadFilter();
+					lowpass.type = 'lowpass';
+					lowpass.frequency.setValueAtTime(260, now);
+					lowpass.frequency.linearRampToValueAtTime(950, now + 0.8);
+					lowpass.frequency.linearRampToValueAtTime(420, now + duration);
+
+					const gain = audioCtx.createGain();
+					gain.gain.setValueAtTime(0.0001, now);
+					gain.gain.exponentialRampToValueAtTime(0.28, now + 0.35);
+					gain.gain.exponentialRampToValueAtTime(0.08, now + 1.25);
+					gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+					noise.connect(lowpass);
+					lowpass.connect(gain);
+					gain.connect(audioCtx.destination);
+
+					noise.start(now);
+					noise.stop(now + duration);
+				} catch (e) {}
+			}
+
+			function speakFlight(text) {
+				if (!speechEnabled) return;
+				if (!('speechSynthesis' in window)) return;
+
+				text = cleanValue(text);
+
+				if (!text) return;
+
+				try {
+					speechSynthesis.cancel();
+
+					const msg = new SpeechSynthesisUtterance(text);
+					msg.lang = 'de-DE';
+					msg.rate = 0.85;
+					msg.pitch = 1.05;
+					msg.volume = 1;
+
+					speechSynthesis.speak(msg);
+				} catch (e) {}
+			}
+
+			function renderWindow(s) {
+				const el = $('windowInfo');
+				const text = cleanValue(s.windowPositionText);
+				const cls = cleanValue(s.windowPositionClass) || 'side';
+
+				el.textContent = text;
+				el.style.display = text ? 'inline-flex' : 'none';
+				el.classList.remove('center', 'side');
+				el.classList.add(cls);
+			}
+
+			function render(s) {
+				const enabled = cleanValue(s.enabled) === 'true';
+				setEnabledButton(enabled);
+
+				const hasFlight = !!(
+					cleanValue(s.callsign) ||
+					cleanValue(s.operationalCallsign) ||
+					cleanValue(s.routeCallsign) ||
+					cleanValue(s.registration)
+				);
+
+				$('wall').classList.toggle('empty', !hasFlight);
+				$('statusText').textContent = hasFlight ? 'Live' : enabled ? 'Warte' : 'Aus';
+
+				if (!hasFlight) {
+					$('mode').textContent = enabled ? '\u2708\uFE0F Flight' : '\u23F8\uFE0F JetFrame aus';
+					$('windowInfo').style.display = 'none';
+
+					$('iataCallsign').textContent = '\u2014';
+					$('operatorCallsign').textContent = '\u2014';
+					$('routeCities').textContent = '\u2014 \u2192 \u2014';
+					$('routeCodes').textContent = '\u2014 \u2192 \u2014';
+					$('airline').textContent = '\u2014';
+					$('aircraftTypeText').textContent = '\u2014';
+					$('aircraftSize').textContent = '\u2014';
+					$('registration').textContent = 'Kennzeichen: \u2014';
+					$('special').textContent = '';
+					$('special').style.display = 'none';
+					$('special').classList.remove('emergency');
+
+					$('altitude').textContent = '\u2013';
+					$('speed').textContent = '\u2013';
+					$('verticalRate').textContent = '\u2013';
+					$('track').textContent = '\u2013';
+
+					setManufacturerLogo({});
+					setImage($('planePhoto'), '', $('placeholder'));
+					hideAirlinePill();
+
+					return;
+				}
+
+				const visibleCallsign = cleanValue(s.routeCallsign) || cleanValue(s.callsign) || '\u2014';
+
+				const opCallsign = cleanValue(s.operationalCallsign) || cleanValue(s.callsign) || '\u2014';
+
+				$('mode').textContent = cleanValue(s.modeVisText) || '\u2708\uFE0F Flight';
+
+				renderWindow(s);
+
+				$('iataCallsign').textContent = visibleCallsign;
+				$('operatorCallsign').textContent = opCallsign;
+
+				$('routeCities').textContent = cleanValue(s.routeDisplayText) || '\u2014 \u2192 \u2014';
+				$('routeCodes').textContent = cleanValue(s.routeCodesText) || '\u2014 \u2192 \u2014';
+
+				$('airline').textContent = cleanValue(s.airlineName) || '\u2014';
+
+				setManufacturerLogo(s);
+
+				$('aircraftTypeText').textContent = cleanValue(s.aircraftTypeText) || '\u2014';
+				$('aircraftSize').textContent = cleanValue(s.aircraftSize) || '\u2014';
+
+				$('registration').textContent = 'Kennzeichen: ' + (cleanValue(s.registration) || '\u2014');
+
+				const emergencyText = cleanValue(s.emergencyText);
+
+				const special = emergencyText || cleanValue(s.specialLiveryVisText) || cleanValue(s.specialDisplayText);
+
+				$('special').textContent = special;
+				$('special').style.display = special ? 'block' : 'none';
+				$('special').classList.toggle('emergency', !!emergencyText);
+
+				$('altitude').textContent = formatNumber(s.altitudeFt);
+				$('speed').textContent = formatNumber(s.speedKt);
+				$('verticalRate').textContent = formatSigned(s.verticalRate);
+
+				const track = num(s.trackDeg);
+				$('track').textContent = track ? Math.round(track) + '\u00B0' : '\u2013';
+
+				setImage(
+					$('planePhoto'),
+					cleanValue(s.localImageUrl) || cleanValue(s.jetphotosImageUrl),
+					$('placeholder'),
+				);
+
+				setAirlinePill(s);
+
+				const key = [cleanValue(s.callsign), cleanValue(s.routeCallsign), cleanValue(s.registration)].join('|');
+
+				const speechTextNow = cleanValue(s.speechText);
+
+				const mode = cleanValue(s.speechMode || 'browser').toLowerCase() || 'browser';
+
+				const isNewFlight = key && key !== lastFlightKey;
+
+				if (isNewFlight) {
+					lastFlightKey = key;
+
+					triggerFlyover();
+
+					if (mode !== 'off') {
+						playPlaneSound();
+					}
+				}
+
+				// Sprache NUR EINMAL pro Flug
+				if (isNewFlight && speechTextNow && !spokenFlights.has(key)) {
+					if (mode === 'browser' || mode === 'both') {
+						if (speechUnlocked) {
+							spokenFlights.add(key);
+							speakFlight(speechTextNow);
+						} else {
+							pendingSpeech = {
+								key,
+								text: speechTextNow,
+							};
+						}
+					}
+
+					if (mode === 'external' || mode === 'both') {
+						if (mode === 'external') {
+							spokenFlights.add(key);
+						}
+
+						writeState(IDS.speechTrigger, 'true');
+
+						setTimeout(() => {
+							writeState(IDS.speechTrigger, 'false');
+						}, 800);
+					}
+				}
+			}
+
+			async function poll() {
+				const data = await readAll();
+
+				speechEnabled = cleanValue(data.speechEnabled) !== 'false';
+
+				setSpeechButton();
+
+				render(data);
+			}
+
+			$('toggleBtn').addEventListener('click', async () => {
+				unlockAudio();
+				unlockSpeech();
+				const current = cleanValue(await readState(DP_ROOT + '.enabled')) === 'true';
+				await writeState(DP_ROOT + '.enabled', current ? 'false' : 'true');
+				poll();
+			});
+
+			$('speechBtn').addEventListener('click', async () => {
+				unlockAudio();
+				unlockSpeech();
+				const current = cleanValue(await readState(IDS.speechEnabled)) !== 'false';
+
+				const next = !current;
+
+				await writeState(IDS.speechEnabled, next ? 'true' : 'false');
+
+				if (!next && 'speechSynthesis' in window) {
+					speechSynthesis.cancel();
+				}
+
+				speechEnabled = next;
+				setSpeechButton();
+				poll();
+			});
+
+			document.addEventListener(
+				'click',
+				() => {
+					unlockAudio();
+					unlockSpeech();
+				},
+				{ once: true },
+			);
+
+			setSpeechButton();
+
+			loadVisualConfig()
+				.then(() => {
+					poll();
+					setInterval(poll, 1500);
+				})
+				.catch(e => {
+					VIS_CONFIG_LOADED = false;
+					console.error('[JetFrame] Start abgebrochen:', e);
+					$('statusText').textContent = 'Config fehlt';
+				});
+		</script>
+	</body>
+</html>

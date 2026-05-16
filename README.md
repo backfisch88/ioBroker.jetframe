@@ -189,4 +189,179 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.---
+
+# 🆕 New in JetFrame 0.6.x
+
+## 🌐 Standalone WebApp
+
+JetFrame now includes a modern standalone WebApp interface.
+
+Includes:
+
+- responsive mobile layout
+- fullscreen iPhone/iPad support
+- standalone kiosk mode
+- live flight frame
+- heatmap statistics
+- welcome/start page
+- navigation between pages
+- Apple-style UI
+
+Pages:
+
+http://IP:8082/jetframe/
+http://IP:8082/jetframe/frame.html
+http://IP:8082/jetframe/heatmap.html
+
+---
+
+# 🖼️ Images & Logos
+
+JetFrame no longer ships with bundled images or logos.
+
+This keeps:
+
+- package size smaller
+- updates faster
+- licensing cleaner
+- customization easier
+
+Users can configure their own image/logo providers.
+
+---
+
+## Manufacturer Logos
+
+Example using logo.dev:
+
+AIRBUS=https://img.logo.dev/airbus.com?token=APIKEY&size=80&retina=true&format=png
+
+BOEING=https://img.logo.dev/boeing.com?token=APIKEY&size=80&retina=true&format=png
+
+EMBRAER=https://img.logo.dev/embraer.com?token=APIKEY&size=80&retina=true&format=png
+
+Configured via:
+
+- externalManufacturerLogos
+- manufacturerLogoUrls
+
+---
+
+## Airline Logos
+
+Example airline logo source:
+
+https://raw.githubusercontent.com/Jxck-S/airline-logos/refs/heads/main/fr24_banners
+
+Supports:
+
+- airline logos
+- aircraft images
+- optional local caching
+- external image providers
+
+---
+
+# 💾 Optional Image Caching
+
+Caching of external images can now be enabled or disabled.
+
+Supports caching for:
+
+- airline logos
+- manufacturer logos
+- aircraft images
+
+Useful for:
+
+- kiosk systems
+- offline setups
+- reducing API traffic
+- faster loading
+
+---
+
+# 🌍 Configurable API Host
+
+The WebApp now supports configurable API hosts.
+
+Example:
+
+http://IP:8082/jetframe/frame.html?apiHost=192.168.178.10&apiPort=8087
+
+Useful for:
+
+- reverse proxies
+- Docker
+- Home Assistant dashboards
+- remote panels
+
+---
+
+# 📡 Configurable ADS-B Sources
+
+Supported:
+
+- adsb.lol
+- adsb.fi
+- automatic fallback switching
+- configurable source priority
+
+Improved handling for:
+
+- 503 errors
+- connection resets
+- automatic failover
+
+---
+
+# 🚨 Flight Prioritization
+
+JetFrame now prioritizes aircraft dynamically.
+
+Priority examples:
+
+- special liveries
+- emergency squawks
+- emergency aircraft
+- runway relevance
+- airport relevance
+- aircraft near viewing direction
+
+Special aircraft automatically appear before normal traffic.
+
+---
+
+# 📊 Heatmap Improvements
+
+New Heatmap features:
+
+- responsive landscape mode
+- auto-fit layout
+- optimized iPhone usage
+- top airlines
+- top routes
+- best traffic time
+- current hour statistics
+- fullscreen-friendly layout
+
+---
+
+# 📱 iPhone/iPad WebApp Support
+
+Recommended setup:
+
+1. Open in Safari
+2. Share
+3. Add to Home Screen
+
+JetFrame launches like a native fullscreen app.
+
+Optimized for:
+
+- iPad wall displays
+- kitchen dashboards
+- kiosk installations
+- airport spotting stations
+

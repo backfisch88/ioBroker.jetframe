@@ -28,6 +28,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var images_exports = {};
 __export(images_exports, {
+  MANUFACTURER_LOGO_CACHE_DIR: () => MANUFACTURER_LOGO_CACHE_DIR,
+  cacheExternalLogoUrl: () => cacheExternalLogoUrl,
+  clearImageCache: () => clearImageCache,
   ensureImageDirs: () => ensureImageDirs,
   saveImages: () => saveImages
 });
@@ -36,8 +39,13 @@ var https = __toESM(require("https"));
 var http = __toESM(require("http"));
 const IMAGE_CACHE = {
   jetDir: "img/jet",
-  logoDir: "img/logos"
+  logoDir: "img/logos",
+  manufacturerDir: "img/manufacturer"
 };
+const NEGATIVE_IMAGE_CACHE = /* @__PURE__ */ new Map();
+const NEGATIVE_CACHE_TTL_MS = 1e3 * 60 * 60 * 6;
+const NEGATIVE_CACHE_SPECIAL_TTL_MS = 1e3 * 60 * 30;
+const MANUFACTURER_CACHE_LOGGED = {};
 async function ensureImageDirs(adapter, logDebug, logWarn) {
   try {
     await adapter.writeFileAsync("jetframe.admin", ".keep", Buffer.from(""));
@@ -47,11 +55,24 @@ async function ensureImageDirs(adapter, logDebug, logWarn) {
   }
 }
 async function saveImages(adapter, config, a, logDebug, logWarn) {
-  const logoUrl = await cacheLogoIfNeeded(adapter, a, logDebug, logWarn);
-  const jetUrl = await cacheJetIfNeeded(adapter, a, logDebug, logWarn);
+  let logoUrl = "";
+  let jetUrl = "";
+  if (config.cacheExternalImages) {
+    logoUrl = await cacheLogoIfNeeded(adapter, a, logDebug, logWarn);
+    jetUrl = await cacheJetIfNeeded(adapter, a, logDebug, logWarn);
+  } else {
+    logoUrl = a.logoUrl || "";
+    jetUrl = String(a.fr24ImageUrl || "").trim() || String(a.jetphotosImageUrl || "").trim();
+    if (!jetUrl) {
+      jetUrl = await resolveFr24AircraftImageFromPage(a, logDebug, logWarn);
+    }
+    if (!jetUrl) {
+      jetUrl = buildHexDbImageUrl(a);
+    }
+  }
   a.localLogoUrl = logoUrl;
   a.localImageUrl = jetUrl;
-  a.finalImageUrl = jetUrl || logoUrl || "";
+  a.finalImageUrl = jetUrl || "";
   const bases = [`${config.dpRoot}.current`];
   if (a.mode === "OVERFLIGHT") {
     bases.push(`${config.dpRoot}.overflight`);
@@ -61,9 +82,66 @@ async function saveImages(adapter, config, a, logDebug, logWarn) {
   for (const base of bases) {
     await adapter.setForeignStateAsync(`${base}.localLogoUrl`, logoUrl, true);
     await adapter.setForeignStateAsync(`${base}.localImageUrl`, jetUrl, true);
-    await adapter.setForeignStateAsync(`${base}.finalImageUrl`, jetUrl || logoUrl || "", true);
+    await adapter.setForeignStateAsync(`${base}.finalImageUrl`, jetUrl || "", true);
   }
 }
+async function clearImageCache(adapter, logDebug, logWarn) {
+  const dirs = [IMAGE_CACHE.jetDir, IMAGE_CACHE.logoDir, "img/manufacturer"];
+  for (const dir of dirs) {
+    try {
+      await deleteFolderFiles(adapter, dir, logDebug);
+    } catch (e) {
+      logWarn(`Cache-Ordner konnte nicht geleert werden: ${dir} | ${errorText(e)}`);
+    }
+  }
+  logDebug("Bild-/Logo-Cache geleert");
+}
+async function deleteFolderFiles(adapter, dir, logDebug) {
+  try {
+    const files = await adapter.readDirAsync("jetframe.admin", dir);
+    for (const file of files || []) {
+      if (!(file == null ? void 0 : file.file)) {
+        continue;
+      }
+      const relPath = `${dir}/${file.file}`;
+      try {
+        await adapter.unlinkAsync("jetframe.admin", relPath);
+        logDebug(`Cache gel\xF6scht: ${relPath}`);
+      } catch {
+      }
+    }
+  } catch {
+  }
+}
+async function cacheExternalLogoUrl(adapter, url, key, relDir, logDebug, logWarn) {
+  const cleanUrl = String(url || "").trim();
+  if (!cleanUrl) {
+    return "";
+  }
+  const fileBase = safeFileName(key || "logo");
+  const existing = await findExistingImage(adapter, relDir, fileBase);
+  if (existing) {
+    if (!MANUFACTURER_CACHE_LOGGED[existing.url]) {
+      MANUFACTURER_CACHE_LOGGED[existing.url] = true;
+      logDebug(`Logo Cache hit: ${existing.url}`);
+    }
+    return existing.url;
+  }
+  try {
+    logDebug(`Logo Download: ${cleanUrl}`);
+    const buffer = await downloadImageBuffer(cleanUrl, false);
+    const ext = detectImageExt(buffer);
+    const relPath = `${relDir}/${fileBase}.${ext}`;
+    await adapter.writeFileAsync("jetframe.admin", relPath, buffer);
+    const cachedUrl = publicUrl(relPath);
+    logDebug(`Logo gespeichert: ${cachedUrl}`);
+    return cachedUrl;
+  } catch (e) {
+    logWarn(`Logo Download/Speichern Fehler: ${errorText(e)}`);
+    return cleanUrl;
+  }
+}
+const MANUFACTURER_LOGO_CACHE_DIR = IMAGE_CACHE.manufacturerDir;
 async function cacheLogoIfNeeded(adapter, a, logDebug, logWarn) {
   if (!a.logoUrl) {
     return "";
@@ -72,7 +150,7 @@ async function cacheLogoIfNeeded(adapter, a, logDebug, logWarn) {
   const fileBase = safeFileName(logoKey);
   const existing = await findExistingImage(adapter, IMAGE_CACHE.logoDir, fileBase);
   if (existing) {
-    logDebug(`Logo Cache hit: ${existing.url}`);
+    logDebug(`Airline Logo Cache hit: ${existing.url}`);
     return existing.url;
   }
   try {
@@ -103,9 +181,17 @@ function buildHexDbImageUrl(a) {
 async function cacheJetIfNeeded(adapter, a, logDebug, logWarn) {
   const key = a.registration || a.callsign || a.hex || "unknown";
   const fileBase = safeFileName(key);
+  const negativeKey = String(fileBase).toUpperCase();
+  const isSpecial = String(a.specialLivery || "").trim() || String(a.specialLiveryVisText || "").trim() || String(a.emergency || "").trim() || String(a.aircraftSize || "").toLowerCase().includes("heavy");
+  const ttl = isSpecial ? NEGATIVE_CACHE_SPECIAL_TTL_MS : NEGATIVE_CACHE_TTL_MS;
+  const negativeTs = NEGATIVE_IMAGE_CACHE.get(negativeKey);
+  if (negativeTs && Date.now() - negativeTs < ttl) {
+    logDebug(`Jet Negativ-Cache hit: ${negativeKey}`);
+    return "";
+  }
   const existing = await findExistingImage(adapter, IMAGE_CACHE.jetDir, fileBase);
   if (existing) {
-    logDebug(`Jet Cache hit: ${existing.url}`);
+    logDebug(`Aircraft Bild Cache hit: ${existing.url}`);
     return existing.url;
   }
   const hexUrl = buildHexDbImageUrl(a);
@@ -128,6 +214,8 @@ async function cacheJetIfNeeded(adapter, a, logDebug, logWarn) {
     fr24Url = await resolveFr24AircraftImageFromPage(a, logDebug, logWarn);
   }
   if (!fr24Url) {
+    NEGATIVE_IMAGE_CACHE.set(negativeKey, Date.now());
+    logDebug(`Jet Bild negativ gecached: ${negativeKey}`);
     return "";
   }
   try {
@@ -141,6 +229,8 @@ async function cacheJetIfNeeded(adapter, a, logDebug, logWarn) {
     return url;
   } catch (e) {
     logWarn(`FR24 Bild Download/Speichern Fehler: ${errorText(e)}`);
+    NEGATIVE_IMAGE_CACHE.set(negativeKey, Date.now());
+    logDebug(`Jet Bild negativ gecached: ${negativeKey}`);
     return "";
   }
 }
@@ -323,6 +413,9 @@ function errorText(e) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  MANUFACTURER_LOGO_CACHE_DIR,
+  cacheExternalLogoUrl,
+  clearImageCache,
   ensureImageDirs,
   saveImages
 });

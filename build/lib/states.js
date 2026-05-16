@@ -23,10 +23,12 @@ __export(states_exports, {
   ensureFlightStates: () => ensureFlightStates,
   ensureState: () => ensureState,
   ensureStates: () => ensureStates,
+  trackDirectionText: () => trackDirectionText,
   writeFlight: () => writeFlight
 });
 module.exports = __toCommonJS(states_exports);
 var import_geo = require("./geo");
+var import_images = require("./images");
 const LAST_SPEECH_TRIGGER = {};
 async function ensureState(adapter, id, def, type, role) {
   const obj = await adapter.getForeignObjectAsync(id);
@@ -52,6 +54,7 @@ async function ensureBaseStates(adapter, config) {
   await ensureState(adapter, `${config.dpRoot}.lastUpdate`, "", "string", "text");
   await ensureState(adapter, `${config.dpRoot}.allCount`, 0, "number", "value");
   await ensureState(adapter, `${config.dpRoot}.matchCount`, 0, "number", "value");
+  await ensureState(adapter, `${config.dpRoot}.clearImageCache`, false, "boolean", "button");
   await ensureState(adapter, config.airportJsonDp, "[]", "string", "json");
   await ensureState(adapter, `${config.dpRoot}.airportjsonLastUpdate`, "", "string", "text");
   await ensureState(adapter, `${config.dpRoot}.specialLiveries`, "[]", "string", "json");
@@ -100,15 +103,22 @@ async function ensureFlightStates(adapter, base) {
   const strings = [
     ".text",
     ".callsign",
+    ".rawCallsign",
+    ".cleanedCallsign",
     ".operationalCallsign",
     ".routeCallsign",
     ".hex",
     ".mode",
+    ".flightPhase",
     ".directionText",
     ".modeVisText",
     ".windowPositionText",
     ".windowPositionClass",
     ".windowPositionSpeechText",
+    ".probableRunway",
+    ".probableRunwayText",
+    ".probableRunway",
+    ".probableRunwayText",
     ".airlineName",
     ".airlineIata",
     ".airlineIcao",
@@ -118,6 +128,8 @@ async function ensureFlightStates(adapter, base) {
     ".destName",
     ".originDisplayName",
     ".destDisplayName",
+    ".departureAirport",
+    ".approachAirport",
     ".routeText",
     ".routeTextLong",
     ".routeWarning",
@@ -162,10 +174,15 @@ async function ensureFlightStates(adapter, base) {
     ".speedKt",
     ".verticalRate",
     ".trackDeg",
+    ".trackDirectionText",
     ".distHomeNm",
+    ".distanceKm",
     ".distAirportNm",
     ".bearingHomeDeg",
     ".windowDiffDeg",
+    ".probableRunwayHeading",
+    ".probableRunwayDiffDeg",
+    ".runwayConfidence",
     ".bearingAircraftToAirportDeg",
     ".bearingAirportToAircraftDeg",
     ".landingTrackDiffDeg",
@@ -200,92 +217,181 @@ function cleanRouteCallsign(a) {
   }
   return v;
 }
+function trackDirectionText(degRaw) {
+  const deg = Number(degRaw);
+  if (!Number.isFinite(deg)) {
+    return "";
+  }
+  const normalized = (deg % 360 + 360) % 360;
+  const dirs = ["\u2191 Norden", "\u2197 Nordost", "\u2192 Osten", "\u2198 S\xFCdost", "\u2193 S\xFCden", "\u2199 S\xFCdwest", "\u2190 Westen", "\u2196 Nordwest"];
+  const index = Math.round(normalized / 45) % 8;
+  return dirs[index];
+}
+function getFlightPhase(a) {
+  const mode = String(a.mode || "").toUpperCase();
+  const altFt = Number(a.altFt || a.altitudeFt || 0);
+  const vr = Number(a.verticalRate || 0);
+  const distAirportNm = Number(a.distAirportNm || 0);
+  if (mode === "LANDING") {
+    if (altFt > 0 && altFt <= 1800) {
+      return "landing";
+    }
+    if (distAirportNm > 0 && distAirportNm <= 12) {
+      return "approach";
+    }
+    if (vr < -300) {
+      return "descent";
+    }
+    return "approach";
+  }
+  if (mode === "TAKEOFF") {
+    if (altFt > 0 && altFt <= 1800) {
+      return "departure";
+    }
+    if (vr > 300) {
+      return "climb";
+    }
+    return "departure";
+  }
+  if (mode === "OVERFLIGHT") {
+    if (vr < -500) {
+      return "descent";
+    }
+    if (vr > 500) {
+      return "climb";
+    }
+    return "cruise";
+  }
+  if (vr < -500) {
+    return "descent";
+  }
+  if (vr > 500) {
+    return "climb";
+  }
+  if (altFt > 8e3) {
+    return "cruise";
+  }
+  return "unknown";
+}
+async function setForeignStateChanged(adapter, id, value, ack = true) {
+  try {
+    const oldState = await adapter.getForeignStateAsync(id);
+    if (oldState && oldState.val === value && oldState.ack === ack) {
+      return;
+    }
+  } catch {
+  }
+  await adapter.setForeignStateAsync(id, value, ack);
+}
 async function writeFlight(adapter, base, a) {
   const routeCallsign = String(a.routeCallsign || a.callsign || "").trim().toUpperCase();
-  const display = buildDisplayInfo(a);
+  const display = await buildDisplayInfo(adapter, adapter.config, a);
   display.speechText = await buildSpeechTextForWrite(adapter, base, a, display);
-  await adapter.setForeignStateAsync(`${base}.text`, buildMessage(a), true);
-  await adapter.setForeignStateAsync(`${base}.callsign`, a.callsign || "", true);
-  await adapter.setForeignStateAsync(`${base}.operationalCallsign`, a.operationalCallsign || a.callsign || "", true);
-  await adapter.setForeignStateAsync(`${base}.routeCallsign`, routeCallsign, true);
-  await adapter.setForeignStateAsync(`${base}.hex`, a.hex || "", true);
-  await adapter.setForeignStateAsync(`${base}.mode`, a.mode || "", true);
-  await adapter.setForeignStateAsync(`${base}.directionText`, a.directionText || "", true);
-  await adapter.setForeignStateAsync(`${base}.modeVisText`, display.modeVisText, true);
-  await adapter.setForeignStateAsync(`${base}.windowPositionText`, display.windowPositionText, true);
-  await adapter.setForeignStateAsync(`${base}.windowPositionClass`, display.windowPositionClass, true);
-  await adapter.setForeignStateAsync(`${base}.windowPositionSpeechText`, display.windowPositionSpeechText, true);
-  await adapter.setForeignStateAsync(`${base}.airlineName`, a.airlineName || "", true);
-  await adapter.setForeignStateAsync(`${base}.airlineIata`, a.airlineIata || "", true);
-  await adapter.setForeignStateAsync(`${base}.airlineIcao`, a.airlineIcao || "", true);
-  await adapter.setForeignStateAsync(`${base}.originIata`, a.originIata || "", true);
-  await adapter.setForeignStateAsync(`${base}.destIata`, a.destIata || "", true);
-  await adapter.setForeignStateAsync(`${base}.originName`, a.originName || "", true);
-  await adapter.setForeignStateAsync(`${base}.destName`, a.destName || "", true);
-  await adapter.setForeignStateAsync(`${base}.originDisplayName`, display.originDisplayName, true);
-  await adapter.setForeignStateAsync(`${base}.destDisplayName`, display.destDisplayName, true);
-  await adapter.setForeignStateAsync(`${base}.routeText`, a.routeText || "", true);
-  await adapter.setForeignStateAsync(`${base}.routeTextLong`, a.routeTextLong || "", true);
-  await adapter.setForeignStateAsync(`${base}.routeReliable`, !!a.routeReliable, true);
-  await adapter.setForeignStateAsync(`${base}.routeWarning`, a.routeWarning || "", true);
-  await adapter.setForeignStateAsync(`${base}.routeSource`, a.routeSource || "", true);
-  await adapter.setForeignStateAsync(`${base}.routeDisplayText`, display.routeDisplayText, true);
-  await adapter.setForeignStateAsync(`${base}.routeCodesText`, display.routeCodesText, true);
-  await adapter.setForeignStateAsync(`${base}.aircraftModel`, a.aircraftModel || "", true);
-  await adapter.setForeignStateAsync(`${base}.aircraftType`, a.aircraftType || a.type || "", true);
-  await adapter.setForeignStateAsync(`${base}.registration`, a.registration || "", true);
-  await adapter.setForeignStateAsync(`${base}.manufacturer`, display.manufacturer, true);
-  await adapter.setForeignStateAsync(`${base}.manufacturerLogoText`, display.manufacturerLogoText, true);
-  await adapter.setForeignStateAsync(`${base}.manufacturerLogoUrl`, display.manufacturerLogoUrl, true);
-  await adapter.setForeignStateAsync(`${base}.aircraftTypeText`, display.aircraftTypeText, true);
-  await adapter.setForeignStateAsync(`${base}.aircraftSize`, display.aircraftSize, true);
-  await adapter.setForeignStateAsync(`${base}.squawk`, a.squawk || "", true);
-  await adapter.setForeignStateAsync(`${base}.emergency`, a.emergency || "", true);
-  await adapter.setForeignStateAsync(`${base}.emergencyType`, a.emergencyType || "", true);
-  await adapter.setForeignStateAsync(`${base}.emergencyText`, a.emergencyText || "", true);
-  await adapter.setForeignStateAsync(`${base}.logoUrl`, a.logoUrl || "", true);
-  await adapter.setForeignStateAsync(`${base}.jetphotosUrl`, a.jetphotosUrl || "", true);
-  await adapter.setForeignStateAsync(`${base}.jetphotosImageUrl`, a.jetphotosImageUrl || "", true);
+  await setForeignStateChanged(adapter, `${base}.text`, buildMessage(a), true);
+  const rawCallsign = String(a.rawCallsign || a.callsign || "").trim();
+  const cleanedCallsign = String(a.cleanedCallsign || a.callsign || "").trim().replace(/\s+/g, "").toUpperCase();
+  await setForeignStateChanged(adapter, `${base}.callsign`, a.callsign || "", true);
+  await setForeignStateChanged(adapter, `${base}.rawCallsign`, rawCallsign, true);
+  await setForeignStateChanged(adapter, `${base}.cleanedCallsign`, cleanedCallsign, true);
+  await setForeignStateChanged(
+    adapter,
+    `${base}.operationalCallsign`,
+    a.operationalCallsign || a.callsign || "",
+    true
+  );
+  await setForeignStateChanged(adapter, `${base}.routeCallsign`, routeCallsign, true);
+  await setForeignStateChanged(adapter, `${base}.hex`, a.hex || "", true);
+  await setForeignStateChanged(adapter, `${base}.mode`, a.mode || "", true);
+  await setForeignStateChanged(adapter, `${base}.flightPhase`, getFlightPhase(a), true);
+  await setForeignStateChanged(adapter, `${base}.directionText`, a.directionText || "", true);
+  await setForeignStateChanged(adapter, `${base}.modeVisText`, display.modeVisText, true);
+  await setForeignStateChanged(adapter, `${base}.windowPositionText`, display.windowPositionText, true);
+  await setForeignStateChanged(adapter, `${base}.windowPositionClass`, display.windowPositionClass, true);
+  await setForeignStateChanged(adapter, `${base}.windowPositionSpeechText`, display.windowPositionSpeechText, true);
+  await setForeignStateChanged(adapter, `${base}.probableRunway`, a.probableRunway || "", true);
+  await setForeignStateChanged(adapter, `${base}.probableRunwayText`, a.probableRunwayText || "", true);
+  await setForeignStateChanged(adapter, `${base}.probableRunwayHeading`, a.probableRunwayHeading || 0, true);
+  await setForeignStateChanged(adapter, `${base}.probableRunwayDiffDeg`, a.probableRunwayDiffDeg || 0, true);
+  await setForeignStateChanged(adapter, `${base}.runwayConfidence`, a.runwayConfidence || 0, true);
+  await setForeignStateChanged(adapter, `${base}.airlineName`, a.airlineName || "", true);
+  await setForeignStateChanged(adapter, `${base}.airlineIata`, a.airlineIata || "", true);
+  await setForeignStateChanged(adapter, `${base}.airlineIcao`, a.airlineIcao || "", true);
+  await setForeignStateChanged(adapter, `${base}.originIata`, a.originIata || "", true);
+  await setForeignStateChanged(adapter, `${base}.destIata`, a.destIata || "", true);
+  await setForeignStateChanged(adapter, `${base}.originName`, a.originName || "", true);
+  await setForeignStateChanged(adapter, `${base}.destName`, a.destName || "", true);
+  await setForeignStateChanged(adapter, `${base}.originDisplayName`, display.originDisplayName, true);
+  await setForeignStateChanged(adapter, `${base}.destDisplayName`, display.destDisplayName, true);
+  await setForeignStateChanged(adapter, `${base}.departureAirport`, display.departureAirport, true);
+  await setForeignStateChanged(adapter, `${base}.approachAirport`, display.approachAirport, true);
+  await setForeignStateChanged(adapter, `${base}.routeText`, a.routeText || "", true);
+  await setForeignStateChanged(adapter, `${base}.routeTextLong`, a.routeTextLong || "", true);
+  await setForeignStateChanged(adapter, `${base}.routeReliable`, !!a.routeReliable, true);
+  await setForeignStateChanged(adapter, `${base}.routeWarning`, a.routeWarning || "", true);
+  await setForeignStateChanged(adapter, `${base}.routeSource`, a.routeSource || "", true);
+  await setForeignStateChanged(adapter, `${base}.routeDisplayText`, display.routeDisplayText, true);
+  await setForeignStateChanged(adapter, `${base}.routeCodesText`, display.routeCodesText, true);
+  await setForeignStateChanged(adapter, `${base}.aircraftModel`, a.aircraftModel || "", true);
+  await setForeignStateChanged(adapter, `${base}.aircraftType`, a.aircraftType || a.type || "", true);
+  await setForeignStateChanged(adapter, `${base}.registration`, a.registration || "", true);
+  await setForeignStateChanged(adapter, `${base}.manufacturer`, display.manufacturer, true);
+  await setForeignStateChanged(adapter, `${base}.manufacturerLogoText`, display.manufacturerLogoText, true);
+  await setForeignStateChanged(adapter, `${base}.manufacturerLogoUrl`, display.manufacturerLogoUrl, true);
+  await setForeignStateChanged(adapter, `${base}.aircraftTypeText`, display.aircraftTypeText, true);
+  await setForeignStateChanged(adapter, `${base}.aircraftSize`, display.aircraftSize, true);
+  await setForeignStateChanged(adapter, `${base}.squawk`, a.squawk || "", true);
+  await setForeignStateChanged(adapter, `${base}.emergency`, a.emergency || "", true);
+  await setForeignStateChanged(adapter, `${base}.emergencyType`, a.emergencyType || "", true);
+  await setForeignStateChanged(adapter, `${base}.emergencyText`, a.emergencyText || "", true);
+  await setForeignStateChanged(adapter, `${base}.logoUrl`, a.logoUrl || "", true);
+  await setForeignStateChanged(adapter, `${base}.jetphotosUrl`, a.jetphotosUrl || "", true);
+  await setForeignStateChanged(adapter, `${base}.jetphotosImageUrl`, a.jetphotosImageUrl || "", true);
   const localLogoUrl = await keepExistingStringState(adapter, `${base}.localLogoUrl`, a.localLogoUrl);
   const localImageUrl = await keepExistingStringState(adapter, `${base}.localImageUrl`, a.localImageUrl);
-  const finalImageUrl = await keepExistingStringState(
+  const preferredImage = a.jetphotosImageUrl || a.finalImageUrl || localImageUrl || "";
+  const finalImageUrl = await keepExistingStringState(adapter, `${base}.finalImageUrl`, preferredImage);
+  await setForeignStateChanged(adapter, `${base}.localLogoUrl`, localLogoUrl, true);
+  await setForeignStateChanged(adapter, `${base}.localImageUrl`, localImageUrl, true);
+  await setForeignStateChanged(adapter, `${base}.finalImageUrl`, finalImageUrl, true);
+  await setForeignStateChanged(adapter, `${base}.altitudeFt`, Math.round(a.altFt || 0), true);
+  await setForeignStateChanged(adapter, `${base}.speedKt`, Math.round(a.speedKt || 0), true);
+  await setForeignStateChanged(adapter, `${base}.verticalRate`, Math.round(a.verticalRate || 0), true);
+  await setForeignStateChanged(adapter, `${base}.trackDeg`, Math.round(a.trackDeg || 0), true);
+  await setForeignStateChanged(adapter, `${base}.trackDirectionText`, trackDirectionText(a.trackDeg), true);
+  await setForeignStateChanged(adapter, `${base}.distHomeNm`, a.distHomeNm || 0, true);
+  await setForeignStateChanged(
     adapter,
-    `${base}.finalImageUrl`,
-    a.finalImageUrl || localImageUrl || localLogoUrl
+    `${base}.distanceKm`,
+    Math.round(Number(a.distHomeNm || 0) * 1.852 * 10) / 10,
+    true
   );
-  await adapter.setForeignStateAsync(`${base}.localLogoUrl`, localLogoUrl, true);
-  await adapter.setForeignStateAsync(`${base}.localImageUrl`, localImageUrl, true);
-  await adapter.setForeignStateAsync(`${base}.finalImageUrl`, finalImageUrl, true);
-  await adapter.setForeignStateAsync(`${base}.altitudeFt`, Math.round(a.altFt || 0), true);
-  await adapter.setForeignStateAsync(`${base}.speedKt`, Math.round(a.speedKt || 0), true);
-  await adapter.setForeignStateAsync(`${base}.verticalRate`, Math.round(a.verticalRate || 0), true);
-  await adapter.setForeignStateAsync(`${base}.trackDeg`, Math.round(a.trackDeg || 0), true);
-  await adapter.setForeignStateAsync(`${base}.distHomeNm`, (0, import_geo.round)(a.distHomeNm || 0, 1), true);
-  await adapter.setForeignStateAsync(`${base}.distAirportNm`, (0, import_geo.round)(a.distAirportNm || 0, 1), true);
-  await adapter.setForeignStateAsync(`${base}.bearingHomeDeg`, (0, import_geo.round)(a.bearingHomeDeg || 0, 1), true);
-  await adapter.setForeignStateAsync(`${base}.windowDiffDeg`, (0, import_geo.round)(a.windowDiffDeg || 0, 1), true);
-  await adapter.setForeignStateAsync(
+  await setForeignStateChanged(adapter, `${base}.distAirportNm`, (0, import_geo.round)(a.distAirportNm || 0, 1), true);
+  await setForeignStateChanged(adapter, `${base}.bearingHomeDeg`, (0, import_geo.round)(a.bearingHomeDeg || 0, 1), true);
+  await setForeignStateChanged(adapter, `${base}.windowDiffDeg`, (0, import_geo.round)(a.windowDiffDeg || 0, 1), true);
+  await setForeignStateChanged(
+    adapter,
     `${base}.bearingAircraftToAirportDeg`,
     (0, import_geo.round)(a.bearingAircraftToAirportDeg || 0, 1),
     true
   );
-  await adapter.setForeignStateAsync(
+  await setForeignStateChanged(
+    adapter,
     `${base}.bearingAirportToAircraftDeg`,
     (0, import_geo.round)(a.bearingAirportToAircraftDeg || 0, 1),
     true
   );
-  await adapter.setForeignStateAsync(`${base}.landingTrackDiffDeg`, (0, import_geo.round)(a.landingTrackDiffDeg || 0, 1), true);
-  await adapter.setForeignStateAsync(`${base}.takeoffTrackDiffDeg`, (0, import_geo.round)(a.takeoffTrackDiffDeg || 0, 1), true);
-  await adapter.setForeignStateAsync(`${base}.airportTrackDiffDeg`, (0, import_geo.round)(a.airportTrackDiffDeg || 0, 1), true);
-  await adapter.setForeignStateAsync(`${base}.specialText`, a.specialText || "", true);
-  await adapter.setForeignStateAsync(`${base}.specialLiveryTitle`, a.specialLiveryTitle || "", true);
-  await adapter.setForeignStateAsync(`${base}.specialLiveryDescription`, a.specialLiveryDescription || "", true);
-  await adapter.setForeignStateAsync(`${base}.specialLiveryFull`, a.specialLiveryFull || "", true);
-  await adapter.setForeignStateAsync(`${base}.specialLiveryVisText`, a.specialLiveryVisText || "", true);
-  await adapter.setForeignStateAsync(`${base}.specialDisplayText`, display.specialDisplayText, true);
-  await adapter.setForeignStateAsync(`${base}.speechText`, display.speechText, true);
-  await adapter.setForeignStateAsync(`${base}.isSpecial`, !!a.isSpecial, true);
-  await adapter.setForeignStateAsync(`${base}.isEmergency`, !!a.isEmergency, true);
+  await setForeignStateChanged(adapter, `${base}.landingTrackDiffDeg`, (0, import_geo.round)(a.landingTrackDiffDeg || 0, 1), true);
+  await setForeignStateChanged(adapter, `${base}.takeoffTrackDiffDeg`, (0, import_geo.round)(a.takeoffTrackDiffDeg || 0, 1), true);
+  await setForeignStateChanged(adapter, `${base}.airportTrackDiffDeg`, (0, import_geo.round)(a.airportTrackDiffDeg || 0, 1), true);
+  await setForeignStateChanged(adapter, `${base}.specialText`, a.specialText || "", true);
+  await setForeignStateChanged(adapter, `${base}.specialLiveryTitle`, a.specialLiveryTitle || "", true);
+  await setForeignStateChanged(adapter, `${base}.specialLiveryDescription`, a.specialLiveryDescription || "", true);
+  await setForeignStateChanged(adapter, `${base}.specialLiveryFull`, a.specialLiveryFull || "", true);
+  await setForeignStateChanged(adapter, `${base}.specialLiveryVisText`, a.specialLiveryVisText || "", true);
+  await setForeignStateChanged(adapter, `${base}.specialDisplayText`, display.specialDisplayText, true);
+  await setForeignStateChanged(adapter, `${base}.speechText`, display.speechText, true);
+  await setForeignStateChanged(adapter, `${base}.isSpecial`, !!a.isSpecial, true);
+  await setForeignStateChanged(adapter, `${base}.isEmergency`, !!a.isEmergency, true);
   await maybeTriggerSpeech(adapter, base, a, display.speechText);
 }
 async function clearFlight(adapter, base) {
@@ -310,6 +416,8 @@ async function clearFlight(adapter, base) {
     ".destName",
     ".originDisplayName",
     ".destDisplayName",
+    ".departureAirport",
+    ".approachAirport",
     ".routeText",
     ".routeTextLong",
     ".routeWarning",
@@ -339,7 +447,7 @@ async function clearFlight(adapter, base) {
     ".speechText"
   ];
   for (const s of strings) {
-    await adapter.setForeignStateAsync(base + s, "", true);
+    await setForeignStateChanged(adapter, base + s, "", true);
   }
   const nums = [
     ".altitudeFt",
@@ -350,6 +458,9 @@ async function clearFlight(adapter, base) {
     ".distAirportNm",
     ".bearingHomeDeg",
     ".windowDiffDeg",
+    ".probableRunwayHeading",
+    ".probableRunwayDiffDeg",
+    ".runwayConfidence",
     ".bearingAircraftToAirportDeg",
     ".bearingAirportToAircraftDeg",
     ".landingTrackDiffDeg",
@@ -357,25 +468,35 @@ async function clearFlight(adapter, base) {
     ".airportTrackDiffDeg"
   ];
   for (const n of nums) {
-    await adapter.setForeignStateAsync(base + n, 0, true);
+    await setForeignStateChanged(adapter, base + n, 0, true);
   }
-  await adapter.setForeignStateAsync(`${base}.routeReliable`, false, true);
-  await adapter.setForeignStateAsync(`${base}.isSpecial`, false, true);
-  await adapter.setForeignStateAsync(`${base}.isEmergency`, false, true);
-  await adapter.setForeignStateAsync(`${base}.speechTrigger`, false, true);
+  await setForeignStateChanged(adapter, `${base}.routeReliable`, false, true);
+  await setForeignStateChanged(adapter, `${base}.isSpecial`, false, true);
+  await setForeignStateChanged(adapter, `${base}.isEmergency`, false, true);
+  await setForeignStateChanged(adapter, `${base}.speechTrigger`, false, true);
 }
-function buildDisplayInfo(a) {
+async function buildDisplayInfo(adapter, config, a) {
+  var _a, _b, _c;
   const originDisplayName = cityOnly(a.originName) || String(a.originIata || "").trim() || "\u2014";
   const destDisplayName = cityOnly(a.destName) || String(a.destIata || "").trim() || "\u2014";
   const routeDisplayText = `${originDisplayName} \u2192 ${destDisplayName}`;
   const routeCodesText = `${a.originIata || "\u2014"} \u2192 ${a.destIata || "\u2014"}`;
+  const configuredAirportLabel = airportLabel(
+    ((_a = config.airport) == null ? void 0 : _a.name) || ((_b = config.airport) == null ? void 0 : _b.iata) || "",
+    ((_c = config.airport) == null ? void 0 : _c.iata) || ""
+  );
+  const mode = String(a.mode || "").toUpperCase();
+  const departureAirport = airportLabel(originDisplayName, a.originIata) || (mode === "TAKEOFF" ? configuredAirportLabel : "");
+  const approachAirport = airportLabel(destDisplayName, a.destIata) || (mode === "LANDING" ? configuredAirportLabel : "");
   const modeVisText = modeVisTextFromFlight(a, originDisplayName, destDisplayName);
   const window = windowPositionInfo(a);
-  const aircraft = aircraftDisplayInfo(a);
+  const aircraft = await aircraftDisplayInfo(adapter, config, a);
   const specialDisplayText = String(a.specialLiveryVisText || a.specialLiveryFull || a.specialText || "").trim();
   const speechText = buildSpeechText(a, {
     originDisplayName,
     destDisplayName,
+    departureAirport,
+    approachAirport,
     routeDisplayText,
     routeCodesText,
     specialDisplayText,
@@ -390,6 +511,8 @@ function buildDisplayInfo(a) {
     windowPositionSpeechText: window.speechText,
     originDisplayName,
     destDisplayName,
+    departureAirport,
+    approachAirport,
     routeDisplayText,
     routeCodesText,
     specialDisplayText,
@@ -399,6 +522,20 @@ function buildDisplayInfo(a) {
     aircraftTypeText: aircraft.aircraftTypeText,
     aircraftSize: aircraft.aircraftSize
   };
+}
+function airportLabel(name, iata) {
+  const n = String(name || "").trim();
+  const c = String(iata || "").trim().toUpperCase();
+  if (n && c && n !== "\u2014") {
+    return `${n} (${c})`;
+  }
+  if (c) {
+    return c;
+  }
+  if (n && n !== "\u2014") {
+    return n;
+  }
+  return "";
 }
 function modeVisTextFromFlight(a, originDisplayName, destDisplayName) {
   const mode = String(a.mode || "").toUpperCase();
@@ -444,7 +581,7 @@ function windowPositionInfo(a) {
     speechText: "rechts vom Fenster"
   };
 }
-function aircraftDisplayInfo(a) {
+async function aircraftDisplayInfo(adapter, config, a) {
   const raw = String(a.aircraftModel || a.aircraftType || a.type || "").trim();
   const type = String(a.aircraftType || a.type || "").trim().toUpperCase();
   const model = String(a.aircraftModel || "").trim().toUpperCase();
@@ -502,24 +639,16 @@ function aircraftDisplayInfo(a) {
     }
   }
   const aircraftSize = aircraftSizeLabel(all);
-  const manufacturerLogoBase = "/jetframe.admin/img/manufacturer/";
-  let manufacturerLogoUrl = "";
-  if (manufacturer === "Airbus") {
-    manufacturerLogoUrl = `${manufacturerLogoBase}airbus.png`;
-  } else if (manufacturer === "Boeing") {
-    manufacturerLogoUrl = `${manufacturerLogoBase}boeing.png`;
-  } else if (manufacturer === "Embraer") {
-    manufacturerLogoUrl = `${manufacturerLogoBase}embraer.png`;
-  } else if (manufacturer === "ATR") {
-    manufacturerLogoUrl = `${manufacturerLogoBase}atr.png`;
-  } else if (manufacturer === "Dassault") {
-    manufacturerLogoUrl = `${manufacturerLogoBase}dassault.png`;
-  } else if (manufacturer === "Lockheed") {
-    manufacturerLogoUrl = `${manufacturerLogoBase}lockheed.png`;
-  } else if (manufacturer === "Honda") {
-    manufacturerLogoUrl = `${manufacturerLogoBase}honda.png`;
-  } else if (manufacturer === "Bombardier") {
-    manufacturerLogoUrl = `${manufacturerLogoBase}bombardier.png`;
+  let manufacturerLogoUrl = findConfiguredManufacturerLogo(config, manufacturer, all);
+  if (manufacturerLogoUrl && config.cacheExternalImages) {
+    manufacturerLogoUrl = await (0, import_images.cacheExternalLogoUrl)(
+      adapter,
+      manufacturerLogoUrl,
+      manufacturer,
+      import_images.MANUFACTURER_LOGO_CACHE_DIR,
+      adapter.log.debug.bind(adapter.log),
+      adapter.log.warn.bind(adapter.log)
+    );
   }
   return {
     manufacturer,
@@ -528,6 +657,48 @@ function aircraftDisplayInfo(a) {
     aircraftTypeText,
     aircraftSize
   };
+}
+function findConfiguredManufacturerLogo(config, manufacturer, allText) {
+  if (!config.externalManufacturerLogos) {
+    return "";
+  }
+  const entries = parseManufacturerLogoConfig(config.manufacturerLogoUrls);
+  if (!entries.length) {
+    return "";
+  }
+  const haystack = `${manufacturer} ${allText}`.toUpperCase();
+  for (const entry of entries) {
+    if (haystack.includes(entry.key)) {
+      return entry.url;
+    }
+  }
+  return "";
+}
+function parseManufacturerLogoConfig(raw) {
+  const text = String(raw || "").trim();
+  if (!text) {
+    return [];
+  }
+  try {
+    const obj = JSON.parse(text);
+    if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+      return Object.entries(obj).map(([key, url]) => ({
+        key: String(key || "").trim().toUpperCase(),
+        url: String(url || "").trim()
+      })).filter((entry) => !!entry.key && /^https?:\/\//i.test(entry.url));
+    }
+  } catch {
+  }
+  return text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
+    const idx = line.indexOf("=");
+    if (idx < 1) {
+      return null;
+    }
+    return {
+      key: line.slice(0, idx).trim().toUpperCase(),
+      url: line.slice(idx + 1).trim()
+    };
+  }).filter((entry) => !!(entry == null ? void 0 : entry.key) && /^https?:\/\//i.test(entry.url));
 }
 function aircraftSizeLabel(allText) {
   const all = String(allText || "").toUpperCase().replace(/[\s_-]/g, "");
@@ -793,6 +964,7 @@ async function keepExistingStringState(adapter, id, value) {
   ensureFlightStates,
   ensureState,
   ensureStates,
+  trackDirectionText,
   writeFlight
 });
 //# sourceMappingURL=states.js.map

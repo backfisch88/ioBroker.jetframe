@@ -27,12 +27,14 @@ const fr24LiveRouteCache = {};
 const fr24AircraftCache = {};
 const adsbdbCallsignCache = {};
 const hexdbRouteCache = {};
+const hexdbAirlineCache = {};
 const CACHE = {
   flighteraMs: 12 * 60 * 60 * 1e3,
   fr24LiveMs: 60 * 60 * 1e3,
   fr24Ms: 24 * 60 * 60 * 1e3,
   adsbdbMs: 12 * 60 * 60 * 1e3,
-  hexdbRouteMs: 6 * 60 * 60 * 1e3
+  hexdbRouteMs: 6 * 60 * 60 * 1e3,
+  hexdbAirlineMs: 24 * 60 * 60 * 1e3
 };
 async function enrichFlightInfo(adapter, config, a, httpJson, httpText, logDebug, logWarn) {
   if (!a.callsign) {
@@ -45,7 +47,19 @@ async function enrichFlightInfo(adapter, config, a, httpJson, httpText, logDebug
   try {
     const operationalCallsign = clean(a.callsign).toUpperCase();
     const operationalData = await loadAdsbdbByCallsign(operationalCallsign, httpJson, logDebug, logWarn);
-    let parsed = parseAdsbdbResponse(operationalData, a, operationalCallsign, operationalCallsign);
+    const hexAirline = await resolveAirlineViaHexDb(a.hex, httpText, logDebug, logWarn);
+    let parsed = parseAdsbdbResponse(config, operationalData, a, operationalCallsign, operationalCallsign);
+    if (hexAirline == null ? void 0 : hexAirline.name) {
+      parsed.airlineName = hexAirline.name;
+      parsed.airlineIata = hexAirline.iata || parsed.airlineIata || "";
+      parsed.airlineIcao = hexAirline.icao || parsed.airlineIcao || guessAirlineIcao(operationalCallsign);
+      parsed.logoUrl = buildExternalAirlineLogoUrl(
+        config,
+        parsed.airlineIcao || guessAirlineIcao(operationalCallsign),
+        parsed.airlineIata || ""
+      );
+      logDebug(`HexDB Airline bevorzugt: ${parsed.airlineName}`);
+    }
     const regForRoute = parsed.registration || a.registration;
     let routeFound = false;
     const hexRoute = await resolveRouteViaHexDb(adapter, operationalCallsign, httpJson, logDebug, logWarn, config);
@@ -149,6 +163,50 @@ async function enrichFlightInfo(adapter, config, a, httpJson, httpText, logDebug
     };
   }
 }
+async function resolveAirlineViaHexDb(hex, httpText, logDebug, logWarn) {
+  const cleanHex = clean(hex).toLowerCase().replace(/[^a-f0-9]/g, "");
+  if (!cleanHex) {
+    return null;
+  }
+  const now = Date.now();
+  const cached = hexdbAirlineCache[cleanHex];
+  if (cached && now - cached.ts < CACHE.hexdbAirlineMs) {
+    logDebug(`HexDB Airline Cache hit: ${cleanHex}`);
+    return cached.data || null;
+  }
+  try {
+    logDebug(`HexDB Airline Anfrage: ${cleanHex}`);
+    const data = await httpText(`https://hexdb.io/hex-airline?hex=${encodeURIComponent(cleanHex)}`);
+    const name = clean(data);
+    if (!name || name.toLowerCase().includes("not found")) {
+      hexdbAirlineCache[cleanHex] = {
+        ts: now,
+        data: null
+      };
+      return null;
+    }
+    const result = normalizeHexDbAirlineName(name);
+    hexdbAirlineCache[cleanHex] = {
+      ts: now,
+      data: result
+    };
+    return result;
+  } catch (e) {
+    hexdbAirlineCache[cleanHex] = {
+      ts: now,
+      data: null
+    };
+    logDebug(`HexDB Airline nicht nutzbar: ${errorText(e)}`);
+    return null;
+  }
+}
+function normalizeHexDbAirlineName(name) {
+  return {
+    name: clean(name),
+    iata: "",
+    icao: ""
+  };
+}
 async function loadAdsbdbByCallsign(callsign, httpJson, logDebug, logWarn) {
   const cs = clean(callsign).toUpperCase();
   if (!cs || cs.length < 3) {
@@ -178,7 +236,7 @@ async function loadAdsbdbByCallsign(callsign, httpJson, logDebug, logWarn) {
     return null;
   }
 }
-function parseAdsbdbResponse(data, a, operationalCallsign, routeCallsign) {
+function parseAdsbdbResponse(config, data, a, operationalCallsign, routeCallsign) {
   const response = (data == null ? void 0 : data.response) || {};
   const route = response.flightroute || null;
   const aircraft = response.aircraft || null;
@@ -189,8 +247,8 @@ function parseAdsbdbResponse(data, a, operationalCallsign, routeCallsign) {
   const aircraftModel = (aircraft ? clean(aircraft.model) : "") || aircraftType || a.aircraftModel || "";
   const registration = aircraft ? clean(aircraft.registration) : a.registration || "";
   const logoKey = airlineIcao || guessAirlineIcao(operationalCallsign);
-  const logoUrl = logoKey ? `https://raw.githubusercontent.com/Jxck-S/airline-logos/refs/heads/main/radarbox_banners/${logoKey}.png` : "";
-  const logoFallbackUrl = logoKey ? `https://raw.githubusercontent.com/Jxck-S/airline-logos/refs/heads/main/fr24_banners/${logoKey}.png` : "";
+  const logoUrl = buildExternalAirlineLogoUrl(config, logoKey, airlineIata);
+  const logoFallbackUrl = "";
   return {
     operationalCallsign,
     routeCallsign,
@@ -213,6 +271,21 @@ function parseAdsbdbResponse(data, a, operationalCallsign, routeCallsign) {
     logoFallbackUrl,
     fr24ImageUrl: ""
   };
+}
+function buildExternalAirlineLogoUrl(config, airlineIcao, airlineIata) {
+  if (!config.externalAirlineLogos) {
+    return "";
+  }
+  const base = String(config.airlineLogoBaseUrl || "").trim();
+  if (!base || !airlineIcao) {
+    return "";
+  }
+  const icao = clean(airlineIcao).toUpperCase();
+  const iata = clean(airlineIata).toUpperCase();
+  if (base.includes("{icao}") || base.includes("{iata}") || base.includes("{code}")) {
+    return base.replace(/\{icao\}/g, encodeURIComponent(icao)).replace(/\{iata\}/g, encodeURIComponent(iata || icao)).replace(/\{code\}/g, encodeURIComponent(icao));
+  }
+  return `${base.replace(/\/+$/, "")}/${encodeURIComponent(icao)}.png`;
 }
 function parseAdsbdbRouteFallback(data, mode, config) {
   const response = (data == null ? void 0 : data.response) || {};

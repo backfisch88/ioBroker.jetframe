@@ -112,6 +112,13 @@ export interface JetFrameConfig {
 	emergencySquawk7500: boolean;
 	emergencySquawk7600: boolean;
 	emergencySquawk7700: boolean;
+
+	externalManufacturerLogos: boolean;
+	manufacturerLogoUrls: string;
+	externalAirlineLogos: boolean;
+	airlineLogoBaseUrl: string;
+	cacheExternalImages: boolean;
+
 	/**
 	 *
 	 */
@@ -213,6 +220,7 @@ export interface Aircraft {
 	 *
 	 */
 	distHomeNm?: number;
+	distanceKm?: number;
 	/**
 	 *
 	 */
@@ -396,6 +404,11 @@ export interface Aircraft {
 	/**
 	 *
 	 */
+	probableRunway?: string;
+	probableRunwayText?: string;
+	probableRunwayHeading?: number;
+	probableRunwayDiffDeg?: number;
+	runwayConfidence?: number;
 	windowPositionText?: string;
 	/**
 	 *
@@ -414,6 +427,8 @@ export interface Aircraft {
 	 *
 	 */
 	destDisplayName?: string;
+	departureAirport?: string;
+	approachAirport?: string;
 	/**
 	 *
 	 */

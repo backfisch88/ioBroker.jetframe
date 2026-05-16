@@ -1,6 +1,6 @@
 {
   "name": "iobroker.jetframe",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Flight tracking and visualization for window-based aircraft detection",
   "author": {
     "name": "backfisch88",
