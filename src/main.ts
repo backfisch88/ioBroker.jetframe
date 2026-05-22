@@ -1525,7 +1525,6 @@ class Jetframe extends utils.Adapter {
 		this.scheduleNext(config.livePollSeconds);
 	}
 
-
 	private async applySpecialLivery(a: Aircraft, dpRoot: string): Promise<void> {
 		const reg = this.clean(a.registration).toUpperCase();
 
@@ -1566,7 +1565,7 @@ class Jetframe extends utils.Adapter {
 			(a as any).specialLiveryDescription = description;
 			(a as any).specialLiveryFull = description || title;
 			(a as any).specialLiveryVisText = `${emoji} ${title}`;
-			(a as any).specialText = `${emoji} ${title}${airline ? ' · ' + airline : ''}`;
+			(a as any).specialText = `${emoji} ${title}${airline ? ` · ${airline}` : ''}`;
 
 			this.log.info(`Special Livery erkannt: ${reg} · ${title}`);
 		} catch (e) {
