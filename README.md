@@ -139,59 +139,8 @@ Planned future features:
 
 ## **WORK IN PROGRESS**
 
-### v0.5.0
 
-✨ New
-
-* Added configurable visualization settings via adapter admin
-* Added automatic config generation for the external visualization
-* Added selectable visualization source: current flight, airport traffic or overflight
-* Added aircraft prioritization options
-* Added emergency / Squawk detection support
-* Added emergency display states for the visualization
-* Added configurable emergency Squawk handling for 7700, 7600 and 7500
-* Added overflight-only mode
-
-🛠 Improvements
-
-* Improved Simple-API handling for the visualization
-* Visualization now keeps Simple-API host, port and source consistent after reload
-* Improved mobile admin layout
-* Improved map sizing on mobile devices
-* Improved map zoom behavior by excluding large ADS-B scan circles from automatic zoom
-* Improved special livery display in the visualization
-* Improved aircraft selection when multiple aircraft are visible
-
-🎨 UI
-
-* Added dedicated visualization settings block in admin
-* Added prioritization settings block in admin
-* Added emergency / Squawk settings block in admin
-* Emergency messages are highlighted in the visualization
-* Refined JetFrame visualization layout
-
-### v0.4.0
-
-* Initial release
-
-
----
-
-# License
-
-MIT License
-
-Copyright (c) 2026 backfisch88
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.---
-
-# 🆕 New in JetFrame 0.6.x
+### 1.0.0
 
 ## 🌐 Standalone WebApp
 
@@ -364,4 +313,58 @@ Optimized for:
 - kitchen dashboards
 - kiosk installations
 - airport spotting stations
+
+### v0.5.0
+
+✨ New
+
+* Added configurable visualization settings via adapter admin
+* Added automatic config generation for the external visualization
+* Added selectable visualization source: current flight, airport traffic or overflight
+* Added aircraft prioritization options
+* Added emergency / Squawk detection support
+* Added emergency display states for the visualization
+* Added configurable emergency Squawk handling for 7700, 7600 and 7500
+* Added overflight-only mode
+
+🛠 Improvements
+
+* Improved Simple-API handling for the visualization
+* Visualization now keeps Simple-API host, port and source consistent after reload
+* Improved mobile admin layout
+* Improved map sizing on mobile devices
+* Improved map zoom behavior by excluding large ADS-B scan circles from automatic zoom
+* Improved special livery display in the visualization
+* Improved aircraft selection when multiple aircraft are visible
+
+🎨 UI
+
+* Added dedicated visualization settings block in admin
+* Added prioritization settings block in admin
+* Added emergency / Squawk settings block in admin
+* Emergency messages are highlighted in the visualization
+* Refined JetFrame visualization layout
+
+### v0.4.0
+
+* Initial release
+
+
+---
+
+# License
+
+MIT License
+
+Copyright (c) 2026 backfisch88
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.---
+
+
 
