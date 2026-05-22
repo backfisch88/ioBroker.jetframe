@@ -601,7 +601,11 @@ export async function clearFlight(adapter: AdapterLike, base: string): Promise<v
 	await setForeignStateChanged(adapter, `${base}.speechTrigger`, false, true);
 }
 
-async function buildDisplayInfo(adapter: AdapterLike, config: JetFrameConfig, a: Aircraft): Promise<Record<string, string>> {
+async function buildDisplayInfo(
+	adapter: AdapterLike,
+	config: JetFrameConfig,
+	a: Aircraft,
+): Promise<Record<string, string>> {
 	const originDisplayName = cityOnly(a.originName) || String(a.originIata || '').trim() || '—';
 
 	const destDisplayName = cityOnly(a.destName) || String(a.destIata || '').trim() || '—';

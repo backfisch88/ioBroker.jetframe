@@ -366,7 +366,11 @@ async function cacheJetIfNeeded(
 	}
 }
 
-async function findExistingImage(adapter: AdapterLike, relDir: string, fileBase: string): Promise<{ url: string } | null> {
+async function findExistingImage(
+	adapter: AdapterLike,
+	relDir: string,
+	fileBase: string,
+): Promise<{ url: string } | null> {
 	const exts = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
 
 	for (const ext of exts) {
