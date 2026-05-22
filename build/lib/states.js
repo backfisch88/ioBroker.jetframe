@@ -170,9 +170,7 @@ async function ensureFlightStates(adapter, base) {
   for (const s of strings) {
     await ensureState(adapter, base + s, "", "string", "text");
   }
-  const bools = [
-    ".statistics.today.rushHourNow"
-  ];
+  const bools = [".statistics.today.rushHourNow"];
   const nums = [
     ".altitudeFt",
     ".speedKt",

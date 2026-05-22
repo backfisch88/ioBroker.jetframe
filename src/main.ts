@@ -233,7 +233,7 @@ class Jetframe extends utils.Adapter {
 			const st = await this.getForeignStateAsync(id);
 
 			if (!st) {
-				await this.setForeignStateAsync(id, type === 'number' ? 0 : '', true);
+				await this.setForeignStateAsync(id, type === 'number' ? 0 : type === 'boolean' ? false : '', true);
 			}
 		} catch (e) {
 			this.logWarn(`State konnte nicht erstellt/initialisiert werden: ${id} | ${this.errorText(e)}`);
