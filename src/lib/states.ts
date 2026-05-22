@@ -114,6 +114,7 @@ export async function ensureFlightStates(adapter: AdapterLike, base: string): Pr
 		'.mode',
 		'.flightPhase',
 		'.directionText',
+		'.trackDirectionText',
 
 		'.modeVisText',
 
