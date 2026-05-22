@@ -1,3 +1,5 @@
+![Logo](admin/jetframe.png)
+
 # ioBroker.jetframe
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.jetframe.svg)](https://www.npmjs.com/package/iobroker.jetframe)
