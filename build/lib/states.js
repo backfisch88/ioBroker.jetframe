@@ -174,7 +174,6 @@ async function ensureFlightStates(adapter, base) {
     ".speedKt",
     ".verticalRate",
     ".trackDeg",
-    ".trackDirectionText",
     ".distHomeNm",
     ".distanceKm",
     ".distAirportNm",

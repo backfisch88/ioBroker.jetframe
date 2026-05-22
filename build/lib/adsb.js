@@ -210,21 +210,6 @@ function errorText(e) {
     return String(e);
   }
 }
-function shouldWarn503(url) {
-  const now = Date.now();
-  const item = ADSB_503_STATE[url] || { count: 0, lastWarn: 0 };
-  item.count += 1;
-  const first = item.count === 1;
-  const everyTen = item.count % 10 === 0;
-  const olderThanFiveMin = now - item.lastWarn > 5 * 60 * 1e3;
-  if (first || everyTen || olderThanFiveMin) {
-    item.lastWarn = now;
-    ADSB_503_STATE[url] = item;
-    return true;
-  }
-  ADSB_503_STATE[url] = item;
-  return false;
-}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   fetchAdsb,

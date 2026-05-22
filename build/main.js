@@ -36,6 +36,7 @@ var import_visConfig = require("./lib/visConfig");
 var import_flightInfo = require("./lib/flightInfo");
 class Jetframe extends utils.Adapter {
   timer = null;
+  statisticsTimer = null;
   liveTarget = null;
   liveInfo = null;
   liveStarted = 0;
@@ -59,6 +60,8 @@ class Jetframe extends utils.Adapter {
       const config = (0, import_config.readConfig)(this);
       await (0, import_states.ensureStates)(this, config);
       await this.ensureStatisticsStates(config.dpRoot);
+      await this.resetTodayStatisticsIfNeeded(`${config.dpRoot}.statistics`);
+      this.scheduleStatisticsRotation(config.dpRoot);
       await this.ensureProbableRunwayStates(config.dpRoot);
       await this.ensureIdleRunwayState(config.dpRoot);
       this.subscribeStates("clearImageCache");
@@ -329,6 +332,126 @@ class Jetframe extends utils.Adapter {
     );
     await this.ensureSimpleState(`${base}.today.rushHourNow`, "Rush hour now", "boolean", "indicator");
     await this.ensureSimpleState(`${base}.today.rushHourText`, "Rush hour text", "string", "text");
+    await this.ensureSimpleState(`${base}.today.a380Count`, "Today A380 count", "number", "value");
+    await this.ensureSimpleState(`${base}.today.b747Count`, "Today B747 count", "number", "value");
+    await this.ensureSimpleState(
+      `${base}.today.heavyAircraftCount`,
+      "Today heavy aircraft count",
+      "number",
+      "value"
+    );
+    await this.ensureSimpleState(
+      `${base}.today.specialLiveryCount`,
+      "Today special livery count",
+      "number",
+      "value"
+    );
+    await this.ensureSimpleState(`${base}.yesterday.date`, "Yesterday date", "string", "text");
+    await this.ensureSimpleState(`${base}.yesterday.totalFlights`, "Yesterday total flights", "number", "value");
+    await this.ensureSimpleState(`${base}.yesterday.landings`, "Yesterday landings", "number", "value");
+    await this.ensureSimpleState(`${base}.yesterday.departures`, "Yesterday departures", "number", "value");
+    await this.ensureSimpleState(`${base}.yesterday.overflights`, "Yesterday overflights", "number", "value");
+    await this.ensureSimpleState(
+      `${base}.yesterday.bestSpotterHour`,
+      "Yesterday best spotter hour",
+      "string",
+      "text"
+    );
+    await this.ensureSimpleState(
+      `${base}.yesterday.bestHourFlights`,
+      "Yesterday best hour flights",
+      "number",
+      "value"
+    );
+    await this.ensureSimpleState(`${base}.yesterday.topAirline`, "Yesterday top airline", "string", "text");
+    await this.ensureSimpleState(`${base}.yesterday.topRoute`, "Yesterday top route", "string", "text");
+    await this.ensureSimpleState(`${base}.yesterday.a380Count`, "Yesterday A380 count", "number", "value");
+    await this.ensureSimpleState(`${base}.yesterday.b747Count`, "Yesterday B747 count", "number", "value");
+    await this.ensureSimpleState(
+      `${base}.yesterday.heavyAircraftCount`,
+      "Yesterday heavy aircraft count",
+      "number",
+      "value"
+    );
+    await this.ensureSimpleState(
+      `${base}.yesterday.specialLiveryCount`,
+      "Yesterday special livery count",
+      "number",
+      "value"
+    );
+    await this.ensureSimpleState(`${base}.yesterday.hourly`, "Yesterday hourly JSON", "string", "json");
+    await this.ensureSimpleState(
+      `${base}.yesterday.airlineRankingText`,
+      "Yesterday airline ranking text",
+      "string",
+      "text"
+    );
+    await this.ensureSimpleState(
+      `${base}.yesterday.routeRankingText`,
+      "Yesterday route ranking text",
+      "string",
+      "text"
+    );
+    await this.ensureSimpleState(`${base}.history.daily`, "Daily statistics history JSON", "string", "json");
+    await this.ensureSimpleState(`${base}.history.dailyText`, "Daily statistics history text", "string", "text");
+    await this.ensureSimpleState(`${base}.alltime.bestDayDate`, "Alltime best day date", "string", "text");
+    await this.ensureSimpleState(`${base}.alltime.bestDayFlights`, "Alltime best day flights", "number", "value");
+    await this.ensureSimpleState(`${base}.alltime.bestHour`, "Alltime best hour", "string", "text");
+    await this.ensureSimpleState(`${base}.alltime.bestHourFlights`, "Alltime best hour flights", "number", "value");
+    await this.ensureSimpleState(`${base}.alltime.bestAirline`, "Alltime best airline", "string", "text");
+    await this.ensureSimpleState(`${base}.alltime.bestRoute`, "Alltime best route", "string", "text");
+    await this.ensureSimpleState(
+      `${base}.alltime.bestAircraftType`,
+      "Alltime best aircraft type",
+      "string",
+      "text"
+    );
+    await this.ensureSimpleState(`${base}.alltime.a380Count`, "Alltime A380 count", "number", "value");
+    await this.ensureSimpleState(`${base}.alltime.b747Count`, "Alltime B747 count", "number", "value");
+    await this.ensureSimpleState(
+      `${base}.alltime.heavyAircraftCount`,
+      "Alltime heavy aircraft count",
+      "number",
+      "value"
+    );
+    await this.ensureSimpleState(
+      `${base}.alltime.specialLiveryCount`,
+      "Alltime special livery count",
+      "number",
+      "value"
+    );
+    await this.ensureSimpleState(
+      `${base}.alltime.bestSpecialDayDate`,
+      "Alltime best special day date",
+      "string",
+      "text"
+    );
+    await this.ensureSimpleState(
+      `${base}.alltime.bestSpecialDayCount`,
+      "Alltime best special day count",
+      "number",
+      "value"
+    );
+    await this.ensureSimpleState(`${base}.alltime.hourly`, "Alltime hourly JSON", "string", "json");
+    await this.ensureSimpleState(
+      `${base}.alltime.airlineRanking`,
+      "Alltime airline ranking JSON",
+      "string",
+      "json"
+    );
+    await this.ensureSimpleState(
+      `${base}.alltime.airlineRankingText`,
+      "Alltime airline ranking text",
+      "string",
+      "text"
+    );
+    await this.ensureSimpleState(`${base}.alltime.routeRanking`, "Alltime route ranking JSON", "string", "json");
+    await this.ensureSimpleState(
+      `${base}.alltime.routeRankingText`,
+      "Alltime route ranking text",
+      "string",
+      "text"
+    );
   }
   async readNumberState(id) {
     try {
@@ -431,6 +554,202 @@ class Jetframe extends utils.Adapter {
     await this.setForeignStateAsync(historyId, JSON.stringify(limitedHistory), true);
     await this.setForeignStateAsync(historyTextId, historyText, true);
   }
+  isA380(a) {
+    const all = [a.aircraftTypeText, a.aircraftModel, a.aircraftType, a.type].map((v) => this.clean(v).toUpperCase()).join(" ").replace(/[\s_-]/g, "");
+    return /A380|A388|A38/.test(all);
+  }
+  isB747(a) {
+    const all = [a.aircraftTypeText, a.aircraftModel, a.aircraftType, a.type].map((v) => this.clean(v).toUpperCase()).join(" ").replace(/[\s_-]/g, "");
+    return /B747|B741|B742|B743|B744|B748|747/.test(all);
+  }
+  isHeavyAircraft(a) {
+    const all = [
+      a.aircraftTypeText,
+      a.aircraftModel,
+      a.aircraftType,
+      a.type,
+      a.aircraftSize
+    ].map((v) => this.clean(v).toUpperCase()).join(" ").replace(/[\s_-]/g, "");
+    return /WIDEBODY|HEAVY|SUPERJUMBO|JUMBO|HEAVYCARGO/.test(all) || /A300|A310|A330|A332|A333|A338|A339|A340|A342|A343|A345|A346/.test(all) || /A350|A359|A35K|A351|A380|A388/.test(all) || /B747|B741|B742|B743|B744|B748/.test(all) || /B757|B752|B753/.test(all) || /B767|B762|B763|B764/.test(all) || /B777|B772|B773|B77W|B778|B779|B77L|B77F/.test(all) || /B787|B788|B789|B78X/.test(all) || /MD11|DC10|L1011|IL86|IL96/.test(all) || /AN124|AN225|C5M|GALAXY|C17|C17A|GLOBEMASTER|A400|A400M/.test(all);
+  }
+  isSpecialFlight(a) {
+    return !!(a.isSpecial || this.clean(a.specialText) || this.clean(a.specialLiveryTitle) || this.clean(a.specialLiveryDescription) || this.clean(a.specialLiveryFull) || this.clean(a.specialLiveryVisText));
+  }
+  mergeRanking(target, source) {
+    for (const [key, value] of Object.entries(source || {})) {
+      const cleanKey = this.clean(key);
+      if (!cleanKey) {
+        continue;
+      }
+      const count = Number(value || 0);
+      if (!Number.isFinite(count) || count <= 0) {
+        continue;
+      }
+      target[cleanKey] = (target[cleanKey] || 0) + count;
+    }
+    return target;
+  }
+  bestHourFromHourly(hourly) {
+    const best = Object.entries(hourly || {}).filter(([, value]) => Number((value == null ? void 0 : value.total) || 0) > 0).sort((a, b) => Number(b[1].total || 0) - Number(a[1].total || 0) || Number(a[0]) - Number(b[0]))[0];
+    return best ? { hour: `${best[0]}:00`, total: Number(best[1].total || 0) } : { hour: "", total: 0 };
+  }
+  async archiveTodayStatistics(base, storedDate) {
+    const todayBase = `${base}.today`;
+    const yesterdayBase = `${base}.yesterday`;
+    const totalFlights = await this.readNumberState(`${todayBase}.totalFlights`);
+    if (!storedDate || totalFlights <= 0) {
+      return;
+    }
+    const landings = await this.readNumberState(`${todayBase}.landings`);
+    const departures = await this.readNumberState(`${todayBase}.departures`);
+    const overflights = await this.readNumberState(`${todayBase}.overflights`);
+    const a380Count = await this.readNumberState(`${todayBase}.a380Count`);
+    const b747Count = await this.readNumberState(`${todayBase}.b747Count`);
+    const heavyAircraftCount = await this.readNumberState(`${todayBase}.heavyAircraftCount`);
+    const specialLiveryCount = await this.readNumberState(`${todayBase}.specialLiveryCount`);
+    const hourly = await this.readJsonState(`${todayBase}.hourly`, this.emptyHourlyStats());
+    const airlineRanking = await this.readJsonState(`${todayBase}.airlineRanking`, {});
+    const routeRanking = await this.readJsonState(`${todayBase}.routeRanking`, {});
+    const airlineSorted = this.sortedRanking(airlineRanking, 20);
+    const routeSorted = this.sortedRanking(routeRanking, 20);
+    const bestHour = this.bestHourFromHourly(hourly);
+    const topAirline = airlineSorted.length ? `${airlineSorted[0][0]} \xB7 ${airlineSorted[0][1]}` : "";
+    const topRoute = routeSorted.length ? `${routeSorted[0][0]} \xB7 ${routeSorted[0][1]}` : "";
+    await this.setForeignStateAsync(`${yesterdayBase}.date`, storedDate, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.totalFlights`, totalFlights, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.landings`, landings, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.departures`, departures, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.overflights`, overflights, true);
+    await this.setForeignStateAsync(
+      `${yesterdayBase}.bestSpotterHour`,
+      bestHour.hour ? `${bestHour.hour} \xB7 ${bestHour.total} Fl\xFCge` : "",
+      true
+    );
+    await this.setForeignStateAsync(`${yesterdayBase}.bestHourFlights`, bestHour.total, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.topAirline`, topAirline, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.topRoute`, topRoute, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.a380Count`, a380Count, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.b747Count`, b747Count, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.heavyAircraftCount`, heavyAircraftCount, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.specialLiveryCount`, specialLiveryCount, true);
+    await this.setForeignStateAsync(`${yesterdayBase}.hourly`, JSON.stringify(hourly), true);
+    await this.setForeignStateAsync(
+      `${yesterdayBase}.airlineRankingText`,
+      this.topRankingText(airlineSorted, 5),
+      true
+    );
+    await this.setForeignStateAsync(`${yesterdayBase}.routeRankingText`, this.topRankingText(routeSorted, 5), true);
+    const historyId = `${base}.history.daily`;
+    const history = await this.readJsonState(historyId, []);
+    const entry = {
+      date: storedDate,
+      totalFlights,
+      landings,
+      departures,
+      overflights,
+      bestHour: bestHour.hour,
+      bestHourFlights: bestHour.total,
+      topAirline,
+      topRoute,
+      a380Count,
+      specialLiveryCount
+    };
+    const limitedHistory = [entry, ...history.filter((item) => this.clean(item == null ? void 0 : item.date) !== storedDate)].slice(0, 365);
+    const historyText = limitedHistory.slice(0, 14).map((item) => {
+      const best = item.bestHour ? ` \xB7 beste Zeit ${item.bestHour}` : "";
+      const special = Number(item.specialLiveryCount || 0) > 0 ? ` \xB7 \u2B50 ${item.specialLiveryCount}` : "";
+      const heavy = Number(item.heavyAircraftCount || 0) > 0 ? ` \xB7 Heavy ${item.heavyAircraftCount}` : "";
+      const a380 = Number(item.a380Count || 0) > 0 ? ` \xB7 A380 ${item.a380Count}` : "";
+      const b747 = Number(item.b747Count || 0) > 0 ? ` \xB7 B747 ${item.b747Count}` : "";
+      return `${item.date}: ${item.totalFlights} Fl\xFCge${best}${heavy}${a380}${b747}${special}`;
+    }).join("\n");
+    await this.setForeignStateAsync(historyId, JSON.stringify(limitedHistory), true);
+    await this.setForeignStateAsync(`${base}.history.dailyText`, historyText, true);
+    const currentBestDayFlights = await this.readNumberState(`${base}.alltime.bestDayFlights`);
+    if (totalFlights > currentBestDayFlights) {
+      await this.setForeignStateAsync(`${base}.alltime.bestDayDate`, storedDate, true);
+      await this.setForeignStateAsync(`${base}.alltime.bestDayFlights`, totalFlights, true);
+    }
+    const currentBestSpecial = await this.readNumberState(`${base}.alltime.bestSpecialDayCount`);
+    if (specialLiveryCount > currentBestSpecial) {
+      await this.setForeignStateAsync(`${base}.alltime.bestSpecialDayDate`, storedDate, true);
+      await this.setForeignStateAsync(`${base}.alltime.bestSpecialDayCount`, specialLiveryCount, true);
+    }
+    await this.setForeignStateAsync(
+      `${base}.alltime.a380Count`,
+      await this.readNumberState(`${base}.alltime.a380Count`) + a380Count,
+      true
+    );
+    await this.setForeignStateAsync(
+      `${base}.alltime.specialLiveryCount`,
+      await this.readNumberState(`${base}.alltime.specialLiveryCount`) + specialLiveryCount,
+      true
+    );
+    const alltimeHourly = await this.readJsonState(`${base}.alltime.hourly`, {});
+    for (const [hour, value] of Object.entries(hourly || {})) {
+      alltimeHourly[hour] = (alltimeHourly[hour] || 0) + Number((value == null ? void 0 : value.total) || 0);
+    }
+    const bestAlltimeHour = Object.entries(alltimeHourly).filter(([, count]) => Number(count || 0) > 0).sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0) || Number(a[0]) - Number(b[0]))[0];
+    await this.setForeignStateAsync(`${base}.alltime.hourly`, JSON.stringify(alltimeHourly), true);
+    await this.setForeignStateAsync(
+      `${base}.alltime.bestHour`,
+      bestAlltimeHour ? `${bestAlltimeHour[0]}:00` : "",
+      true
+    );
+    await this.setForeignStateAsync(
+      `${base}.alltime.bestHourFlights`,
+      bestAlltimeHour ? Number(bestAlltimeHour[1] || 0) : 0,
+      true
+    );
+    const alltimeAirlines = this.mergeRanking(
+      await this.readJsonState(`${base}.alltime.airlineRanking`, {}),
+      airlineRanking
+    );
+    const alltimeRoutes = this.mergeRanking(
+      await this.readJsonState(`${base}.alltime.routeRanking`, {}),
+      routeRanking
+    );
+    const alltimeAirlineSorted = this.sortedRanking(alltimeAirlines, 50);
+    const alltimeRouteSorted = this.sortedRanking(alltimeRoutes, 50);
+    await this.setForeignStateAsync(
+      `${base}.alltime.airlineRanking`,
+      JSON.stringify(Object.fromEntries(alltimeAirlineSorted)),
+      true
+    );
+    await this.setForeignStateAsync(
+      `${base}.alltime.airlineRankingText`,
+      this.topRankingText(alltimeAirlineSorted, 8),
+      true
+    );
+    await this.setForeignStateAsync(
+      `${base}.alltime.routeRanking`,
+      JSON.stringify(Object.fromEntries(alltimeRouteSorted)),
+      true
+    );
+    await this.setForeignStateAsync(
+      `${base}.alltime.routeRankingText`,
+      this.topRankingText(alltimeRouteSorted, 8),
+      true
+    );
+    await this.setForeignStateAsync(
+      `${base}.alltime.bestAirline`,
+      alltimeAirlineSorted.length ? `${alltimeAirlineSorted[0][0]} \xB7 ${alltimeAirlineSorted[0][1]}` : "",
+      true
+    );
+    await this.setForeignStateAsync(
+      `${base}.alltime.bestRoute`,
+      alltimeRouteSorted.length ? `${alltimeRouteSorted[0][0]} \xB7 ${alltimeRouteSorted[0][1]}` : "",
+      true
+    );
+    const aircraftTypeRanking = await this.readJsonState(`${base}.aircraftTypeRanking`, {});
+    const aircraftTypeSorted = this.sortedRanking(aircraftTypeRanking, 50);
+    await this.setForeignStateAsync(
+      `${base}.alltime.bestAircraftType`,
+      aircraftTypeSorted.length ? `${aircraftTypeSorted[0][0]} \xB7 ${aircraftTypeSorted[0][1]}` : "",
+      true
+    );
+    this.log.info(`[JetFrame] Tagesstatistik archiviert: ${storedDate} \xB7 ${totalFlights} Fl\xFCge`);
+  }
   todayDateKey() {
     const d = /* @__PURE__ */ new Date();
     const yyyy = d.getFullYear();
@@ -451,6 +770,7 @@ class Jetframe extends utils.Adapter {
     if (storedDate === today) {
       return;
     }
+    await this.archiveTodayStatistics(base, storedDate);
     await this.setForeignStateAsync(`${todayBase}.date`, today, true);
     await this.setForeignStateAsync(`${todayBase}.totalFlights`, 0, true);
     await this.setForeignStateAsync(`${todayBase}.landings`, 0, true);
@@ -474,6 +794,10 @@ class Jetframe extends utils.Adapter {
     await this.setForeignStateAsync(`${todayBase}.currentHourFlights`, 0, true);
     await this.setForeignStateAsync(`${todayBase}.rushHourNow`, false, true);
     await this.setForeignStateAsync(`${todayBase}.rushHourText`, "", true);
+    await this.setForeignStateAsync(`${todayBase}.a380Count`, 0, true);
+    await this.setForeignStateAsync(`${todayBase}.b747Count`, 0, true);
+    await this.setForeignStateAsync(`${todayBase}.heavyAircraftCount`, 0, true);
+    await this.setForeignStateAsync(`${todayBase}.specialLiveryCount`, 0, true);
   }
   emptyHourlyStats() {
     const result = {};
@@ -602,6 +926,34 @@ class Jetframe extends utils.Adapter {
         true
       );
     }
+    if (this.isA380(a)) {
+      await this.setForeignStateAsync(
+        `${todayBase}.a380Count`,
+        await this.readNumberState(`${todayBase}.a380Count`) + 1,
+        true
+      );
+    }
+    if (this.isB747(a)) {
+      await this.setForeignStateAsync(
+        `${todayBase}.b747Count`,
+        await this.readNumberState(`${todayBase}.b747Count`) + 1,
+        true
+      );
+    }
+    if (this.isHeavyAircraft(a)) {
+      await this.setForeignStateAsync(
+        `${todayBase}.heavyAircraftCount`,
+        await this.readNumberState(`${todayBase}.heavyAircraftCount`) + 1,
+        true
+      );
+    }
+    if (this.isSpecialFlight(a)) {
+      await this.setForeignStateAsync(
+        `${todayBase}.specialLiveryCount`,
+        await this.readNumberState(`${todayBase}.specialLiveryCount`) + 1,
+        true
+      );
+    }
     await this.updateTodayHourlyStatistics(todayBase, info.mode);
   }
   async updateStatistics(dpRoot, a) {
@@ -721,7 +1073,7 @@ class Jetframe extends utils.Adapter {
     await this.startNewFlight(matches[0]);
   }
   async liveLoop() {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
     const config = (0, import_config.readConfig)(this);
     const elapsed = (Date.now() - this.liveStarted) / 1e3;
     const data = await (0, import_adsb.fetchAdsb)(
@@ -776,7 +1128,13 @@ class Jetframe extends utils.Adapter {
       finalImageUrl: ((_d = this.liveInfo) == null ? void 0 : _d.finalImageUrl) || live.finalImageUrl || "",
       logoUrl: ((_e = this.liveInfo) == null ? void 0 : _e.logoUrl) || live.logoUrl || "",
       routeCallsign: ((_f = this.liveInfo) == null ? void 0 : _f.routeCallsign) || live.routeCallsign || live.callsign || "",
-      aircraftModel: ((_g = this.liveInfo) == null ? void 0 : _g.aircraftModel) || live.aircraftModel || live.aircraftType || live.type || ""
+      aircraftModel: ((_g = this.liveInfo) == null ? void 0 : _g.aircraftModel) || live.aircraftModel || live.aircraftType || live.type || "",
+      isSpecial: ((_h = this.liveInfo) == null ? void 0 : _h.isSpecial) || live.isSpecial || false,
+      specialText: ((_i = this.liveInfo) == null ? void 0 : _i.specialText) || live.specialText || "",
+      specialLiveryTitle: ((_j = this.liveInfo) == null ? void 0 : _j.specialLiveryTitle) || live.specialLiveryTitle || "",
+      specialLiveryDescription: ((_k = this.liveInfo) == null ? void 0 : _k.specialLiveryDescription) || live.specialLiveryDescription || "",
+      specialLiveryFull: ((_l = this.liveInfo) == null ? void 0 : _l.specialLiveryFull) || live.specialLiveryFull || "",
+      specialLiveryVisText: ((_m = this.liveInfo) == null ? void 0 : _m.specialLiveryVisText) || live.specialLiveryVisText || ""
     };
     await this.applyProbableRunway(enrichedLive, config);
     this.liveInfo = {
@@ -787,6 +1145,43 @@ class Jetframe extends utils.Adapter {
     }
     await this.setForeignStateAsync(`${config.dpRoot}.status`, "live", true);
     this.scheduleNext(config.livePollSeconds);
+  }
+  async applySpecialLivery(a, dpRoot) {
+    const reg = this.clean(a.registration).toUpperCase();
+    if (!reg) {
+      return;
+    }
+    try {
+      const st = await this.getForeignStateAsync(`${dpRoot}.specialLiveries`);
+      const raw = String((st == null ? void 0 : st.val) || "").trim();
+      if (!raw || raw === "[]") {
+        return;
+      }
+      const list = JSON.parse(raw);
+      if (!Array.isArray(list)) {
+        return;
+      }
+      const hit = list.find((item) => {
+        const itemReg = this.clean(item == null ? void 0 : item.registration).toUpperCase();
+        return itemReg && itemReg === reg;
+      });
+      if (!hit) {
+        return;
+      }
+      const emoji = this.clean(hit.emoji) || "\u{1F3A8}";
+      const title = this.clean(hit.title) || this.clean(hit.type) || "Special Livery";
+      const description = this.clean(hit.description);
+      const airline = this.clean(hit.airline);
+      a.isSpecial = true;
+      a.specialLiveryTitle = title;
+      a.specialLiveryDescription = description;
+      a.specialLiveryFull = description || title;
+      a.specialLiveryVisText = `${emoji} ${title}`;
+      a.specialText = `${emoji} ${title}${airline ? ` \xB7 ${airline}` : ""}`;
+      this.log.info(`Special Livery erkannt: ${reg} \xB7 ${title}`);
+    } catch (e) {
+      this.logWarn(`Special-Livery Match Fehler: ${this.errorText(e)}`);
+    }
   }
   async startNewFlight(rawMatch) {
     const config = (0, import_config.readConfig)(this);
@@ -809,6 +1204,7 @@ class Jetframe extends utils.Adapter {
       this.logDebug.bind(this),
       this.logWarn.bind(this)
     );
+    await this.applySpecialLivery(best, config.dpRoot);
     await this.applyProbableRunway(best, config);
     this.log.info(
       `Neuer Flug: callsign=${best.callsign || ""} route=${best.originIata || "?"} \u2192 ${best.destIata || "?"} | ${best.originName || "?"} \u2192 ${best.destName || "?"}${best.probableRunwayText ? ` | ${best.probableRunwayText}` : ""}`
@@ -887,6 +1283,23 @@ class Jetframe extends utils.Adapter {
       return `HEX:${hex}`;
     }
     return "";
+  }
+  scheduleStatisticsRotation(dpRoot) {
+    if (this.statisticsTimer) {
+      clearInterval(this.statisticsTimer);
+      this.statisticsTimer = null;
+    }
+    this.statisticsTimer = setInterval(() => {
+      this.resetTodayStatisticsIfNeeded(`${dpRoot}.statistics`).catch((e) => {
+        this.logWarn(`Tagesstatistik-Rotation fehlgeschlagen: ${this.errorText(e)}`);
+      });
+    }, 6e4);
+  }
+  clearStatisticsTimer() {
+    if (this.statisticsTimer) {
+      clearInterval(this.statisticsTimer);
+      this.statisticsTimer = null;
+    }
   }
   scheduleNext(seconds) {
     this.timer = setTimeout(() => this.loop(), seconds * 1e3);
@@ -1026,6 +1439,7 @@ class Jetframe extends utils.Adapter {
   onUnload(callback) {
     try {
       this.clearTimer();
+      this.clearStatisticsTimer();
       callback();
     } catch {
       callback();
