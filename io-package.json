@@ -4,20 +4,7 @@
     "name": "jetframe",
     "version": "1.0.1",
     "news": {
-      "1.0.0": {
-        "en": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "de": "Version 1.0.0 – Komplett neues Web-UI (Glassmorphism, vollständig responsiv für iPhone, iPad und Desktop), verbessertes ADS-B Fallback-System, neue Flugstatistiken mit Heatmap, Heavy-Aircraft- und Special-Livery-Tracking, sauberere TypeScript-Codebasis.",
-        "ru": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "pt": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "nl": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "fr": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "it": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "es": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "pl": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "uk": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
-        "zh-cn": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase."
-      },
-      "1.0.1": {
+            "1.0.1": {
         "en": "Initial public npm release with live flight detection, aircraft visualization, statistics and tablet UI optimizations.",
         "de": "Erstes öffentliches npm-Release mit Live-Flugerkennung, Flugzeuganzeige, Statistik und Tablet-Optimierungen.",
         "ru": "Первый публичный npm-релиз с обнаружением рейсов, визуализацией самолётов, статистикой и оптимизацией для планшетов.",
@@ -31,6 +18,20 @@
         "zh-cn": "首个公开 npm 版本，包含实时航班检测、飞机可视化、统计信息和平板界面优化。"
       }
     },
+      "1.0.0": {
+        "en": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "de": "Version 1.0.0 – Komplett neues Web-UI (Glassmorphism, vollständig responsiv für iPhone, iPad und Desktop), verbessertes ADS-B Fallback-System, neue Flugstatistiken mit Heatmap, Heavy-Aircraft- und Special-Livery-Tracking, sauberere TypeScript-Codebasis.",
+        "ru": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "pt": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "nl": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "fr": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "it": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "es": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "pl": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "uk": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
+        "zh-cn": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase."
+      },
+
     "titleLang": {
       "en": "JetFrame",
       "de": "JetFrame",
