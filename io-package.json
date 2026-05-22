@@ -2,7 +2,7 @@
   "common": {
     "webExtension": true,
     "name": "jetframe",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "news": {
       "1.0.0": {
         "en": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
@@ -16,45 +16,6 @@
         "pl": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
         "uk": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase.",
         "zh-cn": "Version 1.0.0 – Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop), improved ADS-B fallback system, new flight statistics with heatmap, heavy aircraft and special livery tracking, cleaner TypeScript codebase."
-      },
-      "0.5.0": {
-        "en": "Added configurable visualization settings, visual source selection, aircraft prioritization, squawk/emergency detection, improved admin map behavior and mobile layout fixes.",
-        "de": "Konfigurierbare Visualisierung, auswählbare Anzeigequelle, Flugzeug-Priorisierung, Squawk-/Notfall-Erkennung sowie Verbesserungen an Admin-Karte und mobilem Layout hinzugefügt.",
-        "ru": "Добавлены настраиваемая визуализация, выбор источника отображения, приоритизация воздушных судов, обнаружение squawk/аварийных кодов, улучшения карты администратора и мобильной раскладки.",
-        "pt": "Adicionadas configurações de visualização, seleção da fonte exibida, priorização de aeronaves, detecção de squawk/emergência e melhorias no mapa/admin mobile.",
-        "nl": "Configureerbare visualisatie, selecteerbare weergavebron, vliegtuigprioritering, squawk/nooddetectie en verbeteringen aan admin-kaart en mobiele layout toegevoegd.",
-        "fr": "Ajout de paramètres de visualisation configurables, sélection de la source affichée, priorisation des avions, détection squawk/urgence et améliorations de la carte admin/mobile.",
-        "it": "Aggiunte impostazioni di visualizzazione configurabili, selezione della sorgente visualizzata, priorità degli aeromobili, rilevamento squawk/emergenza e miglioramenti alla mappa admin/mobile.",
-        "es": "Añadida visualización configurable, selección de fuente visual, priorización de aeronaves, detección de squawk/emergencia y mejoras del mapa admin/móvil.",
-        "pl": "Dodano konfigurowalną wizualizację, wybór źródła widoku, priorytetyzację samolotów, wykrywanie squawk/awarii oraz poprawki mapy admina i widoku mobilnego.",
-        "uk": "Додано налаштовувану візуалізацію, вибір джерела відображення, пріоритизацію літаків, виявлення squawk/аварійних кодів та покращення карти адміністратора і мобільного вигляду.",
-        "zh-cn": "新增可配置的可视化设置、显示来源选择、飞机优先级、Squawk/紧急状态检测，并改进了管理界面地图和移动端布局。"
-      },
-      "0.1.0": {
-        "en": "initial release",
-        "de": "Erstveröffentlichung",
-        "ru": "Начальная версия",
-        "pt": "lançamento inicial",
-        "nl": "Eerste uitgave",
-        "fr": "Première version",
-        "it": "Versione iniziale",
-        "es": "Versión inicial",
-        "pl": "Pierwsze wydanie",
-        "uk": "Початкова версія",
-        "zh-cn": "首次出版"
-      },
-      "0.2.0": {
-        "en": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "de": "Beta-Release mit HexDB-Routen/Bildern, deutschen Flughafen-Ortsnamen, verbesserter Sprachausgabe-Triggerlogik, Nur-Überflug-Modus und Admin-UI-Fixes.",
-        "ru": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "pt": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "nl": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "fr": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "it": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "es": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "pl": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "uk": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes.",
-        "zh-cn": "Beta release with HexDB route/image support, German airport city names, improved speech trigger handling, overflight-only mode and admin UI fixes."
       }
     },
     "titleLang": {
