@@ -1,0 +1,1260 @@
+/* ════════════════════════════════════════════════════════════════
+   JetFrame · Clean Stylesheet · 2026
+   ────────────────────────────────────────────────────────────────
+   Eine Datei. Eine Media-Query (orientation).
+   Alle Größen über clamp() — voll responsiv vom iPhone bis 4K.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── Design Tokens ──────────────────────────────────────────── */
+:root {
+  --bg-1: #0d1020;
+  --bg-2: #050709;
+  --surface:    rgba(255,255,255,.075);
+  --border:     rgba(255,255,255,.12);
+  --border-hi:  rgba(255,255,255,.18);
+  --text:       #fff;
+  --muted:      rgba(255,255,255,.58);
+  --green:      #32e879;
+  --blue:       #56a8ff;
+  --yellow:     #ffd84d;
+  --red:        #ff4d5e;
+  --font: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+
+  --gap:     clamp(8px,  1.4vmin, 18px);
+  --pad:     clamp(12px, 2vmin,   24px);
+  --r-shell: clamp(22px, 3.4vmin, 38px);
+  --r-box:   clamp(14px, 2.2vmin, 26px);
+  --r-pill:  999px;
+}
+
+*, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  /* Safari nutzt diese Farbe für den Bereich unter der URL-Leiste */
+  background-color: #050709;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 18% 0%,  rgba(60,110,255,.28), transparent 44%),
+    radial-gradient(ellipse at 88% 12%, rgba(255,120,50,.16), transparent 38%),
+    linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 70%);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button { font: inherit; cursor: pointer; border: none; outline: none; background: none; color: inherit; padding: 0; }
+a      { text-decoration: none; color: inherit; }
+
+/* ─── App-Wrapper + Shell ───────────────────────────────────── */
+#app {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  padding:
+    calc(env(safe-area-inset-top)    + 10px)
+    calc(env(safe-area-inset-right)  + 10px)
+    calc(env(safe-area-inset-bottom) + 10px)
+    calc(env(safe-area-inset-left)   + 10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.jf-shell {
+  width: 100%;
+  height: 100%;
+  max-width: 1400px;
+  border-radius: var(--r-shell);
+  padding: var(--pad);
+  background: linear-gradient(148deg, rgba(55,62,88,.55), rgba(14,15,20,.82));
+  border: 1px solid var(--border);
+  box-shadow: 0 28px 100px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.16);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+/* ─── Header ────────────────────────────────────────────────── */
+.header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--gap);
+  flex-shrink: 0;
+}
+
+.backBtn {
+  display: grid; place-items: center;
+  width:  clamp(34px, 5vmin, 46px);
+  height: clamp(34px, 5vmin, 46px);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: clamp(18px, 3vmin, 26px);
+  font-weight: 900;
+  color: rgba(255,255,255,.85);
+}
+
+.title {
+  font-size: clamp(22px, 3.6vmin, 40px);
+  font-weight: 950;
+  letter-spacing: -.06em;
+  line-height: .96;
+  white-space: nowrap;
+}
+
+.sub {
+  font-size: clamp(11px, 1.6vmin, 16px);
+  font-weight: 700;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.livePill {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  padding: clamp(6px,1vmin,10px) clamp(12px,1.9vmin,18px);
+  border-radius: var(--r-pill);
+  background: rgba(50,232,121,.12);
+  border: 1px solid rgba(50,232,121,.30);
+  color: rgba(210,255,225,.94);
+  font-size: clamp(11px, 1.6vmin, 16px);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.livePill .dot {
+  width:  clamp(7px,1.2vmin,10px);
+  height: clamp(7px,1.2vmin,10px);
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 12px rgba(50,232,121,.7);
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%     { opacity: .5; transform: scale(.75); }
+}
+
+/* ─── API-Warnung ──────────────────────────────────────────── */
+.simpleApiWarning {
+  position: fixed;
+  left: 50%; bottom: calc(env(safe-area-inset-bottom) + 20px);
+  transform: translateX(-50%) translateY(14px);
+  z-index: 9999;
+  max-width: min(92vw, 540px);
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: rgba(255,77,94,.18);
+  border: 1px solid rgba(255,77,94,.36);
+  color: rgba(255,232,232,.96);
+  box-shadow: 0 18px 48px rgba(0,0,0,.4);
+  backdrop-filter: blur(16px);
+  font-size: clamp(11px, 1.6vmin, 14px);
+  font-weight: 800;
+  text-align: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s, transform .25s;
+}
+.simpleApiWarning.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ════════════════════════════════════════════════════════════
+   HOME PAGE
+   ════════════════════════════════════════════════════════════ */
+
+body.jf-page-home .jf-shell {
+  max-width: 560px;
+}
+
+.hero {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: clamp(4px, .7vmin, 8px);
+  padding-top: clamp(8px, 1.5vmin, 20px);
+}
+
+.logo { font-size: clamp(38px, 7vmin, 60px); line-height: 1; }
+
+h1 {
+  margin: 0;
+  font-size: clamp(38px, 8vmin, 68px);
+  font-weight: 950;
+  letter-spacing: -.075em;
+  line-height: .9;
+}
+
+.tagline {
+  font-size: clamp(13px, 2.2vmin, 20px);
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: clamp(6px,1vmin,10px) clamp(13px,2vmin,18px);
+  border-radius: var(--r-pill);
+  background: rgba(50,232,121,.12);
+  border: 1px solid rgba(50,232,121,.26);
+  color: rgba(210,255,225,.94);
+  font-size: clamp(11px, 1.6vmin, 15px);
+  font-weight: 850;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: clamp(6px, 1vmin, 12px);
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(7px, 1.2vmin, 12px);
+  flex-shrink: 0;
+}
+
+.btn, .powerBtn {
+  border-radius: var(--r-box);
+  padding: clamp(12px, 2vmin, 18px) clamp(14px, 2.4vmin, 22px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: background .15s, transform .1s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+}
+.btn:active, .powerBtn:active { transform: scale(.98); background: rgba(255,255,255,.11); }
+
+.btn.primary { background: linear-gradient(145deg, rgba(86,168,255,.36), rgba(50,232,121,.20)); border-color: rgba(86,168,255,.30); }
+.btn.heat    { background: linear-gradient(145deg, rgba(255,216,77,.28), rgba(255,77,94,.16));  border-color: rgba(255,216,77,.26); }
+
+.powerBtn     { background: linear-gradient(135deg, rgba(50,232,121,.16), rgba(255,255,255,.05)); border-color: rgba(50,232,121,.26); }
+.powerBtn.off { background: linear-gradient(135deg, rgba(255,77,94,.16), rgba(255,255,255,.05)); border-color: rgba(255,77,94,.30); }
+
+.btnTitle { font-size: clamp(17px, 2.8vmin, 26px); font-weight: 920; letter-spacing: -.03em; line-height: 1.1; }
+.btnSub   { font-size: clamp(11px, 1.6vmin, 15px); color: var(--muted); font-weight: 700; margin-top: 2px; }
+.arrow    { font-size: clamp(19px, 3vmin, 26px); font-weight: 700; color: rgba(255,255,255,.75); flex-shrink: 0; }
+
+.powerBadge {
+  flex-shrink: 0;
+  padding: clamp(5px,.9vmin,8px) clamp(11px,1.8vmin,16px);
+  border-radius: var(--r-pill);
+  background: rgba(50,232,121,.18);
+  border: 1px solid rgba(50,232,121,.34);
+  font-size: clamp(11px, 1.7vmin, 15px);
+  font-weight: 950;
+  color: #e0fff0;
+  letter-spacing: .04em;
+}
+.powerBtn.off .powerBadge { background: rgba(255,77,94,.18); border-color: rgba(255,77,94,.36); color: #ffd6da; }
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+  flex-shrink: 0;
+}
+
+.statCard {
+  border-radius: var(--r-box);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px,1.5vmin,16px) 6px;
+  gap: 4px;
+  min-height: clamp(56px, 8vmin, 78px);
+}
+.statVal   { font-size: clamp(22px, 4.4vmin, 38px); font-weight: 950; letter-spacing: -.05em; line-height: .9; }
+.statLabel { font-size: clamp(8px, 1.1vmin, 11px); letter-spacing: .18em; color: var(--muted); font-weight: 850; text-transform: uppercase; }
+
+/* ════════════════════════════════════════════════════════════
+   FRAME PAGE (Live)
+   ════════════════════════════════════════════════════════════ */
+
+body.jf-page-frame .jf-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+
+.frameHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: clamp(7px, 1.2vmin, 12px);
+}
+
+.jfHiddenToggle { display: none !important; }
+
+.speechBtn {
+  width:  clamp(34px, 5vmin, 46px);
+  height: clamp(34px, 5vmin, 46px);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: clamp(16px, 2.4vmin, 22px);
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.speechBtn.on { background: rgba(50,232,121,.14); border-color: rgba(50,232,121,.30); }
+
+.jfFrameMain {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  gap: var(--gap);
+  grid-template-areas:
+    "photo"
+    "info"
+    "metrics";
+  grid-template-rows: auto minmax(0,1fr) auto;
+}
+
+/* ── Foto ── */
+.photoWrap {
+  grid-area: photo;
+  position: relative;
+  border-radius: var(--r-box);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+}
+
+#planePhoto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  transition: opacity .4s ease;
+}
+
+.placeholder {
+  position: absolute; inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.radarCircle {
+  position: absolute;
+  width: min(46vmin, 320px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.13);
+}
+
+.radarSweep {
+  position: absolute;
+  width: min(46vmin, 320px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(50,232,121,.32), transparent 20%);
+  animation: radarSpin 2.6s linear infinite;
+  opacity: .42;
+}
+
+.idlePlane {
+  position: relative; z-index: 3;
+  font-size: clamp(40px, 7vmin, 76px);
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,.35));
+  animation: idleFloat 3.2s ease-in-out infinite;
+}
+
+.idleFlyers { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 2; }
+.idleFlyers span {
+  position: absolute;
+  left: -14%;
+  font-size: clamp(16px, 3vmin, 28px);
+  opacity: 0;
+  animation: idleFly 5.8s ease-in-out infinite;
+}
+.idleFlyers span:nth-child(1) { top: 32%; animation-delay: .2s;  }
+.idleFlyers span:nth-child(2) { top: 56%; animation-delay: 1.8s; }
+.idleFlyers span:nth-child(3) { top: 44%; animation-delay: 3.5s; }
+
+.idleText {
+  position: absolute;
+  left: 50%; bottom: clamp(12px, 2vmin, 24px);
+  transform: translateX(-50%);
+  font-size: clamp(13px, 2vmin, 18px);
+  font-weight: 850;
+  color: rgba(255,255,255,.68);
+  white-space: nowrap;
+  z-index: 3;
+}
+
+@keyframes radarSpin { to { transform: rotate(360deg); } }
+@keyframes idleFloat {
+  0%,100% { transform: translateY(0) rotate(-8deg); }
+  50%     { transform: translateY(-10px) rotate(-2deg); }
+}
+@keyframes idleFly {
+  0%   { transform: translateX(0) translateY(16px) rotate(8deg); opacity: 0; }
+  12%  { opacity: .82; }
+  84%  { opacity: .82; }
+  100% { transform: translateX(120vw) translateY(-34px) rotate(8deg); opacity: 0; }
+}
+
+.frameIdleRunwaySlot {
+  display: none;
+  grid-area: info;
+  align-items: center;
+  justify-content: center;
+}
+body.jf-page-frame.jf-no-flight .frameIdleRunwaySlot { display: flex; }
+
+.idleRunwayText {
+  display: none;
+  padding: clamp(8px,1.2vmin,12px) clamp(16px,2vmin,22px);
+  border-radius: var(--r-pill);
+  background: rgba(50,232,121,.14);
+  border: 1px solid rgba(50,232,121,.32);
+  color: #dffff0;
+  font-size: clamp(13px, 2vmin, 18px);
+  font-weight: 900;
+  white-space: nowrap;
+  text-align: center;
+}
+.idleRunwayText.visible { display: inline-flex; }
+
+.info {
+  grid-area: info;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(4px, .7vmin, 10px);
+}
+
+.mode {
+  font-size: clamp(18px, 2.8vmin, 32px);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.flightInfoPillRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(6px, 1vmin, 12px);
+}
+
+.windowInfo, .runwayInfo {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  border-radius: var(--r-pill);
+  padding: clamp(5px,.9vmin,9px) clamp(11px,1.6vmin,18px);
+  font-size: clamp(12px, 1.8vmin, 18px);
+  font-weight: 900;
+  white-space: nowrap;
+  border: 1px solid var(--border-hi);
+  background: var(--surface);
+}
+.windowInfo.visible, .runwayInfo.visible { display: inline-flex; }
+.windowInfo {
+  border-color: rgba(255,231,122,.36);
+  background:   rgba(255,231,122,.13);
+  color: #fff0a2;
+}
+
+.callsigns { display: flex; flex-direction: column; }
+
+.iataCallsign {
+  font-size: clamp(34px, 5.6vmin, 64px);
+  font-weight: 950;
+  letter-spacing: -.07em;
+  line-height: .9;
+  white-space: nowrap;
+}
+
+.operatorCallsign, .routeCodes, .reg {
+  font-size: clamp(13px, 2vmin, 22px);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: -.02em;
+}
+
+.routeCities {
+  font-size: clamp(24px, 4.2vmin, 50px);
+  font-weight: 950;
+  letter-spacing: -.06em;
+  line-height: .96;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Aircraft-Card ── */
+.aircraftCard {
+  display: flex;
+  flex-direction: column;
+  border-radius: clamp(16px, 2.4vmin, 26px);
+  border: 1px solid var(--border-hi);
+  background: var(--surface);
+  padding: clamp(8px, 1.3vmin, 14px) clamp(12px, 1.7vmin, 18px);
+  width: min(560px, 100%);
+}
+
+.acRow {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1.3vmin, 14px);
+  padding: clamp(5px, .8vmin, 8px) 0;
+  min-width: 0;
+}
+
+.aircraftSep {
+  width: 100%;
+  height: 1px;
+  background: rgba(255,255,255,.13);
+}
+
+.acLogo {
+  width:  clamp(34px, 4.6vmin, 50px);
+  height: clamp(34px, 4.6vmin, 50px);
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,.18);
+}
+
+#airlineLogoImg,
+#manufacturerLogoImg {
+  width:  78%;
+  height: 78%;
+  object-fit: contain;
+}
+
+#manufacturerLogoText {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(15px, 2.2vmin, 22px);
+  color: #06080f;
+  font-weight: 900;
+}
+
+.airline, #aircraftTypeText {
+  font-size: clamp(13px, 1.9vmin, 20px);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+#aircraftSize {
+  color: var(--yellow);
+  font-size: clamp(11px, 1.7vmin, 18px);
+  font-weight: 850;
+  margin-left: auto;  /* immer rechts in der Zeile */
+  flex-shrink: 0;
+}
+
+.reg { font-size: clamp(12px, 1.8vmin, 18px); }
+
+.special {
+  display: none;
+  padding: clamp(5px,.9vmin,9px) clamp(11px,1.6vmin,18px);
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255,231,122,.34);
+  background: rgba(255,231,122,.13);
+  color: #fff0a2;
+  font-size: clamp(12px, 1.8vmin, 18px);
+  font-weight: 900;
+  white-space: nowrap;
+}
+.special:not(:empty) { display: inline-flex; align-items: center; }
+.special.emergency { border-color: rgba(255,77,94,.42); background: rgba(255,77,94,.16); color: #ffd2d7; }
+
+/* ── Metrics ── */
+.metrics {
+  grid-area: metrics;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+
+.metric {
+  border-radius: var(--r-box);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: clamp(6px, 1vmin, 12px);
+  min-height: clamp(54px, 7.5vmin, 84px);
+}
+
+.metricValue {
+  font-size: clamp(22px, 3.8vmin, 42px);
+  font-weight: 950;
+  letter-spacing: -.06em;
+  line-height: .9;
+}
+
+.metricLabel {
+  font-size: clamp(8px, 1vmin, 11px);
+  letter-spacing: .22em;
+  color: var(--muted);
+  font-weight: 850;
+  margin-top: clamp(3px, .5vmin, 5px);
+  text-transform: uppercase;
+}
+
+body.jf-page-frame.jf-no-flight .info,
+body.jf-page-frame.jf-no-flight .metrics { display: none !important; }
+
+/* No-Flight: Grid nur 2 Zeilen — Photo + Runway-Pille */
+body.jf-page-frame.jf-no-flight .jfFrameMain {
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "photo"
+    "info";
+  align-content: start;
+}
+body.jf-page-frame.jf-no-flight .frameIdleRunwaySlot {
+  display: flex;
+  justify-content: center;
+  padding: clamp(8px,1.2vmin,16px) 0;
+}
+
+/* ── Preload Skeleton ── */
+.jfPreloadOverlay {
+  /* Absolut innerhalb jfFrameMain — deckt exakt denselben Bereich ab */
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  display: grid;
+  gap: var(--gap);
+  grid-template-rows: auto minmax(0,1fr) auto;
+  grid-template-areas:
+    "prePhoto"
+    "preInfo"
+    "preMetrics";
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .22s, visibility .22s;
+}
+
+.jfPreloadOverlay > * { min-height: 0; }
+
+body.jf-page-frame.jf-preload .jfPreloadOverlay { opacity: 1; visibility: visible; }
+
+body.jf-page-frame.jf-preload .photoWrap > *,
+body.jf-page-frame.jf-preload .info > *,
+body.jf-page-frame.jf-preload .metrics > * { opacity: 0 !important; }
+
+.prePhoto {
+  grid-area: prePhoto;
+  border-radius: var(--r-box);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  aspect-ratio: 16 / 10;
+  width: 100%;
+}
+
+.preInfo {
+  grid-area: preInfo;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(6px, 1vmin, 10px);
+  overflow: hidden;
+}
+
+.preMetrics {
+  grid-area: preMetrics;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+  min-height: clamp(54px, 7.5vmin, 84px);
+}
+
+.sk {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(110deg,
+    rgba(255,255,255,.08), rgba(255,255,255,.28), rgba(255,255,255,.08));
+  background-size: 240% 100%;
+  animation: shimmer 1.15s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%   { background-position:  120% 0; opacity: .55; }
+  50%  { opacity: 1; }
+  100% { background-position: -120% 0; opacity: .55; }
+}
+
+.skMode  { width: 42%; height: clamp(20px, 2.8vmin, 32px); }
+.prePillRow { display: flex; gap: clamp(8px,1.2vmin,14px); }
+.skPillA { width: clamp(160px, 22vmin, 260px); height: clamp(26px, 3.6vmin, 42px); }
+.skPillB { width: clamp(100px, 14vmin, 160px); height: clamp(26px, 3.6vmin, 42px); }
+.skCall  { width: 40%; height: clamp(34px, 5.6vmin, 64px); }
+.skSmall { width: 28%; height: clamp(13px, 2vmin, 22px); }
+.skRoute { width: 80%; height: clamp(24px, 4.2vmin, 50px); }
+.skCodes { width: 32%; height: clamp(13px, 2vmin, 22px); }
+.skReg   { width: 42%; height: clamp(12px, 1.8vmin, 18px); }
+.skAirline { width: 55%; height: clamp(13px, 1.9vmin, 20px); }
+.skType    { width: 70%; height: clamp(13px, 1.9vmin, 20px); }
+.skSize    { width: clamp(70px,10vmin,120px); height: clamp(13px, 1.9vmin, 20px); }
+
+.preCard {
+  width: min(560px, 100%);
+  border-radius: clamp(16px,2.4vmin,26px);
+  border: 1px solid var(--border-hi);
+  background: var(--surface);
+  padding: clamp(8px,1.3vmin,14px) clamp(12px,1.7vmin,18px);
+  display: grid;
+  gap: clamp(6px, 1vmin, 10px);
+}
+
+.preCardRow {
+  display: grid;
+  grid-template-columns: clamp(34px,4.6vmin,50px) 1fr auto;
+  align-items: center;
+  gap: clamp(8px,1.3vmin,14px);
+}
+
+.preLogo {
+  width:  clamp(34px,4.6vmin,50px);
+  height: clamp(34px,4.6vmin,50px);
+  border-radius: 50%;
+  background: rgba(255,255,255,.18);
+}
+
+.preDivider { height: 1px; background: rgba(255,255,255,.13); }
+
+.preMetric {
+  border-radius: var(--r-box);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+}
+.preMetric .sk { width: 50%; height: clamp(11px, 1.6vmin, 18px); }
+
+body.jf-page-frame.jf-preload:not(.jf-no-flight) .placeholder {
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .22s, visibility .22s;
+}
+body.jf-page-frame.jf-preload:not(.jf-no-flight) #planePhoto {
+  display: block;
+  opacity: .22;
+  filter: blur(3px) saturate(.9);
+  transform: scale(1.01);
+  transition: opacity .3s, filter .36s, transform .36s;
+}
+body.jf-page-frame.jf-loaded #planePhoto { opacity: 1; filter: none; transform: none; }
+
+/* ── Flight-Switch Animation ── */
+.jfFlightSwitch {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgba(5,6,10,.72);
+  backdrop-filter: blur(14px);
+  border-radius: var(--r-box);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s;
+}
+
+body.jf-page-frame.jf-flight-switch .jfFlightSwitch {
+  opacity: 1;
+  animation: switchPop .28s cubic-bezier(.22,.8,.34,1.2) forwards;
+}
+@keyframes switchPop {
+  0%   { opacity: 0; transform: scale(.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.jfSwitchText  { text-align: center; }
+.jfSwitchLabel { font-size: clamp(14px, 2.4vmin, 22px); font-weight: 850; color: var(--muted); }
+.jfSwitchRoute { font-size: clamp(28px, 5vmin, 56px); font-weight: 950; letter-spacing: -.05em; margin-top: 6px; }
+
+.jfSwitchRadar {
+  position: absolute;
+  width: min(60vmin, 400px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(50,232,121,.22);
+}
+
+.jfSwitchPlane {
+  position: absolute;
+  font-size: clamp(20px, 3.4vmin, 40px);
+  opacity: 0;
+  animation: switchFly 1.75s ease-in-out infinite;
+}
+.jfSwitchPlaneA { top: 28%; left: -8%; animation-delay: 0s;   }
+.jfSwitchPlaneB { top: 52%; left: -8%; animation-delay: .32s; }
+.jfSwitchPlaneC { top: 40%; left: -8%; animation-delay: .64s; }
+.jfSwitchPlaneD { top: 64%; left: -8%; animation-delay: .96s; }
+@keyframes switchFly {
+  0%   { transform: translateX(0) rotate(6deg); opacity: 0; }
+  14%  { opacity: .85; }
+  86%  { opacity: .85; }
+  100% { transform: translateX(120vw) rotate(6deg); opacity: 0; }
+}
+
+.flyover {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%, rgba(50,232,121,.18), transparent 62%);
+  opacity: 0;
+}
+.flyover.active {
+  animation: flyover 3.4s cubic-bezier(.22,.8,.34,1) forwards;
+}
+@keyframes flyover {
+  0%   { opacity: 0; transform: scale(.8); }
+  18%  { opacity: 1; }
+  72%  { opacity: .5; }
+  100% { opacity: 0; transform: scale(1.18); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   HEATMAP PAGE
+   ════════════════════════════════════════════════════════════ */
+
+body.jf-page-heatmap .jf-shell {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0,1fr) auto;
+}
+
+.hmStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+
+.hmStat {
+  border-radius: var(--r-box);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(8px,1.3vmin,14px) 6px;
+  min-height: clamp(52px, 7.5vmin, 78px);
+}
+.hmVal   { font-size: clamp(20px, 4.4vmin, 38px); font-weight: 950; letter-spacing: -.05em; line-height: .9; }
+.hmLabel { font-size: clamp(8px, 1.1vmin, 11px); letter-spacing: .16em; color: var(--muted); font-weight: 850; text-transform: uppercase; margin-top: 4px; white-space: nowrap; }
+
+.rush {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(8px,1.4vmin,16px);
+  padding: clamp(7px,1.1vmin,11px) clamp(14px,2vmin,22px);
+  border-radius: var(--r-box);
+  background: rgba(255,216,77,.09);
+  border: 1px solid rgba(255,216,77,.22);
+  color: rgba(255,240,170,.94);
+  font-size: clamp(12px, 1.8vmin, 18px);
+  font-weight: 900;
+  min-height: clamp(36px, 5vmin, 50px);
+}
+.rush span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rush.hot  { background: rgba(255,77,94,.12); border-color: rgba(255,77,94,.28); color: rgba(255,220,224,.95); }
+
+.scroller {
+  display: flex;
+  align-items: stretch;
+  gap: clamp(10px, 1.5vmin, 16px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  height: 100%;
+  padding-bottom: 4px;
+}
+.scroller::-webkit-scrollbar { display: none; }
+
+.hourCard {
+  scroll-snap-align: center;
+  flex: 0 0 min(380px, 75vw);
+  height: 100%;
+  border-radius: clamp(18px, 3vmin, 30px);
+  padding: clamp(13px, 2vmin, 20px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+}
+
+.hourCard::before {
+  content: "";
+  position: absolute; inset: 0;
+  opacity: var(--heat, .07);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(50,232,121,.88), transparent 60%),
+    linear-gradient(145deg, rgba(86,168,255,.7), rgba(255,216,77,.6));
+  pointer-events: none;
+}
+
+.hourCard.now  { border-color: rgba(50,232,121,.38); box-shadow: 0 0 24px rgba(50,232,121,.12); }
+.hourCard.best { border-color: rgba(255,216,77,.36); }
+
+.hourInner { position: relative; z-index: 2; width: 100%; display: flex; flex-direction: column; }
+
+.hourTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.hour {
+  font-size: clamp(30px, 6.8vmin, 60px);
+  font-weight: 950;
+  letter-spacing: -.05em;
+  line-height: .92;
+}
+
+.badge {
+  padding: clamp(4px,.7vmin,7px) clamp(8px,1.2vmin,12px);
+  border-radius: var(--r-pill);
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(255,255,255,.13);
+  color: rgba(255,255,255,.76);
+  font-size: clamp(9px, 1.4vmin, 13px);
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.hourTotal {
+  font-size: clamp(60px, 14vmin, 120px);
+  line-height: .82;
+  font-weight: 950;
+  letter-spacing: -.08em;
+  margin-top: auto;
+}
+
+.hourSub {
+  font-size: clamp(13px, 2.4vmin, 22px);
+  font-weight: 800;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(6px,1vmin,10px);
+  margin-top: auto;
+}
+
+.bar {
+  height: clamp(32px, 5vmin, 48px);
+  border-radius: clamp(11px, 1.6vmin, 18px);
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(11px, 1.8vmin, 16px);
+  font-weight: 900;
+}
+
+.rankings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  min-height: 0;
+}
+
+.panel {
+  border-radius: var(--r-box);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: clamp(10px,1.5vmin,16px) clamp(12px,1.7vmin,18px);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.panel h3 {
+  margin: 0 0 clamp(5px, .8vmin, 8px);
+  font-size: clamp(10px, 1.4vmin, 13px);
+  letter-spacing: .14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 850;
+}
+
+.panel pre {
+  margin: 0;
+  font-family: var(--font);
+  font-size: clamp(11px, 1.7vmin, 15px);
+  line-height: 1.32;
+  font-weight: 800;
+  color: rgba(255,255,255,.9);
+  white-space: pre;
+  overflow: hidden;
+}
+
+.panel pre.hm-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2px,.4vmin,4px);
+  white-space: normal;
+}
+.panel pre.hm-list .hm-line {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ════════════════════════════════════════════════════════════
+   STATS PAGE
+   ════════════════════════════════════════════════════════════ */
+
+body.jf-page-stats .jf-shell {
+  display: grid;
+  grid-template-rows: auto auto minmax(0,1fr);
+}
+
+body.jf-page-stats .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+}
+
+body.jf-page-stats .stat {
+  border-radius: var(--r-box);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: clamp(10px,1.5vmin,16px) clamp(12px,1.7vmin,18px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: clamp(60px, 8.5vmin, 92px);
+  overflow: hidden;
+}
+body.jf-page-stats .stat.big  { background: linear-gradient(145deg, rgba(86,168,255,.20), rgba(50,232,121,.12)); border-color: rgba(86,168,255,.22); }
+body.jf-page-stats .stat.warn { background: linear-gradient(145deg, rgba(255,216,77,.20), rgba(255,77,94,.10)); border-color: rgba(255,216,77,.24); }
+
+.stLabel { font-size: clamp(8px, 1vmin, 12px); letter-spacing: .16em; color: var(--muted); font-weight: 850; text-transform: uppercase; }
+.stVal   { font-size: clamp(24px, 4.2vmin, 46px); font-weight: 950; letter-spacing: -.05em; line-height: .9; margin-top: clamp(3px,.5vmin,7px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stSub   { font-size: clamp(10px, 1.4vmin, 13px); font-weight: 700; color: var(--muted); margin-top: clamp(3px,.5vmin,5px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+body.jf-page-stats .panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: var(--gap);
+  min-height: 0;
+}
+
+body.jf-page-stats .panel pre {
+  font-size: clamp(10px, 1.4vmin, 14px);
+  line-height: 1.22;
+  font-weight: 760;
+}
+
+.panel.jf-split-panel pre {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(12px, 1.8vmin, 22px);
+  row-gap: 2px;
+  white-space: normal;
+}
+.panel.jf-split-panel pre .jf-line {
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ════════════════════════════════════════════════════════════
+   LANDSCAPE LAYOUT
+   Eine Media-Query — gilt für alle Geräte im Querformat
+   ════════════════════════════════════════════════════════════ */
+
+@media (orientation: landscape) {
+  /* HOME */
+  body.jf-page-home .jf-shell {
+    max-width: 1100px;
+    display: grid;
+    grid-template-columns: 42% 1fr;
+    grid-template-rows: 1fr auto;
+    gap: var(--gap) clamp(14px, 2.4vmin, 24px);
+  }
+  body.jf-page-home .hero     { grid-column: 1; grid-row: 1 / 3; }
+  body.jf-page-home .buttons  { grid-column: 2; grid-row: 1; }
+  body.jf-page-home .statsRow { grid-column: 2; grid-row: 2; }
+
+  /* FRAME — Foto links (16:10 fixed), Info rechts */
+  body.jf-page-frame .jfFrameMain {
+    grid-template-columns: minmax(0, 48%) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "photo info"
+      "metrics metrics";
+    align-items: start;
+  }
+
+  /* No-Flight Landscape: Radar links, Runway-Pille rechts */
+  body.jf-page-frame.jf-no-flight .jfFrameMain {
+    grid-template-columns: minmax(0, 48%) minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: "photo info";
+    align-items: start;
+  }
+
+  body.jf-page-frame.jf-no-flight .frameIdleRunwaySlot {
+    grid-area: info;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  body.jf-page-frame .jfPreloadOverlay {
+    grid-template-columns: minmax(0, 48%) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "prePhoto preInfo"
+      "preMetrics preMetrics";
+    align-items: start;
+  }
+  body.jf-page-frame .photoWrap {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    height: auto;
+    align-self: start;
+  }
+  /* FRAME Landscape — kompaktere Info-Schriften damit alles passt */
+  body.jf-page-frame .mode        { font-size: clamp(14px, 2vmin, 22px); }
+  body.jf-page-frame .iataCallsign { font-size: clamp(24px, 4vmin, 44px); }
+  body.jf-page-frame .routeCities { font-size: clamp(18px, 3vmin, 36px); }
+  body.jf-page-frame .operatorCallsign,
+  body.jf-page-frame .routeCodes,
+  body.jf-page-frame .reg         { font-size: clamp(11px, 1.5vmin, 16px); }
+  body.jf-page-frame .aircraftCard { padding: clamp(6px,1vmin,10px) clamp(10px,1.4vmin,14px); width: 100%; }
+  body.jf-page-frame .acRow       { padding: clamp(3px,.5vmin,6px) 0; gap: clamp(6px,1vmin,10px); }
+  body.jf-page-frame .acLogo      { width: clamp(26px,3.2vmin,36px); height: clamp(26px,3.2vmin,36px); }
+  body.jf-page-frame .airline,
+  body.jf-page-frame #aircraftTypeText { font-size: clamp(11px,1.6vmin,16px); }
+  body.jf-page-frame #aircraftSize { font-size: clamp(10px,1.4vmin,14px); }
+  body.jf-page-frame .metricValue { font-size: clamp(18px,3vmin,32px); }
+  body.jf-page-frame .metric      { min-height: clamp(42px,6vmin,60px); }
+
+  body.jf-page-frame .prePhoto {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    height: auto;
+    align-self: start;
+  }
+  /* Preload Skeleton im Landscape: Skeleton-Balken kleiner */
+  body.jf-page-frame .skMode  { height: clamp(14px,2vmin,22px); }
+  body.jf-page-frame .skPillA { height: clamp(20px,2.8vmin,32px); }
+  body.jf-page-frame .skPillB { height: clamp(20px,2.8vmin,32px); }
+  body.jf-page-frame .skCall  { height: clamp(22px,3.5vmin,42px); }
+  body.jf-page-frame .skSmall { height: clamp(10px,1.4vmin,16px); }
+  body.jf-page-frame .skRoute { height: clamp(16px,2.5vmin,30px); }
+  body.jf-page-frame .skCodes { height: clamp(10px,1.4vmin,16px); }
+  body.jf-page-frame .skReg   { height: clamp(10px,1.4vmin,16px); }
+  body.jf-page-frame .preMetric { min-height: clamp(42px,6vmin,60px); }
+  body.jf-page-frame .preCard {
+    padding: clamp(6px,1vmin,10px) clamp(10px,1.4vmin,14px);
+    gap: clamp(4px,.6vmin,8px);
+  }
+  body.jf-page-frame .preCardRow { gap: clamp(6px,1vmin,10px); }
+  body.jf-page-frame .preLogo {
+    width:  clamp(26px,3.2vmin,36px);
+    height: clamp(26px,3.2vmin,36px);
+  }
+  body.jf-page-frame .preInfo { gap: clamp(4px,.6vmin,8px); }
+
+  /* HEATMAP — Hours links, Rankings rechts */
+  body.jf-page-heatmap .jf-shell {
+    grid-template-columns: minmax(0, 60%) minmax(220px, 40%);
+    grid-template-rows: auto auto auto minmax(0,1fr);
+  }
+  body.jf-page-heatmap .header,
+  body.jf-page-heatmap .hmStats,
+  body.jf-page-heatmap .rush { grid-column: 1 / -1; }
+  body.jf-page-heatmap .scroller { grid-column: 1; grid-row: 4; }
+  body.jf-page-heatmap .rankings {
+    grid-column: 2; grid-row: 4;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  /* STATS — Stats links, Panels rechts */
+  body.jf-page-stats .jf-shell {
+    grid-template-columns: minmax(0, 56%) minmax(220px, 44%);
+    grid-template-rows: auto minmax(0,1fr);
+  }
+  body.jf-page-stats .header { grid-column: 1 / -1; }
+  body.jf-page-stats .grid {
+    grid-column: 1;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, minmax(0,1fr));
+    min-height: 0;
+  }
+  body.jf-page-stats .panels {
+    grid-column: 2;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, minmax(0,1fr));
+    min-height: 0;
+  }
+  body.jf-page-stats .stat { min-height: 0; }
+}
+
+/* Schmale Geräte im Hochformat: Heatmap-Stats und Stats-Grid auf 2 Spalten */
+@media (orientation: portrait) and (max-width: 600px) {
+  body.jf-page-heatmap .hmStats { grid-template-columns: repeat(2, 1fr); }
+  body.jf-page-stats .grid      { grid-template-columns: repeat(2, 1fr); }
+  body.jf-page-stats .panels    { grid-template-columns: 1fr; grid-template-rows: repeat(4, minmax(0,1fr)); }
+}

@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="de">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+	<title>JetFrame Live</title>
+
+	<link rel="manifest" href="manifest.webmanifest">
+	<link rel="apple-touch-icon" href="jetframe.png">
+	<link rel="icon" type="image/png" href="jetframe.png">
+
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="theme-color" content="#050709">
+	<link rel="stylesheet" href="jetframe.css?v=20260522-fix14">
+</head>
+
+<body class="jf-page-frame jf-preload">
+	<div id="simpleApiWarning" class="simpleApiWarning">
+		⚠️ Simple-API nicht erreichbar<br>
+		<span id="simpleApiWarningText"></span>
+	</div>
+
+	<div id="app">
+		<div id="wall" class="jf-shell">
+			<div class="header">
+				<a class="backBtn headerBack" href="index.html" aria-label="Zurück">‹</a>
+
+				<div class="headerTitleBlock">
+					<div class="title">✈️ JetFrame</div>
+					<div id="frameDateText" class="sub">Heute</div>
+				</div>
+
+				<div class="frameHeaderActions">
+					<!-- toggleBtn intentionally hidden via CSS (jfHiddenToggle) -->
+					<button id="toggleBtn" class="toggleBtn on jfHiddenToggle" type="button" aria-hidden="true">ON</button>
+					<button id="speechBtn" class="toggleBtn speechBtn" type="button" aria-label="Sprachausgabe">🔇</button>
+					<div class="livePill frameLivePill" aria-label="Live">
+						<span class="dot" aria-hidden="true"></span>
+						<span>Live</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="jfFrameMain">
+				<div class="photoWrap">
+					<img id="planePhoto" src="" alt="Flugzeugfoto" />
+
+					<div id="placeholder" class="placeholder">
+						<div class="radarCircle" aria-hidden="true"></div>
+						<div class="radarSweep" aria-hidden="true"></div>
+						<div class="idlePlane" aria-hidden="true">✈️</div>
+						<div class="idleFlyers" aria-hidden="true">
+							<span>✈️</span><span>🛫</span><span>🛬</span>
+						</div>
+						<div class="idleText">Warte auf Flug</div>
+					</div>
+				</div>
+
+				<div class="frameIdleRunwaySlot">
+					<div id="idleRunwayText" class="idleRunwayText"></div>
+				</div>
+
+				<section class="info">
+					<div id="mode" class="mode">Flight</div>
+
+					<div class="flightInfoPillRow">
+						<div id="windowInfo" class="windowInfo side">
+							<span id="windowArrow" class="windowArrow" aria-hidden="true">▲</span>
+							<span id="windowInfoText"></span>
+						</div>
+						<div id="runwayInfo" class="runwayInfo"></div>
+					</div>
+
+					<div class="callsigns">
+						<div id="iataCallsign" class="iataCallsign">—</div>
+						<div id="operatorCallsign" class="operatorCallsign">—</div>
+					</div>
+
+					<div class="routeBig">
+						<div id="routeCities" class="routeCities">— → —</div>
+						<div id="routeCodes" class="routeCodes">— → —</div>
+					</div>
+
+					<div id="aircraftCard" class="aircraftCard">
+						<div id="airlineMini" class="acRow acRowAirline">
+							<span class="acLogo">
+								<img id="airlineLogoImg" class="airlineLogoImg" src="" alt="" />
+							</span>
+							<span id="airline" class="airline">—</span>
+						</div>
+
+						<span class="aircraftSep" aria-hidden="true"></span>
+
+						<div class="acRow acRowAircraft">
+							<span id="manufacturerLogo" class="manufacturerLogo acLogo">
+								<img id="manufacturerLogoImg" src="" alt="" />
+								<span id="manufacturerLogoText" class="manufacturerLogoText">✈</span>
+							</span>
+							<span id="aircraftTypeText">—</span>
+							<span id="aircraftSize" class="aircraftSize">—</span>
+						</div>
+					</div>
+
+					<div id="registration" class="reg">Kennzeichen: —</div>
+					<div id="special" class="special"></div>
+				</section>
+
+				<div class="metrics">
+					<div class="metric">
+						<div id="altitude" class="metricValue">–</div>
+						<div class="metricLabel">HÖHE FT</div>
+					</div>
+					<div class="metric">
+						<div id="speed" class="metricValue">–</div>
+						<div class="metricLabel">SPEED KT</div>
+					</div>
+					<div class="metric">
+						<div id="verticalRate" class="metricValue">–</div>
+						<div class="metricLabel">FT/MIN</div>
+					</div>
+					<div class="metric">
+						<div id="track" class="metricValue">–</div>
+						<div class="metricLabel">KURS</div>
+					</div>
+				</div>
+
+				<div id="jfFlightSwitch" class="jfFlightSwitch" aria-hidden="true">
+					<div class="jfSwitchRadar" aria-hidden="true"></div>
+					<div class="jfSwitchPlane jfSwitchPlaneA" aria-hidden="true">✈️</div>
+					<div class="jfSwitchPlane jfSwitchPlaneB" aria-hidden="true">🛫</div>
+					<div class="jfSwitchPlane jfSwitchPlaneC" aria-hidden="true">🛬</div>
+					<div class="jfSwitchPlane jfSwitchPlaneD" aria-hidden="true">✈️</div>
+					<div class="jfSwitchText">
+						<div class="jfSwitchLabel">Nächster Flug</div>
+						<div id="jfSwitchRoute" class="jfSwitchRoute">—</div>
+					</div>
+				</div>
+
+				<div class="jfPreloadOverlay" aria-hidden="true">
+					<div class="prePhoto"></div>
+					<div class="preInfo">
+						<div class="sk skMode"></div>
+						<div class="prePillRow">
+							<div class="sk skPill skPillA"></div>
+							<div class="sk skPill skPillB"></div>
+						</div>
+						<div class="sk skCall"></div>
+						<div class="sk skSmall"></div>
+						<div class="sk skRoute"></div>
+						<div class="sk skCodes"></div>
+						<div class="preCard">
+							<div class="preCardRow">
+								<div class="preLogo"></div>
+								<div class="sk skAirline"></div>
+							</div>
+							<div class="preDivider"></div>
+							<div class="preCardRow">
+								<div class="preLogo"></div>
+								<div class="sk skType"></div>
+								<div class="sk skSize"></div>
+							</div>
+						</div>
+						<div class="sk skReg"></div>
+					</div>
+					<div class="preMetrics">
+						<div class="preMetric"><div class="sk"></div></div>
+						<div class="preMetric"><div class="sk"></div></div>
+						<div class="preMetric"><div class="sk"></div></div>
+						<div class="preMetric"><div class="sk"></div></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="flyover" class="flyover" aria-hidden="true"></div>
+
+<script>
+'use strict';
+
+/* ── Konfiguration ───────────────────────────────────────── */
+
+let API_BASE = (() => {
+	const proto = window.location.protocol || 'http:';
+	const host  = window.location.hostname  || '127.0.0.1';
+	const url   = new URL(window.location.href);
+	const apiHost = url.searchParams.get('apiHost') || host;
+	const apiPort = url.searchParams.get('apiPort') || '8087';
+	return proto + '//' + apiHost + ':' + apiPort;
+})();
+
+const DP_ROOT = (() => {
+	const url = new URL(window.location.href);
+	const instance = url.searchParams.get('instance') || '0';
+	return 'jetframe.' + String(instance).replace(/[^0-9]/g, '');
+})();
+
+let VIS_SOURCE = (() => {
+	const url = new URL(window.location.href);
+	const src = String(url.searchParams.get('source') || 'current').toLowerCase();
+	return ['current', 'airport', 'overflight'].includes(src) ? src : 'current';
+})();
+
+let CURRENT = DP_ROOT + '.' + VIS_SOURCE;
+let VIS_CONFIG_LOADED = false;
+
+/* IDS werden als Getter-Funktion aufgebaut, damit rebuildIds() sauber ist */
+function makeIds() {
+	return {
+		enabled:                  DP_ROOT  + '.enabled',
+		idleRunwayText:           DP_ROOT  + '.idleRunwayText',
+		speechMode:               DP_ROOT  + '.speechMode',
+		speechEnabled:            DP_ROOT  + '.speechEnabled',
+
+		callsign:                 CURRENT  + '.callsign',
+		operationalCallsign:      CURRENT  + '.operationalCallsign',
+		routeCallsign:            CURRENT  + '.routeCallsign',
+
+		modeVisText:              CURRENT  + '.modeVisText',
+		windowPositionText:       CURRENT  + '.windowPositionText',
+		windowPositionClass:      CURRENT  + '.windowPositionClass',
+
+		probableRunwayText:       CURRENT  + '.probableRunwayText',
+
+		routeDisplayText:         CURRENT  + '.routeDisplayText',
+		routeCodesText:           CURRENT  + '.routeCodesText',
+
+		airlineName:              CURRENT  + '.airlineName',
+		registration:             CURRENT  + '.registration',
+
+		specialDisplayText:       CURRENT  + '.specialDisplayText',
+		specialLiveryVisText:     CURRENT  + '.specialLiveryVisText',
+		emergencyText:            CURRENT  + '.emergencyText',
+		squawk:                   CURRENT  + '.squawk',
+
+		manufacturerLogoUrl:      CURRENT  + '.manufacturerLogoUrl',
+		manufacturerLogoText:     CURRENT  + '.manufacturerLogoText',
+		aircraftTypeText:         CURRENT  + '.aircraftTypeText',
+		aircraftSize:             CURRENT  + '.aircraftSize',
+
+		altitudeFt:               CURRENT  + '.altitudeFt',
+		speedKt:                  CURRENT  + '.speedKt',
+		verticalRate:             CURRENT  + '.verticalRate',
+		trackDeg:                 CURRENT  + '.trackDeg',
+
+		localImageUrl:            CURRENT  + '.localImageUrl',
+		jetphotosImageUrl:        CURRENT  + '.jetphotosImageUrl',
+		localLogoUrl:             CURRENT  + '.localLogoUrl',
+		logoUrl:                  CURRENT  + '.logoUrl',
+
+		speechText:               CURRENT  + '.speechText',
+		speechTrigger:            CURRENT  + '.speechTrigger',
+	};
+}
+
+let IDS = makeIds();
+
+function rebuildIds() {
+	CURRENT = DP_ROOT + '.' + VIS_SOURCE;
+	IDS = makeIds();
+}
+
+/* ── State ──────────────────────────────────────────────── */
+
+let lastFlightKey   = '';
+let spokenFlights   = new Set();
+let pendingSpeech   = null;
+let speechEnabled   = true;
+let audioCtx        = null;
+let speechUnlocked  = false;
+
+/* ── DOM Helper ─────────────────────────────────────────── */
+
+function $(id) { return document.getElementById(id); }
+
+/* ── API Warning ────────────────────────────────────────── */
+
+function setSimpleApiWarning(visible, text) {
+	const box = $('simpleApiWarning');
+	const msg = $('simpleApiWarningText');
+	if (!box) return;
+	if (msg) msg.textContent = text || API_BASE;
+	box.classList.toggle('visible', !!visible);
+}
+
+async function checkSimpleApiReachable() {
+	try {
+		const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(DP_ROOT + '.status'), { cache: 'no-store' });
+		if (!res.ok) throw new Error('HTTP ' + res.status);
+		setSimpleApiWarning(false, '');
+		return true;
+	} catch (e) {
+		setSimpleApiWarning(true, API_BASE);
+		return false;
+	}
+}
+
+/* ── Value Helpers ──────────────────────────────────────── */
+
+function cleanValue(v) {
+	if (v === null || v === undefined) return '';
+	v = String(v).trim();
+	if (v === 'null' || v === 'undefined') return '';
+	if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+		v = v.slice(1, -1);
+	}
+	return v.replace(/\\"/g, '"').replace(/\\n/g, ' ').trim();
+}
+
+function num(v) {
+	const n = Number(String(v).replace(',', '.'));
+	return Number.isFinite(n) ? n : 0;
+}
+
+function formatNumber(v) {
+	const n = num(v);
+	return n ? Math.round(n).toLocaleString('de-DE') : '–';
+}
+
+function formatSigned(v) {
+	const n = num(v);
+	if (!n) return '–';
+	const r = Math.round(n);
+	return (r > 0 ? '+' : '') + r.toLocaleString('de-DE');
+}
+
+/* ── API Calls ──────────────────────────────────────────── */
+
+async function readState(id) {
+	if (!VIS_CONFIG_LOADED) return '';
+	try {
+		const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(id), { cache: 'no-store' });
+		if (!res.ok) return '';
+		const text = await res.text();
+		const cleaned = cleanValue(text);
+		if (!cleaned || cleaned === 'null' || cleaned.toLowerCase().startsWith('error:')) return '';
+		return cleaned;
+	} catch (e) {
+		setSimpleApiWarning(true, API_BASE);
+		return '';
+	}
+}
+
+async function writeState(id, value) {
+	try {
+		await fetch(API_BASE + '/set/' + encodeURIComponent(id) + '?value=' + encodeURIComponent(value), { cache: 'no-store' });
+	} catch (e) {}
+}
+
+async function readAll() {
+	const entries = await Promise.all(
+		Object.entries(IDS).map(async ([k, id]) => [k, await readState(id)])
+	);
+	return Object.fromEntries(entries);
+}
+
+/* ── Visual Config ──────────────────────────────────────── */
+
+async function loadVisualConfig() {
+	const url = new URL(window.location.href);
+	const hasApiOverride    = url.searchParams.has('apiHost') || url.searchParams.has('apiPort');
+	const hasSourceOverride = url.searchParams.has('source');
+
+	const res = await fetch('/jetframe.admin/vis-config.json?v=' + Date.now(), { cache: 'no-store' });
+	if (!res.ok) throw new Error('vis-config.json nicht gefunden');
+
+	const cfg = await res.json();
+
+	if (!hasApiOverride) {
+		const proto = window.location.protocol || 'http:';
+		const host  = String(cfg.simpleApiHost || window.location.hostname || '127.0.0.1').trim();
+		const port  = String(cfg.simpleApiPort || '8087').trim();
+		API_BASE = proto + '//' + host + ':' + port;
+	}
+
+	if (!hasSourceOverride) {
+		const src = String(cfg.visualSource || 'current').toLowerCase();
+		VIS_SOURCE = ['current', 'airport', 'overflight'].includes(src) ? src : 'current';
+	}
+
+	VIS_CONFIG_LOADED = true;
+	rebuildIds();
+
+	console.log('[JetFrame] vis-config.json geladen:', cfg, API_BASE, CURRENT);
+}
+
+/* ── Audio / Speech ─────────────────────────────────────── */
+
+function unlockAudio() {
+	try {
+		if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+		if (audioCtx.state === 'suspended') audioCtx.resume();
+	} catch (e) {}
+}
+
+function unlockSpeech() {
+	if (speechUnlocked) return;
+	try {
+		if (!('speechSynthesis' in window)) return;
+		const u = new SpeechSynthesisUtterance(' ');
+		u.lang = 'de-DE'; u.volume = 0.01; u.rate = 1;
+		speechSynthesis.cancel();
+		speechSynthesis.speak(u);
+		speechUnlocked = true;
+
+		if (pendingSpeech && pendingSpeech.text && !spokenFlights.has(pendingSpeech.key)) {
+			spokenFlights.add(pendingSpeech.key);
+			setTimeout(() => speakFlight(pendingSpeech.text), 250);
+			pendingSpeech = null;
+		}
+	} catch (e) {}
+}
+
+function playPlaneSound() {
+	if (!speechEnabled || !audioCtx) return;
+	try {
+		const now = audioCtx.currentTime;
+		const dur = 1.8;
+
+		const buf  = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+		const data = buf.getChannelData(0);
+		for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.45;
+
+		const src  = audioCtx.createBufferSource();
+		src.buffer = buf;
+
+		const lp = audioCtx.createBiquadFilter();
+		lp.type = 'lowpass';
+		lp.frequency.setValueAtTime(260, now);
+		lp.frequency.linearRampToValueAtTime(950, now + 0.8);
+		lp.frequency.linearRampToValueAtTime(420, now + dur);
+
+		const g = audioCtx.createGain();
+		g.gain.setValueAtTime(0.0001, now);
+		g.gain.exponentialRampToValueAtTime(0.28, now + 0.35);
+		g.gain.exponentialRampToValueAtTime(0.08, now + 1.25);
+		g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+		src.connect(lp); lp.connect(g); g.connect(audioCtx.destination);
+		src.start(now); src.stop(now + dur);
+	} catch (e) {}
+}
+
+function speakFlight(text) {
+	if (!speechEnabled) return;
+	if (!('speechSynthesis' in window)) return;
+	text = cleanValue(text);
+	if (!text) return;
+	try {
+		speechSynthesis.cancel();
+		const msg = new SpeechSynthesisUtterance(text);
+		msg.lang = 'de-DE'; msg.rate = 0.85; msg.pitch = 1.05; msg.volume = 1;
+		speechSynthesis.speak(msg);
+	} catch (e) {}
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+
+function setSpeechButton() {
+	const btn = $('speechBtn');
+	if (!btn) return;
+	btn.textContent = speechEnabled ? '🔊' : '🔇';
+	btn.classList.toggle('on', speechEnabled);
+	btn.setAttribute('aria-label', speechEnabled ? 'Sprachausgabe an' : 'Sprachausgabe aus');
+}
+
+$('toggleBtn').addEventListener('click', async () => {
+	unlockAudio(); unlockSpeech();
+	const cur = cleanValue(await readState(DP_ROOT + '.enabled')) === 'true';
+	await writeState(DP_ROOT + '.enabled', cur ? 'false' : 'true');
+	poll();
+});
+
+$('speechBtn').addEventListener('click', async () => {
+	unlockAudio(); unlockSpeech();
+	const cur = cleanValue(await readState(IDS.speechEnabled)) !== 'false';
+	const next = !cur;
+	await writeState(IDS.speechEnabled, next ? 'true' : 'false');
+	if (!next && 'speechSynthesis' in window) speechSynthesis.cancel();
+	speechEnabled = next;
+	setSpeechButton();
+	poll();
+});
+
+document.addEventListener('click', () => { unlockAudio(); unlockSpeech(); }, { once: true });
+
+/* ── Image Helpers ──────────────────────────────────────── */
+
+function setImage(imgEl, url, placeholderEl) {
+	url = cleanValue(url);
+	if (!imgEl) return;
+
+	if (!url) {
+		imgEl.style.display = 'none';
+		imgEl.removeAttribute('src');
+		if (placeholderEl) placeholderEl.style.display = 'grid';
+		return;
+	}
+
+	imgEl.onload  = () => { imgEl.style.display = 'block'; if (placeholderEl) placeholderEl.style.display = 'none'; };
+	imgEl.onerror = () => { imgEl.style.display = 'none'; imgEl.removeAttribute('src'); if (placeholderEl) placeholderEl.style.display = 'grid'; };
+	imgEl.src = url;
+}
+
+function setManufacturerLogo(s) {
+	const img = $('manufacturerLogoImg');
+	const txt = $('manufacturerLogoText');
+	if (!img || !txt) return;
+
+	const url      = cleanValue(s.manufacturerLogoUrl);
+	const fallback = cleanValue(s.manufacturerLogoText) || '✈';
+
+	img.onload  = () => { img.style.display = 'block'; txt.classList.remove('isFallback'); txt.style.display = 'none'; };
+	img.onerror = () => { img.style.display = 'none'; img.removeAttribute('src'); txt.textContent = fallback; txt.classList.add('isFallback'); txt.style.display = 'grid'; };
+
+	if (url) {
+		txt.classList.remove('isFallback'); txt.style.display = 'none';
+		img.src = url;
+	} else {
+		img.style.display = 'none'; img.removeAttribute('src');
+		txt.textContent = fallback; txt.classList.add('isFallback'); txt.style.display = 'grid';
+	}
+}
+
+function setAirlineLogo(s) {
+	const img  = $('airlineLogoImg');
+	const mini = $('airlineMini');
+	if (!img || !mini) return;
+
+	const url = cleanValue(s.localLogoUrl) || cleanValue(s.logoUrl);
+
+	if (!url) {
+		img.style.display = 'none'; img.removeAttribute('src');
+		mini.classList.remove('hasLogo');
+		return;
+	}
+
+	img.onload  = () => { img.style.display = 'block'; mini.classList.add('hasLogo'); };
+	img.onerror = () => { img.style.display = 'none'; img.removeAttribute('src'); mini.classList.remove('hasLogo'); };
+
+	if (img.getAttribute('src') !== url) img.src = url;
+}
+
+/* ── Pill Renders ───────────────────────────────────────── */
+
+function setRunwayInfo(text) {
+	const el = $('runwayInfo');
+	if (!el) return;
+	text = cleanValue(text);
+
+	if (!text) {
+		el.textContent = '';
+		el.classList.remove('visible');
+		el.style.display = 'none';
+		return;
+	}
+
+	text = text
+		.replace(/vermutlich\s+/i, '')
+		.replace(/\s*[·|]\s*(Landung|Start|Traffic).*$/i, '')
+		.trim();
+
+	el.textContent    = text;
+	el.style.display  = 'inline-flex';
+	requestAnimationFrame(() => el.classList.add('visible'));
+}
+
+function renderWindow(s) {
+	const el     = $('windowInfo');
+	const textEl = $('windowInfoText');
+	const arrow  = $('windowArrow');
+	if (!el) return;
+
+	const text = cleanValue(s.windowPositionText);
+	const cls  = cleanValue(s.windowPositionClass) || 'side';
+
+	el.style.display = text ? 'inline-flex' : 'none';
+
+	el.classList.remove('center', 'side');
+	el.classList.add(cls);
+
+	const cleanText = text.replace(/^[^a-zA-ZäöüÄÖÜß0-9]+\s*/u, '').trim();
+	if (textEl) textEl.textContent = cleanText;
+	else el.textContent = cleanText;
+
+	if (arrow) {
+		const match = text.match(/(\d+(?:[.,]\d+)?)°/);
+		let deg = match ? (Number(String(match[1]).replace(',', '.')) || 0) : 0;
+		if (text.toLowerCase().includes('links')) deg = -Math.abs(deg);
+		else if (!text.toLowerCase().includes('rechts')) deg = 0;
+		arrow.textContent = '▲';
+		arrow.style.transform = 'rotate(' + deg + 'deg)';
+	}
+}
+
+function setIdleRunwayText(text) {
+	const el = $('idleRunwayText');
+	if (!el) return;
+	text = cleanValue(text);
+
+	if (!text) {
+		el.textContent = '';
+		el.classList.remove('visible');
+		return;
+	}
+
+	el.textContent = text;
+	el.classList.add('visible');
+}
+
+/* ── Flyover ────────────────────────────────────────────── */
+
+function triggerFlyover() {
+	const el = $('flyover');
+	if (!el) return;
+	el.classList.remove('active');
+	void el.offsetWidth;
+	el.classList.add('active');
+	setTimeout(() => el.classList.remove('active'), 3400);
+}
+
+/* ── Main Render ────────────────────────────────────────── */
+
+function setEnabledButton(enabled) {
+	const btn = $('toggleBtn');
+	if (!btn) return;
+	btn.textContent = enabled ? 'ON' : 'OFF';
+	btn.classList.toggle('on', enabled);
+}
+
+function render(s) {
+	const enabled = cleanValue(s.enabled) === 'true';
+	setEnabledButton(enabled);
+
+	const hasFlight = !!(
+		cleanValue(s.callsign)             ||
+		cleanValue(s.operationalCallsign)  ||
+		cleanValue(s.routeCallsign)        ||
+		cleanValue(s.registration)
+	);
+
+	$('wall').classList.toggle('empty', !hasFlight);
+	document.body.classList.toggle('jf-no-flight', !hasFlight);
+
+	/* ── No Flight ── */
+	if (!hasFlight) {
+		$('mode').textContent         = enabled ? '✈️ Warte auf Flug' : '⏸️ JetFrame aus';
+		$('windowInfo').style.display = 'none';
+
+		$('iataCallsign').textContent    = '—';
+		$('operatorCallsign').textContent = '—';
+		$('routeCities').textContent     = '— → —';
+		$('routeCodes').textContent      = '— → —';
+		$('airline').textContent         = '—';
+		setAirlineLogo({});
+		$('aircraftTypeText').textContent = '—';
+		$('aircraftSize').textContent     = '—';
+		$('registration').textContent     = 'Kennzeichen: —';
+
+		const sp = $('special');
+		sp.textContent = '';
+		sp.style.display = 'none';
+		sp.classList.remove('emergency');
+
+		$('altitude').textContent    = '–';
+		$('speed').textContent       = '–';
+		$('verticalRate').textContent = '–';
+		$('track').textContent       = '–';
+
+		setManufacturerLogo({});
+		setImage($('planePhoto'), '', $('placeholder'));
+		setIdleRunwayText(cleanValue(s.probableRunwayText) || cleanValue(s.idleRunwayText));
+		setRunwayInfo(cleanValue(s.idleRunwayText));
+
+		return;
+	}
+
+	/* ── Active Flight ── */
+	const visibleCallsign = cleanValue(s.routeCallsign) || cleanValue(s.callsign) || '—';
+	const opCallsign      = cleanValue(s.operationalCallsign) || cleanValue(s.callsign) || '—';
+
+	$('mode').textContent = cleanValue(s.modeVisText) || '✈️ Flight';
+
+	renderWindow(s);
+	setRunwayInfo(cleanValue(s.probableRunwayText));
+
+	$('iataCallsign').textContent     = visibleCallsign;
+	$('operatorCallsign').textContent = opCallsign;
+	$('routeCities').textContent      = cleanValue(s.routeDisplayText) || '— → —';
+	$('routeCodes').textContent       = cleanValue(s.routeCodesText)   || '— → —';
+	$('airline').textContent          = cleanValue(s.airlineName)      || '—';
+	setAirlineLogo(s);
+	setManufacturerLogo(s);
+
+	$('aircraftTypeText').textContent = cleanValue(s.aircraftTypeText) || '—';
+	$('aircraftSize').textContent     = cleanValue(s.aircraftSize)     || '—';
+	$('registration').textContent     = 'Kennzeichen: ' + (cleanValue(s.registration) || '—');
+
+	const emergencyText = cleanValue(s.emergencyText);
+	const special = emergencyText || cleanValue(s.specialLiveryVisText) || cleanValue(s.specialDisplayText);
+	const sp = $('special');
+	sp.textContent   = special ? '⭐ ' + special : '';
+	sp.style.display = special ? 'block' : 'none';
+	sp.classList.toggle('emergency', !!emergencyText);
+
+	$('altitude').textContent     = formatNumber(s.altitudeFt);
+	$('speed').textContent        = formatNumber(s.speedKt);
+	$('verticalRate').textContent = formatSigned(s.verticalRate);
+
+	const trackVal = num(s.trackDeg);
+	$('track').textContent = trackVal ? Math.round(trackVal) + '°' : '–';
+
+	setImage(
+		$('planePhoto'),
+		cleanValue(s.localImageUrl) || cleanValue(s.jetphotosImageUrl),
+		$('placeholder')
+	);
+
+	setIdleRunwayText('');
+
+	/* ── Speech Logic ── */
+	const key          = [cleanValue(s.callsign), cleanValue(s.routeCallsign), cleanValue(s.registration)].join('|');
+	const speechTextNow = cleanValue(s.speechText);
+	const mode         = (cleanValue(s.speechMode) || 'browser').toLowerCase();
+	const isNewFlight  = key && key !== lastFlightKey;
+
+	if (isNewFlight) {
+		lastFlightKey = key;
+		triggerFlyover();
+		if (mode !== 'off') playPlaneSound();
+	}
+
+	if (isNewFlight && speechTextNow && !spokenFlights.has(key)) {
+		if (mode === 'browser' || mode === 'both') {
+			if (speechUnlocked) {
+				spokenFlights.add(key);
+				speakFlight(speechTextNow);
+			} else {
+				pendingSpeech = { key, text: speechTextNow };
+			}
+		}
+		if (mode === 'external' || mode === 'both') {
+			if (mode === 'external') spokenFlights.add(key);
+			writeState(IDS.speechTrigger, 'true');
+			setTimeout(() => writeState(IDS.speechTrigger, 'false'), 800);
+		}
+	}
+}
+
+/* ── Poll ───────────────────────────────────────────────── */
+
+async function poll() {
+	const data = await readAll();
+
+	speechEnabled = cleanValue(data.speechEnabled) !== 'false';
+	setSpeechButton();
+
+	const didFlightSwitch = window.jfMaybeFlightSwitch ? window.jfMaybeFlightSwitch(data) : false;
+
+	if (didFlightSwitch) {
+		setTimeout(() => {
+			render(data);
+			if (window.jfMaybeFinishFramePreload) window.jfMaybeFinishFramePreload();
+		}, 900);
+	} else {
+		render(data);
+		if (window.jfMaybeFinishFramePreload) window.jfMaybeFinishFramePreload();
+	}
+}
+
+/* ── Boot ───────────────────────────────────────────────── */
+
+setSpeechButton();
+
+loadVisualConfig()
+	.then(async () => {
+		await checkSimpleApiReachable();
+		poll();
+		setInterval(poll, 1500);
+	})
+	.catch(e => {
+		VIS_CONFIG_LOADED = false;
+		console.error('[JetFrame] Start abgebrochen:', e);
+	});
+</script>
+
+
+<!-- ========== Header Subline Clock ========== -->
+<script>
+(function () {
+	let _busy = false;
+
+	function pad(n) { return String(n).padStart(2, '0'); }
+
+	function wantedText() {
+		const d = new Date();
+		return 'Heute · ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) +
+			' · ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
+	}
+
+	function applyHeaderSubline() {
+		if (_busy) return;
+		_busy = true;
+		const sub = document.querySelector('.header .sub, .header .frameTimeSub');
+		if (sub) {
+			sub.className = 'sub';
+			const text = wantedText();
+			if (sub.textContent !== text) sub.textContent = text;
+		}
+		_busy = false;
+	}
+
+	applyHeaderSubline();
+	setInterval(applyHeaderSubline, 5000); // Reduziert von 1s auf 5s
+
+	const target = document.querySelector('.header');
+	if (target) {
+		new MutationObserver(applyHeaderSubline).observe(target, { childList: true, subtree: true, characterData: true });
+	}
+})();
+</script>
+
+
+<!-- ========== Date Format Fix ========== -->
+<script>
+(function () {
+	const RE_DATE = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
+
+	function fmtDateText(text) {
+		return String(text || '').replace(RE_DATE, '$3.$2.$1');
+	}
+
+	function applyDateFormat() {
+		const root = document.querySelector('.jf-shell, .card, .wall');
+		if (!root) return;
+		const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+		const nodes = [];
+		while (walker.nextNode()) nodes.push(walker.currentNode);
+		for (const n of nodes) {
+			if (!RE_DATE.test(n.nodeValue)) continue;
+			const next = fmtDateText(n.nodeValue);
+			if (next !== n.nodeValue) n.nodeValue = next;
+		}
+	}
+
+	applyDateFormat();
+	setInterval(applyDateFormat, 5000); // Reduziert von 1s auf 5s
+
+	const root = document.querySelector('.jf-shell, .card, .wall');
+	if (root) {
+		new MutationObserver(applyDateFormat).observe(root, { childList: true, subtree: true, characterData: true });
+	}
+})();
+</script>
+
+
+<!-- ========== Flight Switch ========== -->
+<script>
+(function () {
+	window.jfLastFlightKey    = null;
+	window.jfFlightSwitchTimer = null;
+
+	function clean(v) { return String(v || '').trim(); }
+
+	function pickFlightKey(s) {
+		return clean(s.callsign) || clean(s.operationalCallsign) ||
+			clean(s.routeCallsign) || clean(s.registration) ||
+			clean(s.hex) || clean(s.icao24);
+	}
+
+	function pickRouteText(s) {
+		const from = clean(s.fromCity) || clean(s.fromName) || clean(s.originCity) || clean(s.fromIata) || clean(s.origin) || '';
+		const to   = clean(s.toCity)   || clean(s.toName)   || clean(s.destinationCity) || clean(s.toIata) || clean(s.destination) || '';
+		if (from && to) return from + ' → ' + to;
+		return clean(s.callsign) || clean(s.operationalCallsign) || clean(s.routeCallsign) || 'Flugwechsel';
+	}
+
+	window.jfMaybeFlightSwitch = function (s) {
+		if (!s) return false;
+		if (document.body.classList.contains('jf-preload'))   return false;
+		if (document.body.classList.contains('jf-no-flight')) return false;
+
+		const key  = pickFlightKey(s);
+		if (!key) return false;
+
+		const last = window.jfLastFlightKey;
+		if (!last)      { window.jfLastFlightKey = key; return false; }
+		if (last === key) return false;
+
+		window.jfLastFlightKey = key;
+
+		const routeEl = document.getElementById('jfSwitchRoute');
+		if (routeEl) routeEl.textContent = pickRouteText(s);
+
+		clearTimeout(window.jfFlightSwitchTimer);
+		document.body.classList.remove('jf-flight-switch');
+		void document.body.offsetWidth;
+		document.body.classList.add('jf-flight-switch');
+
+		window.jfFlightSwitchTimer = setTimeout(() => {
+			document.body.classList.remove('jf-flight-switch');
+		}, 1750);
+
+		return true;
+	};
+})();
+</script>
+
+
+<!-- ========== Frame Preload ========== -->
+<script>
+(function () {
+	const startedAt = Date.now();
+	let finishTimer = null;
+
+	function txt(id) {
+		const el = document.getElementById(id);
+		return el ? String(el.textContent || '').trim() : '';
+	}
+
+	function meaningful(v) {
+		v = String(v || '').trim();
+		return !!v && v !== '—' && v !== '–' && v !== '— → —' && v !== 'Kennzeichen: —';
+	}
+
+	function imageReady() {
+		const img = document.getElementById('planePhoto');
+		if (document.body.classList.contains('jf-no-flight')) return true;
+		if (!img) return true;
+		return img.complete && img.naturalWidth > 0;
+	}
+
+	function dataReady() {
+		if (document.body.classList.contains('jf-no-flight')) {
+			return meaningful(txt('mode'));
+		}
+		return (
+			meaningful(txt('iataCallsign')) &&
+			meaningful(txt('routeCities')) &&
+			(meaningful(txt('airline')) || meaningful(txt('aircraftTypeText')) || meaningful(txt('registration')))
+		);
+	}
+
+	function finish() {
+		if (!document.body.classList.contains('jf-preload')) return;
+		document.body.classList.remove('jf-preload');
+		document.body.classList.add('jf-loaded');
+	}
+
+	window.jfMaybeFinishFramePreload = function () {
+		clearTimeout(finishTimer);
+		finishTimer = setTimeout(() => {
+			if (!dataReady() || !imageReady()) return;
+			const rest = Math.max(0, 1500 - (Date.now() - startedAt));
+			setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(finish)), rest);
+		}, 250);
+	};
+})();
+</script>
+
+
+<!-- ========== Tablet / Landscape Detector ========== -->
+<script>
+(function () {
+	function applyTabletClass() {
+		const w = window.innerWidth  || 0;
+		const h = window.innerHeight || 0;
+		const coarse    = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+		const landscape = w > h;
+		const isTabletLandscape = landscape && coarse && w >= 900 && h >= 600;
+		document.body.classList.toggle('jf-tablet-landscape', isTabletLandscape);
+	}
+
+	applyTabletClass();
+	window.addEventListener('resize', applyTabletClass);
+	window.addEventListener('orientationchange', () => setTimeout(applyTabletClass, 250));
+})();
+</script>
+</body>
+</html>

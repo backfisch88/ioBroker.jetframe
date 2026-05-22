@@ -1,0 +1,58 @@
+// ioBroker eslint template configuration file for js and ts files
+// Please note that esm or react based modules need additional modules loaded.
+import config from '@iobroker/eslint-config';
+
+export default [
+	...config,
+	{
+		// specify files to exclude from linting here
+		ignores: [
+
+	'admin/src/**',
+
+            'build/**',
+
+  "**/admin/src/**",
+
+            "**/build/**",
+
+            "admin/src/**",
+
+            "build/**",
+			'.dev-server/',
+			'.vscode/',
+			'*.test.js',
+			'test/**/*.js',
+			'*.config.mjs',
+			'build',
+			'dist',
+			'admin/words.js',
+			'admin/admin.d.ts',
+			'admin/blockly.js',
+			'**/adapter-config.d.ts',
+			'widgets/**/*.js',
+		],
+	},
+	{
+		// you may disable some 'jsdoc' warnings - but using jsdoc is highly recommended
+		// as this improves maintainability. jsdoc warnings will not block build process.
+		rules: {
+"no-empty": "off",
+"jsdoc/no-blank-blocks": "off",
+"@typescript-eslint/no-unused-vars": "off",
+"@typescript-eslint/no-base-to-string": "off",	
+"jsdoc/require-param-description": "off",
+"jsdoc/require-returns-description": "off",
+	"jsdoc/require-jsdoc": "off",
+"jsdoc/require-description": "off",
+"jsdoc/require-param": "off",
+"jsdoc/require-returns": "off",
+
+			// 'jsdoc/require-jsdoc': 'off',
+			// 'jsdoc/require-param': 'off',
+			// 'jsdoc/require-param-description': 'off',
+			// 'jsdoc/require-returns-description': 'off',
+			// 'jsdoc/require-returns-check': 'off',
+		},
+	},
+];

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <title>JetFrame Heatmap</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="jetframe.png">
+  <link rel="icon" type="image/png" href="jetframe.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#050709">
+  <link rel="stylesheet" href="jetframe.css?v=20260522-fix14">
+</head>
+<body class="jf-page-heatmap">
+
+<div id="simpleApiWarning" class="simpleApiWarning">
+  ⚠️ Simple-API nicht erreichbar<br>
+  <span id="simpleApiWarningText"></span>
+</div>
+
+<div id="app">
+  <div class="jf-shell">
+    <div class="header">
+      <a class="backBtn" href="index.html" aria-label="Zurück">‹</a>
+      <div>
+        <div class="title">✈️ JetFrame</div>
+        <div id="dateText" class="sub">Heatmap</div>
+      </div>
+      <div class="livePill">
+        <span class="dot"></span><span>Live</span>
+      </div>
+    </div>
+
+    <div class="hmStats">
+      <div class="hmStat"><div id="totalFlights" class="hmVal">–</div><div class="hmLabel">Flüge</div></div>
+      <div class="hmStat"><div id="landings"     class="hmVal">–</div><div class="hmLabel">Landungen</div></div>
+      <div class="hmStat"><div id="departures"   class="hmVal">–</div><div class="hmLabel">Starts</div></div>
+      <div class="hmStat"><div id="overflights"  class="hmVal">–</div><div class="hmLabel">Überflüge</div></div>
+    </div>
+
+    <div id="rushBox" class="rush">
+      <span id="rushText">Lade Traffic…</span>
+      <span id="bestText">Beste Zeit: –</span>
+    </div>
+
+    <div id="hourScroller" class="scroller"></div>
+
+    <div class="rankings">
+      <div class="panel"><h3>Top Airlines</h3><pre id="airlineRanking">–</pre></div>
+      <div class="panel"><h3>Top Routen</h3><pre  id="routeRanking">–</pre></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+let API_BASE = (() => {
+  const u = new URL(location.href);
+  return (location.protocol||'http:')+'//'+(u.searchParams.get('apiHost')||location.hostname||'127.0.0.1')+':'+(u.searchParams.get('apiPort')||'8087');
+})();
+const DP_ROOT = 'jetframe.'+(new URL(location.href).searchParams.get('instance')||'0').replace(/[^0-9]/g,'');
+let VIS_CONFIG_LOADED = false;
+
+const BASE = DP_ROOT+'.statistics.today';
+const IDS = {
+  date:'date', totalFlights:'totalFlights', landings:'landings',
+  departures:'departures', overflights:'overflights', hourly:'hourly',
+  bestSpotterHour:'bestSpotterHour', rushHourNow:'rushHourNow',
+  rushHourText:'rushHourText', airlineRankingText:'airlineRankingText',
+  routeRankingText:'routeRankingText',
+};
+
+function $(id){ return document.getElementById(id); }
+
+function setWarn(v,t){ const b=$('simpleApiWarning'),m=$('simpleApiWarningText'); if(!b)return; if(m)m.textContent=t||API_BASE; b.classList.toggle('visible',!!v); }
+
+async function checkApi(){ try{ const r=await fetch(API_BASE+'/getPlainValue/'+encodeURIComponent(DP_ROOT+'.status'),{cache:'no-store'}); if(!r.ok)throw 0; setWarn(false); return true; }catch{ setWarn(true); return false; } }
+
+async function loadVis(){
+  const u=new URL(location.href);
+  const noOverride=!u.searchParams.has('apiHost')&&!u.searchParams.has('apiPort');
+  const r=await fetch('/jetframe.admin/vis-config.json?v='+Date.now(),{cache:'no-store'});
+  if(!r.ok)throw new Error('vis-config.json fehlt');
+  const c=await r.json();
+  if(noOverride){ API_BASE=(location.protocol||'http:')+'//'+String(c.simpleApiHost||location.hostname||'127.0.0.1').trim()+':'+String(c.simpleApiPort||'8087').trim(); }
+  VIS_CONFIG_LOADED=true;
+}
+
+function clean(v){
+  if(v==null)return''; v=String(v).trim();
+  if(v==='null'||v==='undefined')return'';
+  if((v[0]==='"'&&v.slice(-1)==='"')||(v[0]==="'"&&v.slice(-1)==="'"))v=v.slice(1,-1);
+  return v.replace(/\\"/g,'"').replace(/\\n/g,'\n').trim();
+}
+
+function num(v){ const n=Number(String(v).replace(',','.')); return Number.isFinite(n)?n:0; }
+
+async function read(key){
+  if(!VIS_CONFIG_LOADED)return'';
+  try{
+    const r=await fetch(API_BASE+'/getPlainValue/'+encodeURIComponent(BASE+'.'+key),{cache:'no-store'});
+    if(!r.ok)return'';
+    return clean(await r.text());
+  }catch{ setWarn(true); return''; }
+}
+
+async function readAll(){ return Object.fromEntries(await Promise.all(Object.keys(IDS).map(async k=>[k,await read(IDS[k])]))); }
+
+function parseHourly(raw){
+  const r={};
+  for(let h=0;h<24;h++)r[String(h).padStart(2,'0')]={total:0,landings:0,departures:0,overflights:0};
+  try{ const d=JSON.parse(raw||'{}'); for(const[k,v]of Object.entries(d))if(r[k])r[k]={total:+v.total||0,landings:+v.landings||0,departures:+v.departures||0,overflights:+v.overflights||0}; }catch{}
+  return r;
+}
+
+function renderHours(hourly){
+  const sc=$('hourScroller'); if(!sc)return;
+  const nowH=String(new Date().getHours()).padStart(2,'0');
+  const max=Math.max(1,...Object.values(hourly).map(v=>v.total));
+  const best=Object.entries(hourly).sort((a,b)=>b[1].total-a[1].total)[0]?.[0]||'';
+  const hash=JSON.stringify(hourly)+nowH;
+  if(sc.dataset.hash===hash)return;
+  sc.dataset.hash=hash;
+  sc.innerHTML='';
+  const f=document.createDocumentFragment();
+  for(let h=0;h<24;h++){
+    const k=String(h).padStart(2,'0'), v=hourly[k]||{total:0,landings:0,departures:0,overflights:0};
+    const heat=Math.min(.72,Math.max(.06,v.total/max*.72));
+    const c=document.createElement('div');
+    c.className='hourCard'+(k===nowH?' now':'')+(k===best&&v.total>0?' best':'');
+    c.style.setProperty('--heat',heat.toFixed(2));
+    const badge=k===nowH?'JETZT':(k===best&&v.total>0?'PEAK':'UHR');
+    c.innerHTML='<div class="hourInner"><div class="hourTop"><div class="hour">'+k+':00</div><div class="badge">'+badge+'</div></div><div class="hourTotal">'+v.total+'</div><div class="hourSub">Flugbewegungen</div><div class="bars"><div class="bar">🛬 '+v.landings+'</div><div class="bar">🛫 '+v.departures+'</div><div class="bar">🛩️ '+v.overflights+'</div></div></div>';
+    f.appendChild(c);
+  }
+  sc.appendChild(f);
+  setTimeout(()=>{ const n=sc.querySelector('.now'); if(n)n.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'}); },150);
+}
+
+function set(id,val){ const e=$(id); if(e)e.textContent=val; }
+
+function render(d){
+  set('dateText', d.date?'Heute · '+d.date:'Heatmap');
+  set('totalFlights', num(d.totalFlights));
+  set('landings',     num(d.landings));
+  set('departures',   num(d.departures));
+  set('overflights',  num(d.overflights));
+  const rush=$('rushBox'); if(rush)rush.classList.toggle('hot',clean(d.rushHourNow)==='true');
+  set('rushText', clean(d.rushHourText)||'Noch keine Rushhour');
+  set('bestText',  clean(d.bestSpotterHour)?'Beste Zeit: '+clean(d.bestSpotterHour):'Beste Zeit: –');
+  set('airlineRanking', clean(d.airlineRankingText)||'–');
+  set('routeRanking',   clean(d.routeRankingText)||'–');
+  renderHours(parseHourly(d.hourly));
+}
+
+async function poll(){ await checkApi(); render(await readAll()); }
+
+loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
+  .catch(e=>{ VIS_CONFIG_LOADED=false; console.error(e); setWarn(true,'vis-config.json fehlt'); });
+</script>
+
+<script>
+/* Header clock — every 5s */
+(function(){
+  let _b=false;
+  function pad(n){return String(n).padStart(2,'0');}
+  function wanted(){const d=new Date();return'Heute · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
+  function apply(){if(_b)return;_b=true;const s=document.querySelector('.header .sub');if(s){const t=wanted();if(s.textContent!==t)s.textContent=t;}_b=false;}
+  apply();setInterval(apply,5000);
+  const h=document.querySelector('.header');if(h)new MutationObserver(apply).observe(h,{childList:true,subtree:true,characterData:true});
+})();
+</script>
+
+<script>
+/* Date format YYYY-MM-DD → DD.MM.YYYY */
+(function(){
+  const RE=/\b(\d{4})-(\d{2})-(\d{2})\b/g;
+  function fmt(t){return String(t||'').replace(RE,'$3.$2.$1');}
+  function apply(){const root=document.querySelector('.jf-shell');if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const ns=[];while(w.nextNode())ns.push(w.currentNode);for(const n of ns){if(!RE.test(n.nodeValue))continue;const nx=fmt(n.nodeValue);if(nx!==n.nodeValue)n.nodeValue=nx;}}
+  apply();setInterval(apply,5000);
+  const r=document.querySelector('.jf-shell');if(r)new MutationObserver(apply).observe(r,{childList:true,subtree:true,characterData:true});
+})();
+</script>
+
+<script>
+/* Ranking-Zeilen: jede Zeile als eigener Span mit ellipsis */
+(function(){
+  function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function applyOne(pre){
+    if(!pre)return;
+    // Originaltext merken
+    if(pre.dataset.jfRaw===undefined) pre.dataset.jfRaw=pre.textContent||'';
+    else if(!pre.querySelector('.hm-line')) pre.dataset.jfRaw=pre.textContent||'';
+    const raw=(pre.dataset.jfRaw||'').trim();
+    if(!raw||raw==='–'||raw==='-'){pre.classList.remove('hm-list');pre.textContent=raw||'–';return;}
+    const lines=raw.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    if(lines.length<1)return;
+    pre.classList.add('hm-list');
+    const html=lines.map(l=>'<span class="hm-line">'+esc(l)+'</span>').join('');
+    if(pre.innerHTML!==html)pre.innerHTML=html;
+  }
+  function applyAll(){
+    applyOne(document.getElementById('airlineRanking'));
+    applyOne(document.getElementById('routeRanking'));
+  }
+  let t=null;
+  new MutationObserver(()=>{clearTimeout(t);t=setTimeout(applyAll,30);})
+    .observe(document.body,{childList:true,subtree:true,characterData:true});
+  applyAll();
+})();
+</script>
+
+</body>
+</html>

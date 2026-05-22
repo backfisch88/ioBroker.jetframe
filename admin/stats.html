@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+  <title>JetFrame Statistik</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="jetframe.png">
+  <link rel="icon" type="image/png" href="jetframe.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#050709">
+  <link rel="stylesheet" href="jetframe.css?v=20260522-fix14">
+</head>
+<body class="jf-page-stats">
+
+<div id="simpleApiWarning" class="simpleApiWarning">
+  ⚠️ Simple-API nicht erreichbar<br>
+  <span id="simpleApiWarningText"></span>
+</div>
+
+<div id="app">
+  <div class="jf-shell">
+    <div class="header">
+      <a class="backBtn" href="index.html" aria-label="Zurück">‹</a>
+      <div>
+        <div class="title">✈️ JetFrame</div>
+        <div id="dateText" class="sub">Statistik</div>
+      </div>
+      <div class="livePill">
+        <span class="dot"></span><span>Live</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="stat big">
+        <div class="stLabel">Heute</div>
+        <div id="todayTotal" class="stVal">–</div>
+        <div id="todaySmall" class="stSub">Flüge heute</div>
+      </div>
+      <div class="stat">
+        <div class="stLabel">Gestern</div>
+        <div id="yesterdayTotal" class="stVal">–</div>
+        <div id="yesterdaySmall" class="stSub">Rückblick</div>
+      </div>
+      <div class="stat warn">
+        <div class="stLabel">Rekordtag</div>
+        <div id="bestDay" class="stVal">–</div>
+        <div id="bestDaySmall" class="stSub">Alltime</div>
+      </div>
+      <div class="stat">
+        <div class="stLabel">Beste Zeit</div>
+        <div id="bestHour" class="stVal">–</div>
+        <div id="bestHourSmall" class="stSub">allgemein</div>
+      </div>
+      <div class="stat">
+        <div class="stLabel">Heavy heute</div>
+        <div id="heavyToday" class="stVal">–</div>
+        <div id="heavySmall" class="stSub">A380 / B747 separat</div>
+      </div>
+      <div class="stat">
+        <div class="stLabel">Specials heute</div>
+        <div id="specialToday" class="stVal">–</div>
+        <div id="specialSmall" class="stSub">Speziallackierungen</div>
+      </div>
+    </div>
+
+    <div class="panels">
+      <div class="panel"><h3>Tageshistorie</h3><pre id="dailyHistory">–</pre></div>
+      <div class="panel"><h3>Gestern</h3><pre id="yesterdayDetails">–</pre></div>
+      <div class="panel"><h3>Top Airlines Alltime</h3><pre id="alltimeAirlines">–</pre></div>
+      <div class="panel"><h3>Top Routen Alltime</h3><pre id="alltimeRoutes">–</pre></div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+let API_BASE = (() => {
+  const u = new URL(location.href);
+  return (location.protocol||'http:')+'//'+(u.searchParams.get('apiHost')||location.hostname||'127.0.0.1')+':'+(u.searchParams.get('apiPort')||'8087');
+})();
+const DP_ROOT = 'jetframe.'+(new URL(location.href).searchParams.get('instance')||'0').replace(/[^0-9]/g,'');
+let VIS_CONFIG_LOADED = false;
+
+const BASE = DP_ROOT+'.statistics';
+const IDS = {
+  todayDate:BASE+'.today.date', todayTotal:BASE+'.today.totalFlights',
+  todayLandings:BASE+'.today.landings', todayDepartures:BASE+'.today.departures',
+  todayOverflights:BASE+'.today.overflights', todayBestHour:BASE+'.today.bestSpotterHour',
+  todayHeavy:BASE+'.today.heavyAircraftCount', todayA380:BASE+'.today.a380Count',
+  todayB747:BASE+'.today.b747Count', todaySpecial:BASE+'.today.specialLiveryCount',
+  yesterdayDate:BASE+'.yesterday.date', yesterdayTotal:BASE+'.yesterday.totalFlights',
+  yesterdayLandings:BASE+'.yesterday.landings', yesterdayDepartures:BASE+'.yesterday.departures',
+  yesterdayOverflights:BASE+'.yesterday.overflights', yesterdayBestHour:BASE+'.yesterday.bestSpotterHour',
+  yesterdayTopAirline:BASE+'.yesterday.topAirline', yesterdayTopRoute:BASE+'.yesterday.topRoute',
+  yesterdayHeavy:BASE+'.yesterday.heavyAircraftCount', yesterdayA380:BASE+'.yesterday.a380Count',
+  yesterdayB747:BASE+'.yesterday.b747Count', yesterdaySpecial:BASE+'.yesterday.specialLiveryCount',
+  bestDayDate:BASE+'.alltime.bestDayDate', bestDayFlights:BASE+'.alltime.bestDayFlights',
+  bestHour:BASE+'.alltime.bestHour', bestHourFlights:BASE+'.alltime.bestHourFlights',
+  alltimeHeavy:BASE+'.alltime.heavyAircraftCount', alltimeA380:BASE+'.alltime.a380Count',
+  alltimeB747:BASE+'.alltime.b747Count', alltimeSpecial:BASE+'.alltime.specialLiveryCount',
+  alltimeAirlines:BASE+'.alltime.airlineRankingText', alltimeRoutes:BASE+'.alltime.routeRankingText',
+  dailyHistory:BASE+'.history.dailyText',
+};
+
+function $(id){ return document.getElementById(id); }
+function setWarn(v,t){ const b=$('simpleApiWarning'),m=$('simpleApiWarningText'); if(!b)return; if(m)m.textContent=t||API_BASE; b.classList.toggle('visible',!!v); }
+async function checkApi(){ try{ const r=await fetch(API_BASE+'/getPlainValue/'+encodeURIComponent(DP_ROOT+'.status'),{cache:'no-store'}); if(!r.ok)throw 0; setWarn(false); return true; }catch{ setWarn(true); return false; } }
+
+async function loadVis(){
+  const u=new URL(location.href), no=!u.searchParams.has('apiHost')&&!u.searchParams.has('apiPort');
+  const r=await fetch('/jetframe.admin/vis-config.json?v='+Date.now(),{cache:'no-store'});
+  if(!r.ok)throw new Error('vis-config.json fehlt');
+  const c=await r.json();
+  if(no){ API_BASE=(location.protocol||'http:')+'//'+String(c.simpleApiHost||location.hostname||'127.0.0.1').trim()+':'+String(c.simpleApiPort||'8087').trim(); }
+  VIS_CONFIG_LOADED=true;
+}
+
+function clean(v){
+  if(v==null)return''; v=String(v).trim();
+  if(v==='null'||v==='undefined')return'';
+  if((v[0]==='"'&&v.slice(-1)==='"')||(v[0]==="'"&&v.slice(-1)==="'"))v=v.slice(1,-1);
+  return v.replace(/\\"/g,'"').replace(/\\n/g,'\n').trim();
+}
+function num(v){ const n=Number(String(v).replace(',','.')); return Number.isFinite(n)?n:0; }
+function fmt(v){ return num(v).toLocaleString('de-DE'); }
+
+async function read(id){
+  if(!VIS_CONFIG_LOADED)return'';
+  try{ const r=await fetch(API_BASE+'/getPlainValue/'+encodeURIComponent(id),{cache:'no-store'}); if(!r.ok)return''; return clean(await r.text()); }
+  catch{ setWarn(true); return''; }
+}
+
+async function readAll(){
+  return Object.fromEntries(await Promise.all(Object.entries(IDS).map(async([k,id])=>[k,await read(id)])));
+}
+
+function set(id,v){ const e=$(id); if(e)e.textContent=v; }
+
+function render(d){
+  set('dateText', d.todayDate?'Heute · '+d.todayDate:'Statistik');
+  set('todayTotal',      fmt(d.todayTotal));
+  set('todaySmall',      fmt(d.todayLandings)+' Landungen · '+fmt(d.todayDepartures)+' Starts');
+  set('yesterdayTotal',  fmt(d.yesterdayTotal));
+  set('yesterdaySmall',  d.yesterdayDate||'noch kein Vortag');
+  set('bestDay',         fmt(d.bestDayFlights));
+  set('bestDaySmall',    d.bestDayDate||'noch kein Rekord');
+  set('bestHour',        d.bestHour||'–');
+  set('bestHourSmall',   num(d.bestHourFlights)?fmt(d.bestHourFlights)+' Flüge insgesamt':'allgemein');
+  set('heavyToday',      fmt(d.todayHeavy));
+  set('heavySmall',      'A380 '+fmt(d.todayA380)+' · B747 '+fmt(d.todayB747)+' · Alltime '+fmt(d.alltimeHeavy));
+  set('specialToday',    fmt(d.todaySpecial));
+  set('specialSmall',    'Alltime '+fmt(d.alltimeSpecial));
+  set('dailyHistory',    d.dailyHistory||'Noch keine Tageshistorie vorhanden');
+  set('yesterdayDetails', [
+    (d.yesterdayDate||'Gestern')+' · '+fmt(d.yesterdayTotal)+' Flüge',
+    'Landungen: '+fmt(d.yesterdayLandings),
+    'Starts: '+fmt(d.yesterdayDepartures),
+    'Überflüge: '+fmt(d.yesterdayOverflights),
+    d.yesterdayBestHour?'Beste Zeit: '+d.yesterdayBestHour:'',
+    d.yesterdayTopAirline?'Top Airline: '+d.yesterdayTopAirline:'',
+    d.yesterdayTopRoute?'Top Route: '+d.yesterdayTopRoute:'',
+    'Heavy: '+fmt(d.yesterdayHeavy)+' · A380: '+fmt(d.yesterdayA380)+' · B747: '+fmt(d.yesterdayB747),
+    'Specials: '+fmt(d.yesterdaySpecial),
+  ].filter(Boolean).join('\n'));
+  set('alltimeAirlines', d.alltimeAirlines||'–');
+  set('alltimeRoutes',   d.alltimeRoutes||'–');
+}
+
+async function poll(){ await checkApi(); render(await readAll()); }
+
+loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
+  .catch(e=>{ VIS_CONFIG_LOADED=false; console.error(e); setWarn(true,'vis-config.json fehlt'); });
+</script>
+
+<script>
+/* Header clock */
+(function(){
+  let _b=false;
+  function pad(n){return String(n).padStart(2,'0');}
+  function wanted(){const d=new Date();return'Heute · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
+  function apply(){if(_b)return;_b=true;const s=document.querySelector('.header .sub');if(s){const t=wanted();if(s.textContent!==t)s.textContent=t;}_b=false;}
+  apply();setInterval(apply,5000);
+  const h=document.querySelector('.header');if(h)new MutationObserver(apply).observe(h,{childList:true,subtree:true,characterData:true});
+})();
+</script>
+
+<script>
+/* Date format */
+(function(){
+  const RE=/\b(\d{4})-(\d{2})-(\d{2})\b/g;
+  function fmt(t){return String(t||'').replace(RE,'$3.$2.$1');}
+  function apply(){const root=document.querySelector('.jf-shell');if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const ns=[];while(w.nextNode())ns.push(w.currentNode);for(const n of ns){if(!RE.test(n.nodeValue))continue;const nx=fmt(n.nodeValue);if(nx!==n.nodeValue)n.nodeValue=nx;}}
+  apply();setInterval(apply,5000);
+  const r=document.querySelector('.jf-shell');if(r)new MutationObserver(apply).observe(r,{childList:true,subtree:true,characterData:true});
+})();
+</script>
+
+<script>
+/* Split panel 2-column layout for ranking text */
+(function(){
+  function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function isSplit(p){const t=(p.querySelector('h3')?.textContent||'').toLowerCase();return t.includes('gestern')||t.includes('top airlines')||t.includes('top routen');}
+  function doOne(p){
+    const pre=p.querySelector('pre'); if(!pre||!isSplit(p))return;
+    // capture raw text before first split
+    if(pre.dataset.jfRaw===undefined) pre.dataset.jfRaw=pre.textContent||'';
+    // if render() updated textContent, capture it
+    else if(!pre.querySelector('.jf-line')) pre.dataset.jfRaw=pre.textContent||'';
+    const raw=(pre.dataset.jfRaw||'').trim();
+    if(!raw||raw==='–'||raw==='-'){p.classList.remove('jf-split-panel');return;}
+    const lines=raw.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    if(lines.length<2)return;
+    p.classList.add('jf-split-panel');
+    const html=lines.map(l=>'<span class="jf-line">'+esc(l)+'</span>').join('');
+    if(pre.innerHTML!==html)pre.innerHTML=html;
+  }
+  function all(){document.querySelectorAll('.panel').forEach(doOne);}
+  let t=null;
+  new MutationObserver(()=>{clearTimeout(t);t=setTimeout(all,30);}).observe(document.body,{childList:true,subtree:true,characterData:true});
+  all();
+})();
+</script>
+
+</body>
+</html>

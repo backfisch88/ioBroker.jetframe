@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="de">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+	<title>JetFrame</title>
+	<link rel="manifest" href="manifest.webmanifest">
+	<link rel="apple-touch-icon" href="jetframe.png">
+	<link rel="icon" type="image/png" href="jetframe.png">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="theme-color" content="#050709">
+	<link rel="stylesheet" href="jetframe.css?v=20260522-fix14">
+</head>
+<body class="jf-page-home">
+
+<div id="simpleApiWarning" class="simpleApiWarning">
+	⚠️ Simple-API nicht erreichbar<br>
+	<span id="simpleApiWarningText"></span>
+</div>
+
+<div id="app">
+	<div class="jf-shell">
+		<div class="hero">
+			<div class="logo">✈️</div>
+			<h1>JetFrame</h1>
+			<div class="sub">Dein Live-Flugradar für Zuhause</div>
+			<div id="statusText" class="statusPill">Verbinde mit JetFrame…</div>
+		</div>
+
+		<div class="buttons">
+			<div id="globalPowerBtn" class="powerBtn on" role="button" tabindex="0" aria-label="JetFrame Ein/Aus">
+				<div>
+					<div class="btnTitle">JetFrame aktiv</div>
+					<div id="globalPowerSub" class="btnSub">Live-Erkennung ist eingeschaltet</div>
+				</div>
+				<div id="globalPowerState" class="powerBadge">ON</div>
+			</div>
+
+			<a id="frameLink" href="frame.html">
+				<div class="btn primary">
+					<div>
+						<div class="btnTitle">Live Frame</div>
+						<div class="btnSub">Aktuelles Flugzeug anzeigen</div>
+					</div>
+					<div class="arrow">›</div>
+				</div>
+			</a>
+
+			<a id="heatmapLink" href="heatmap.html">
+				<div class="btn heat">
+					<div>
+						<div class="btnTitle">Heatmap</div>
+						<div class="btnSub">Tagesstatistik & beste Spotterzeit</div>
+					</div>
+					<div class="arrow">›</div>
+				</div>
+			</a>
+
+			<a id="statsLink" href="stats.html">
+				<div class="btn">
+					<div>
+						<div class="btnTitle">Statistik</div>
+						<div class="btnSub">Gestern, Rekorde & Spotterzeiten</div>
+					</div>
+					<div class="arrow">›</div>
+				</div>
+			</a>
+		</div>
+
+		<div class="statsRow">
+			<div class="statCard">
+				<div id="totalFlights" class="statVal">–</div>
+				<div class="statLabel">HEUTE</div>
+			</div>
+			<div class="statCard">
+				<div id="currentHour" class="statVal">–</div>
+				<div class="statLabel">AKTUELL</div>
+			</div>
+			<div class="statCard">
+				<div id="landings" class="statVal">–</div>
+				<div class="statLabel">LANDUNGEN</div>
+			</div>
+		</div>
+
+		<div class="footer">JetFrame · Auto-Refresh alle 10 Sekunden</div>
+	</div>
+</div>
+
+<script>
+'use strict';
+
+let API_BASE = (() => {
+	const proto = window.location.protocol || 'http:';
+	const host = window.location.hostname || '127.0.0.1';
+	const url = new URL(window.location.href);
+	const apiHost = url.searchParams.get('apiHost') || host;
+	const apiPort = url.searchParams.get('apiPort') || '8087';
+	return proto + '//' + apiHost + ':' + apiPort;
+})();
+
+const DP_ROOT = (() => {
+	const url = new URL(window.location.href);
+	const instance = url.searchParams.get('instance') || '0';
+	return 'jetframe.' + String(instance).replace(/[^0-9]/g, '');
+})();
+
+let VIS_CONFIG_LOADED = false;
+
+function $(id) { return document.getElementById(id); }
+
+function clean(v) {
+	if (v === null || v === undefined) return '';
+	v = String(v).trim();
+	if (v === 'null' || v === 'undefined') return '';
+	if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+		v = v.slice(1, -1);
+	}
+	return v.replace(/\\"/g, '"').replace(/\\n/g, '').trim();
+}
+
+async function loadVisualConfig() {
+	const url = new URL(window.location.href);
+	const hasApiOverride = url.searchParams.has('apiHost') || url.searchParams.has('apiPort');
+
+	try {
+		const res = await fetch('/jetframe.admin/vis-config.json?v=' + Date.now(), { cache: 'no-store' });
+		if (!res.ok) throw new Error('vis-config.json nicht gefunden');
+
+		const cfg = await res.json();
+
+		if (!hasApiOverride) {
+			const proto = window.location.protocol || 'http:';
+			const host = String(cfg.simpleApiHost || window.location.hostname || '127.0.0.1').trim();
+			const port = String(cfg.simpleApiPort || '8087').trim();
+			API_BASE = proto + '//' + host + ':' + port;
+		}
+
+		console.log('[JetFrame] vis-config.json geladen:', cfg, API_BASE);
+	} catch (e) {
+		console.warn('[JetFrame] vis-config.json nicht geladen, nutze Fallback:', API_BASE, e);
+	}
+
+	VIS_CONFIG_LOADED = true;
+}
+
+function setSimpleApiWarning(visible, text) {
+	const box = $('simpleApiWarning');
+	const msg = $('simpleApiWarningText');
+	if (msg) msg.textContent = text || API_BASE;
+	if (box) box.classList.toggle('visible', !!visible);
+}
+
+async function checkSimpleApiReachable() {
+	try {
+		const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(DP_ROOT + '.status'), { cache: 'no-store' });
+		if (!res.ok) throw new Error('HTTP ' + res.status);
+		setSimpleApiWarning(false, '');
+		return true;
+	} catch (e) {
+		setSimpleApiWarning(true, API_BASE);
+		return false;
+	}
+}
+
+async function readState(id) {
+	if (!VIS_CONFIG_LOADED) return '';
+	try {
+		const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(id), { cache: 'no-store' });
+		if (!res.ok) return '';
+		return clean(await res.text());
+	} catch (e) {
+		setSimpleApiWarning(true, API_BASE);
+		return '';
+	}
+}
+
+async function writeState(id, value) {
+	try {
+		await fetch(API_BASE + '/set/' + encodeURIComponent(id) + '?value=' + encodeURIComponent(value), { cache: 'no-store' });
+	} catch (e) {
+		setSimpleApiWarning(true, API_BASE);
+	}
+}
+
+function setGlobalPowerButton(enabled) {
+	const btn = $('globalPowerBtn');
+	const state = $('globalPowerState');
+	const sub = $('globalPowerSub');
+	const title = btn ? btn.querySelector('.btnTitle') : null;
+
+	if (!btn) return;
+
+	btn.classList.toggle('on', !!enabled); btn.classList.toggle('off', !enabled);
+	btn.classList.toggle('off', !enabled);
+
+	if (title) title.textContent = enabled ? 'JetFrame aktiv' : 'JetFrame pausiert';
+	if (state) state.textContent = enabled ? 'ON' : 'OFF';
+	if (sub) sub.textContent = enabled ? 'Live-Erkennung ist eingeschaltet' : 'Live-Erkennung ist pausiert';
+}
+
+function applyQueryLinks() {
+	const q = window.location.search || '';
+	if ($('frameLink'))   $('frameLink').href   = 'frame.html'   + q;
+	if ($('heatmapLink')) $('heatmapLink').href = 'heatmap.html' + q;
+	if ($('statsLink'))   $('statsLink').href   = 'stats.html'   + q;
+}
+
+async function poll() {
+	await checkSimpleApiReachable();
+
+	const base = DP_ROOT + '.statistics';
+
+	const [status, enabled, total, current, landings, runway] = await Promise.all([
+		readState(DP_ROOT + '.status'),
+		readState(DP_ROOT + '.enabled'),
+		readState(base + '.today.totalFlights'),
+		readState(base + '.today.currentHourFlights'),
+		readState(base + '.today.landings'),
+		readState(DP_ROOT + '.idleRunwayText'),
+	]);
+
+	if ($('totalFlights')) $('totalFlights').textContent = Number(total  || 0);
+	if ($('currentHour'))  $('currentHour').textContent  = Number(current || 0);
+	if ($('landings'))     $('landings').textContent     = Number(landings || 0);
+
+	setGlobalPowerButton(clean(enabled) !== 'false');
+
+	const parts = [];
+	if (status) parts.push('Status: ' + status);
+	if (runway) parts.push(runway);
+	if ($('statusText')) $('statusText').textContent = parts.length ? parts.join(' · ') : 'JetFrame bereit';
+}
+
+async function toggleGlobalPower() {
+	const current = clean(await readState(DP_ROOT + '.enabled')) !== 'false';
+	const next = !current;
+	await writeState(DP_ROOT + '.enabled', next ? 'true' : 'false');
+	setGlobalPowerButton(next);
+	poll();
+}
+
+const powerBtn = $('globalPowerBtn');
+if (powerBtn) {
+	powerBtn.addEventListener('click', toggleGlobalPower);
+	powerBtn.addEventListener('keydown', e => {
+		if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleGlobalPower(); }
+	});
+}
+
+applyQueryLinks();
+
+loadVisualConfig()
+	.then(() => {
+		poll();
+		setTimeout(poll, 2500);
+		setInterval(poll, 10000);
+	})
+	.catch(e => {
+		console.error('[JetFrame] Start abgebrochen:', e);
+		VIS_CONFIG_LOADED = true;
+		poll();
+		setInterval(poll, 10000);
+	});
+</script>
+</body>
+</html>
