@@ -190,7 +190,11 @@ export async function ensureFlightStates(adapter: AdapterLike, base: string): Pr
 		await ensureState(adapter, base + s, '', 'string', 'text');
 	}
 
-	const nums = [
+	const bools = [
+		'.statistics.today.rushHourNow',
+	];
+
+const nums = [
 		'.altitudeFt',
 		'.speedKt',
 		'.verticalRate',
