@@ -296,6 +296,10 @@ Planned future features:
 
 ## Changelog
 
+### v1.0.4
+
+- Fix CI deploy workflow and release metadata cleanup.
+
 ### v1.0.3
 
 - Release cleanup and checker preparation.
@@ -363,4 +367,4 @@ OF ANY KIND.
 
 
 
-Current version: 1.0.3
+Current version: 1.0.4
