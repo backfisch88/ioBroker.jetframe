@@ -294,7 +294,7 @@ Planned future features:
 
 ---
 
-### Changelog
+## Changelog
 
 ### v1.0.3
 
