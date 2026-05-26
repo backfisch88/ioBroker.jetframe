@@ -311,3 +311,9 @@ Planned future features:
 ### 1.0.0
 
 * Initial release.
+
+## License
+
+MIT License
+
+Copyright (c) 2026 backfisch88
