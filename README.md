@@ -296,6 +296,11 @@ Planned future features:
 
 ### Changelog
 
+### v1.0.3
+
+- Release cleanup and checker preparation.
+
+
 ## WORK IN PROGRESS
 
 ### v1.0.0
@@ -355,5 +360,7 @@ of this software and associated documentation files.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 OF ANY KIND.
 
-Current version: 1.0.2
 
+
+
+Current version: 1.0.3

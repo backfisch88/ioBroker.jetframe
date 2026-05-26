@@ -1,11 +1,11 @@
 {
   "common": {
     "name": "jetframe",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "news": {
-      "1.0.2": {
-        "en": "Stability improvements, workflow fixes and release preparation.",
-        "de": "Stabilitätsverbesserungen, Workflow-Fixes und Release-Vorbereitung."
+      "1.0.3": {
+        "en": "Release cleanup with fixed metadata, workflow and adapter checker preparation.",
+        "de": "Release-Aufräumarbeiten mit korrigierten Metadaten, Workflow und Adapter-Checker-Vorbereitung."
       }
     },
     "titleLang": {
