@@ -11,7 +11,7 @@
 
 ---
 
-# ✈️ JetFrame
+## ✈️ JetFrame
 
 JetFrame is a modern FlightWall adapter for ioBroker.
 
@@ -19,7 +19,7 @@ It detects nearby aircraft based on your window position and visualizes them wit
 
 ---
 
-# ✨ Features
+## ✨ Features
 
 - Live aircraft detection
 - Window-direction based filtering
@@ -43,7 +43,7 @@ It detects nearby aircraft based on your window position and visualizes them wit
 
 ---
 
-# 🛠 Requirements
+## 🛠 Requirements
 
 - ioBroker
 - web adapter
@@ -52,7 +52,7 @@ It detects nearby aircraft based on your window position and visualizes them wit
 
 ---
 
-# 🚀 Usage
+## 🚀 Usage
 
 1. Install and start the required ioBroker adapters:
    - `web`
@@ -92,7 +92,7 @@ Available sources:
 
 ---
 
-# 🌐 Standalone WebApp
+## 🌐 Standalone WebApp
 
 JetFrame now includes a modern standalone WebApp interface.
 
@@ -124,7 +124,7 @@ Optimized for:
 
 ---
 
-# 🖼️ Images & Logos
+## 🖼️ Images & Logos
 
 JetFrame no longer ships with bundled images or logos.
 
@@ -169,7 +169,7 @@ Supports:
 
 ---
 
-# 💾 Optional Image Caching
+## 💾 Optional Image Caching
 
 Caching of external images can now be enabled or disabled.
 
@@ -187,7 +187,7 @@ Useful for:
 
 ---
 
-# 🌍 Configurable API Host
+## 🌍 Configurable API Host
 
 The WebApp supports configurable API hosts.
 
@@ -204,7 +204,7 @@ Useful for:
 
 ---
 
-# 📡 Configurable ADS-B Sources
+## 📡 Configurable ADS-B Sources
 
 Supported:
 
@@ -221,7 +221,7 @@ Improved handling for:
 
 ---
 
-# 🚨 Flight Prioritization
+## 🚨 Flight Prioritization
 
 JetFrame dynamically prioritizes aircraft.
 
@@ -238,7 +238,7 @@ Special aircraft automatically appear before normal traffic.
 
 ---
 
-# 📊 Heatmap
+## 📊 Heatmap
 
 Heatmap features:
 
@@ -253,13 +253,12 @@ Heatmap features:
 
 ---
 
-# 📦 Installation
+## 📦 Installation
 
-    iobroker url https://github.com/backfisch88/ioBroker.jetframe/releases/latest/download/iobroker.jetframe-0.6.0.tgz --host this
+Install the adapter via the ioBroker Admin interface after it has been added to the official ioBroker repository.
 
----
 
-# ⚠️ Legal Notice
+## ⚠️ Legal Notice
 
 JetFrame may display publicly available aviation-related information including:
 
@@ -285,7 +284,7 @@ Users are responsible for complying with the licenses and API terms of configure
 
 ---
 
-# 🚀 Roadmap
+## 🚀 Roadmap
 
 Planned future features:
 
@@ -295,7 +294,7 @@ Planned future features:
 
 ---
 
-# Changelog
+### Changelog
 
 ## WORK IN PROGRESS
 
@@ -344,7 +343,7 @@ Planned future features:
 
 ---
 
-# License
+### License
 
 MIT License
 
