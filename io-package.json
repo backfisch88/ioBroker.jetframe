@@ -1,11 +1,11 @@
 {
   "common": {
     "name": "jetframe",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "news": {
-      "1.0.1": {
-        "en": "Public release with live flight detection, aircraft visualization, statistics and tablet UI optimizations.",
-        "de": "Öffentliches Release mit Live-Flugerkennung, Flugzeuganzeige, Statistik und Tablet-Optimierungen."
+      "1.0.2": {
+        "en": "Stability improvements, workflow fixes and release preparation.",
+        "de": "Stabilitätsverbesserungen, Workflow-Fixes und Release-Vorbereitung."
       }
     },
     "titleLang": {
