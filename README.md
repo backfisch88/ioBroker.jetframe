@@ -294,77 +294,20 @@ Planned future features:
 
 ---
 
+
+
 ## Changelog
 
-### v1.0.4
+### **WORK IN PROGRESS**
 
-- Fix CI deploy workflow and release metadata cleanup.
+### 1.0.4
 
-### v1.0.3
+* Fix CI deploy workflow and release metadata cleanup.
 
-- Release cleanup and checker preparation.
+### 1.0.3
 
+* Release cleanup and checker preparation.
 
-## WORK IN PROGRESS
+### 1.0.0
 
-### v1.0.0
-
-✨ New
-
-- Added standalone WebApp
-- Added welcome/start page
-- Added responsive heatmap
-- Added fullscreen iPhone/iPad support
-- Added configurable API host support
-- Added external manufacturer logo support
-- Added external airline logo support
-- Added optional image caching
-- Added improved aircraft prioritization
-- Added automatic ADS-B fallback handling
-- Added landscape auto-fit layout
-- Added top airlines and routes statistics
-- Added configurable image provider support
-
-🛠 Improvements
-
-- Improved mobile layouts
-- Improved iPhone standalone support
-- Improved heatmap scaling
-- Improved emergency prioritization
-- Improved image handling
-- Reduced package size significantly
-- Removed bundled image/logo dependencies
-- Improved fallback handling for adsb.lol / adsb.fi
-- Improved fullscreen experience
-- Improved Apple-style UI consistency
-
-### v0.5.0
-
-- Added configurable visualization settings
-- Added aircraft prioritization
-- Added emergency / Squawk support
-- Added overflight mode
-- Added improved visualization handling
-
-### v0.4.0
-
-- Initial release
-
----
-
-### License
-
-MIT License
-
-Copyright (c) 2026 backfisch88
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
-OF ANY KIND.
-
-
-
-
-Current version: 1.0.4
+* Initial release.
