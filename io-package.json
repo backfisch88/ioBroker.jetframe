@@ -1,11 +1,15 @@
 {
   "common": {
     "name": "jetframe",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "news": {
       "1.0.3": {
         "en": "Release cleanup with fixed metadata, workflow and adapter checker preparation.",
         "de": "Release-Aufräumarbeiten mit korrigierten Metadaten, Workflow und Adapter-Checker-Vorbereitung."
+      },
+      "1.0.4": {
+        "en": "Fix CI deploy workflow and release metadata cleanup.",
+        "de": "CI-Deploy-Workflow und Release-Metadaten bereinigt."
       }
     },
     "titleLang": {
