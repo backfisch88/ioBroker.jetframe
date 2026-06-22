@@ -1121,7 +1121,7 @@ async function maybeTriggerSpeech(adapter: AdapterLike, base: string, a: Aircraf
 
 	await adapter.setForeignStateAsync(`${base}.speechTrigger`, true, true);
 
-	setTimeout(() => {
+	adapter.setTimeout(() => {
 		adapter.setForeignStateAsync(`${base}.speechTrigger`, false, true).catch(() => {});
 	}, 500);
 }

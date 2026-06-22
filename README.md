@@ -11,7 +11,7 @@
 
 ---
 
-## ✈️ JetFrame
+# ✈️ JetFrame
 
 JetFrame is a modern FlightWall adapter for ioBroker.
 
@@ -19,7 +19,7 @@ It detects nearby aircraft based on your window position and visualizes them wit
 
 ---
 
-## ✨ Features
+# ✨ Features
 
 - Live aircraft detection
 - Window-direction based filtering
@@ -43,7 +43,7 @@ It detects nearby aircraft based on your window position and visualizes them wit
 
 ---
 
-## 🛠 Requirements
+# 🛠 Requirements
 
 - ioBroker
 - web adapter
@@ -52,7 +52,7 @@ It detects nearby aircraft based on your window position and visualizes them wit
 
 ---
 
-## 🚀 Usage
+# 🚀 Usage
 
 1. Install and start the required ioBroker adapters:
    - `web`
@@ -92,7 +92,7 @@ Available sources:
 
 ---
 
-## 🌐 Standalone WebApp
+# 🌐 Standalone WebApp
 
 JetFrame now includes a modern standalone WebApp interface.
 
@@ -124,7 +124,7 @@ Optimized for:
 
 ---
 
-## 🖼️ Images & Logos
+# 🖼️ Images & Logos
 
 JetFrame no longer ships with bundled images or logos.
 
@@ -169,7 +169,7 @@ Supports:
 
 ---
 
-## 💾 Optional Image Caching
+# 💾 Optional Image Caching
 
 Caching of external images can now be enabled or disabled.
 
@@ -187,7 +187,7 @@ Useful for:
 
 ---
 
-## 🌍 Configurable API Host
+# 🌍 Configurable API Host
 
 The WebApp supports configurable API hosts.
 
@@ -204,7 +204,7 @@ Useful for:
 
 ---
 
-## 📡 Configurable ADS-B Sources
+# 📡 Configurable ADS-B Sources
 
 Supported:
 
@@ -221,7 +221,7 @@ Improved handling for:
 
 ---
 
-## 🚨 Flight Prioritization
+# 🚨 Flight Prioritization
 
 JetFrame dynamically prioritizes aircraft.
 
@@ -238,7 +238,7 @@ Special aircraft automatically appear before normal traffic.
 
 ---
 
-## 📊 Heatmap
+# 📊 Heatmap
 
 Heatmap features:
 
@@ -253,12 +253,13 @@ Heatmap features:
 
 ---
 
-## 📦 Installation
+# 📦 Installation
 
-Install the adapter via the ioBroker Admin interface after it has been added to the official ioBroker repository.
+    iobroker url https://github.com/backfisch88/ioBroker.jetframe/releases/latest/download/iobroker.jetframe-0.6.0.tgz --host this
 
+---
 
-## ⚠️ Legal Notice
+# ⚠️ Legal Notice
 
 JetFrame may display publicly available aviation-related information including:
 
@@ -284,7 +285,7 @@ Users are responsible for complying with the licenses and API terms of configure
 
 ---
 
-## 🚀 Roadmap
+# 🚀 Roadmap
 
 Planned future features:
 
@@ -294,26 +295,63 @@ Planned future features:
 
 ---
 
+# Changelog
 
+## WORK IN PROGRESS
 
-## Changelog
+### v1.0.0
 
-### **WORK IN PROGRESS**
+✨ New
 
-### 1.0.4
+- Added standalone WebApp
+- Added welcome/start page
+- Added responsive heatmap
+- Added fullscreen iPhone/iPad support
+- Added configurable API host support
+- Added external manufacturer logo support
+- Added external airline logo support
+- Added optional image caching
+- Added improved aircraft prioritization
+- Added automatic ADS-B fallback handling
+- Added landscape auto-fit layout
+- Added top airlines and routes statistics
+- Added configurable image provider support
 
-* Fix CI deploy workflow and release metadata cleanup.
+🛠 Improvements
 
-### 1.0.3
+- Improved mobile layouts
+- Improved iPhone standalone support
+- Improved heatmap scaling
+- Improved emergency prioritization
+- Improved image handling
+- Reduced package size significantly
+- Removed bundled image/logo dependencies
+- Improved fallback handling for adsb.lol / adsb.fi
+- Improved fullscreen experience
+- Improved Apple-style UI consistency
 
-* Release cleanup and checker preparation.
+### v0.5.0
 
-### 1.0.0
+- Added configurable visualization settings
+- Added aircraft prioritization
+- Added emergency / Squawk support
+- Added overflight mode
+- Added improved visualization handling
 
-* Initial release.
+### v0.4.0
 
-## License
+- Initial release
+
+---
+
+# License
 
 MIT License
 
 Copyright (c) 2026 backfisch88
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+OF ANY KIND.

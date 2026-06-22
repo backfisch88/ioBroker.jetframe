@@ -2,10 +2,10 @@
 	"jetframe adapter settings": "Paramètres d'adaptateur pour jetframe",
 	"option1": "option1",
 	"option2": "option2",
-	"speechMode": "Sprachausgabe",
-	"speechModeBrowser": "Browser intern",
-	"speechModeExternal": "Extern per Datenpunkt",
-	"speechModeBoth": "Browser + extern",
-	"speechModeOff": "Aus",
-	"speechTemplate": "Ansage-Template"
+	"speechMode": "Synthèse vocale",
+	"speechModeBrowser": "Navigateur interne",
+	"speechModeExternal": "Externe via point de données",
+	"speechModeBoth": "Navigateur + externe",
+	"speechModeOff": "Désactivé",
+	"speechTemplate": "Modèle d'annonce"
 }

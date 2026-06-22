@@ -17,8 +17,8 @@ import { writeVisConfig } from './lib/visConfig';
 import { enrichFlightInfo } from './lib/flightInfo';
 
 class Jetframe extends utils.Adapter {
-	private timer: NodeJS.Timeout | null = null;
-	private statisticsTimer: NodeJS.Timeout | null = null;
+	private timer: ioBroker.Timeout | undefined | null = null;
+	private statisticsTimer: ioBroker.Interval | undefined | null = null;
 	private liveTarget: Partial<Aircraft> | null = null;
 	private liveInfo: Partial<Aircraft> | null = null;
 	private liveStarted = 0;
@@ -1712,11 +1712,11 @@ class Jetframe extends utils.Adapter {
 
 	private scheduleStatisticsRotation(dpRoot: string): void {
 		if (this.statisticsTimer) {
-			clearInterval(this.statisticsTimer);
+			this.clearInterval(this.statisticsTimer);
 			this.statisticsTimer = null;
 		}
 
-		this.statisticsTimer = setInterval(() => {
+		this.statisticsTimer = this.setInterval(() => {
 			this.resetTodayStatisticsIfNeeded(`${dpRoot}.statistics`).catch(e => {
 				this.logWarn(`Tagesstatistik-Rotation fehlgeschlagen: ${this.errorText(e)}`);
 			});
@@ -1725,18 +1725,18 @@ class Jetframe extends utils.Adapter {
 
 	private clearStatisticsTimer(): void {
 		if (this.statisticsTimer) {
-			clearInterval(this.statisticsTimer);
+			this.clearInterval(this.statisticsTimer);
 			this.statisticsTimer = null;
 		}
 	}
 
 	private scheduleNext(seconds: number): void {
-		this.timer = setTimeout(() => this.loop(), seconds * 1000);
+		this.timer = this.setTimeout(() => this.loop(), seconds * 1000);
 	}
 
 	private clearTimer(): void {
 		if (this.timer) {
-			clearTimeout(this.timer);
+			this.clearTimeout(this.timer);
 			this.timer = null;
 		}
 	}
