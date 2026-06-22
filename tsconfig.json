@@ -32,7 +32,11 @@
 		// "useUnknownInCatchVariables": false,
 
 		"sourceMap": true,
-		"inlineSourceMap": false
+		"inlineSourceMap": false,
+
+		// Without this, `tsc --noEmit` does not pick up @types/mocha / @types/chai
+		// and fails on *.test.ts with "Cannot find name 'describe'/'it'".
+		"types": ["node", "mocha", "chai"]
 	},
 	"include": ["src/**/*.ts", "test/**/*.ts"],
 	"exclude": ["build/**", "node_modules/**", "widgets/**"]
