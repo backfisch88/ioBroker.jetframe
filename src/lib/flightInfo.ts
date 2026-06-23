@@ -50,7 +50,7 @@ export async function enrichFlightInfo(
 
 		const operationalData = await loadAdsbdbByCallsign(operationalCallsign, httpJson, logDebug, logWarn);
 
-		const hexAirline = await resolveAirlineViaHexDb(a.hex, httpText, logDebug, logWarn);
+		const hexAirline = await resolveAirlineViaHexDb(a.hex, httpText, logDebug);
 
 		let parsed = parseAdsbdbResponse(config, operationalData, a, operationalCallsign, operationalCallsign);
 
@@ -223,7 +223,6 @@ async function resolveAirlineViaHexDb(
 	hex: string,
 	httpText: HttpText,
 	logDebug: (msg: string, level?: number) => void,
-	logWarn: (msg: string) => void,
 ): Promise<{ name: string; iata: string; icao: string } | null> {
 	const cleanHex = clean(hex)
 		.toLowerCase()
@@ -1988,7 +1987,16 @@ function containsAny(text: string, arr: string[]): boolean {
 }
 
 function clean(v: unknown): string {
-	return String(v || '').trim();
+	if (v === null || v === undefined) {
+		return '';
+	}
+	if (typeof v === 'string') {
+		return v.trim();
+	}
+	if (typeof v === 'number' || typeof v === 'boolean') {
+		return String(v).trim();
+	}
+	return '';
 }
 
 function errorText(e: unknown): string {
@@ -2005,7 +2013,10 @@ function errorText(e: unknown): string {
 	try {
 		return JSON.stringify(e);
 	} catch {
-		return String(e);
+		// Last-resort fallback for values JSON.stringify can't handle
+		// (e.g. circular references). Object.prototype.toString.call()
+		// is always type-safe, unlike a bare String(e) coercion.
+		return Object.prototype.toString.call(e);
 	}
 }
 

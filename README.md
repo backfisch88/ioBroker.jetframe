@@ -4,354 +4,188 @@
 
 [![NPM version](https://img.shields.io/npm/v/iobroker.jetframe.svg)](https://www.npmjs.com/package/iobroker.jetframe)
 [![Downloads](https://img.shields.io/npm/dm/iobroker.jetframe.svg)](https://www.npmjs.com/package/iobroker.jetframe)
-![Number of Installations](https://iobroker.live/badges/jetframe-installed.svg)
-![Current version in stable repository](https://iobroker.live/badges/jetframe-stable.svg)
+[![NPM](https://nodei.co/npm/iobroker.jetframe.png?downloads=true)](https://www.npmjs.com/package/iobroker.jetframe)
+
+## JetFrame
+
+**JetFrame** ist ein ioBroker-Adapter zur Live-Flugverfolgung und -visualisierung auf Basis von ADS-B-Daten. Er erkennt Flugzeuge, die an deinem Fenster vorbeifliegen, und zeigt sie in einer modernen Web-App mit Foto, Fluginformationen und Statistiken an.
+
+## Funktionen
+
+- **Live-Flugverfolgung** über ADS-B (adsb.lol mit automatischem Fallback auf adsb.fi)
+- **Fenstererkennung** – zeigt nur Flugzeuge, die tatsächlich durch dein Sichtfeld fliegen
+- **Echtzeit-Visualisierung** mit Flugzeugfoto, Airline-Logo, Hersteller-Logo und Flugroute
+- **Heatmap** – Tagesstatistik mit Spotterzeitanalyse und bester Spotterzeit
+- **Statistiken** – Rekordtage, Heavy-Aircraft-Tracking, Special-Livery-Erkennung
+- **Sprachausgabe** – optional über Browser-TTS oder externe ioBroker-Objekte
+- **Runway-Erkennung** – zeigt die wahrscheinliche Start-/Landebahn an
+- **Responsive Web-UI** – optimiert für iPhone, iPad und Desktop (Portrait und Landscape)
+- **Überflugmodus** – optionale Erkennung von Flugzeugen, die direkt über dich fliegen
+- **Notfallerkennung** – Squawk 7500/7600/7700 werden hervorgehoben
+
+## Voraussetzungen
+
+- ioBroker js-controller ≥ 6.0.11
+- Node.js ≥ 22
+- Simple-API Adapter (für die Web-Oberfläche)
+- ADS-B-Empfang in deiner Nähe (öffentliche APIs werden genutzt, kein eigener Receiver nötig)
 
-[![Test and Release](https://github.com/backfisch88/ioBroker.jetframe/actions/workflows/test-and-release.yml/badge.svg)](https://github.com/backfisch88/ioBroker.jetframe/actions/workflows/test-and-release.yml)
+## Konfiguration
 
----
+Nach der Installation im ioBroker-Admin unter **Adapter → JetFrame → Instanz → Einstellungen**:
 
-# ✈️ JetFrame
+| Einstellung | Beschreibung |
+|---|---|
+| **Heimat-Koordinaten** | Breitengrad und Längengrad deines Standorts |
+| **Flughafen** | IATA-Code, Name und Koordinaten des nächsten Flughafens |
+| **Suchradius (nm)** | Radius (in Seemeilen) um den Flughafen, in dem ADS-B-Daten abgerufen werden |
+| **Fensterrichtung** | Himmelsrichtung, in die dein Fenster zeigt (0° = Norden) |
+| **Fenster-Öffnungswinkel** | Sichtfeld deines Fensters in Grad (z. B. 90°) |
+| **Höhengrenzen** | Minimale und maximale Flughöhe (ft), bei der Flugzeuge angezeigt werden |
+| **Poll-Intervall** | Wie oft nach neuen Flugzeugen gesucht wird (Suche und Live-Tracking) |
+| **Überflüge** | Aktiviert die Erkennung von Flugzeugen, die direkt über dich fliegen |
+| **Sprachausgabe** | Browser-TTS, externes ioBroker-Objekt oder deaktiviert |
+| **Bilder** | Konfiguration für externe Airline- und Hersteller-Logos |
 
-JetFrame is a modern FlightWall adapter for ioBroker.
+## Web-Oberfläche
 
-It detects nearby aircraft based on your window position and visualizes them with live flight information, airline branding, aircraft metadata and optional speech announcements.
+Die Web-App ist über den Simple-API-Adapter erreichbar:
 
----
+```
+http://<iobroker-ip>:<simple-api-port>/jetframe.admin/index.html
+```
 
-# ✨ Features
+### Seiten
 
-- Live aircraft detection
-- Window-direction based filtering
-- Apple-style glass UI
-- Airline logos
-- Manufacturer logos
-- Flight routes
-- Aircraft type detection
-- Callsign / flight number
-- Live ADS-B data
-- JetPhotos integration
-- Special liveries
-- Browser speech synthesis
-- Flyover animations
-- Adaptive mobile UI
-- Responsive standalone WebApp
-- Heatmap statistics
-- Emergency / Squawk support
-- Aircraft prioritization
-- Optional image caching
+| Seite | URL | Beschreibung |
+|---|---|---|
+| **Startseite** | `index.html` | Übersicht, Systemstatus, Navigation |
+| **Live Frame** | `frame.html` | Echtzeit-Flugzeigeanzeige mit Foto |
+| **Heatmap** | `heatmap.html` | Tagesstatistik und beste Spotterzeit |
+| **Statistik** | `stats.html` | Rekorde, Alltime-Rankings, Tageshistorie |
 
----
+### URL-Parameter
 
-# 🛠 Requirements
+| Parameter | Beispiel | Beschreibung |
+|---|---|---|
+| `instance` | `?instance=1` | Adapter-Instanz (Standard: `0`) |
+| `apiHost` | `?apiHost=192.168.1.10` | Simple-API Hostname |
+| `apiPort` | `?apiPort=8087` | Simple-API Port |
+| `source` | `?source=overflight` | Anzeigemodus: `current`, `airport`, `overflight` |
 
-- ioBroker
-- web adapter
-- simple-api adapter
-- modern browser (Safari or Chrome recommended)
+## ioBroker-Datenpunkte
 
----
+Der Adapter legt unter `jetframe.0.*` folgende Datenpunkte an:
 
-# 🚀 Usage
+### Status
 
-1. Install and start the required ioBroker adapters:
-   - `web`
-   - `simple-api`
+| Datenpunkt | Typ | Beschreibung |
+|---|---|---|
+| `enabled` | boolean | Adapter aktivieren/deaktivieren |
+| `status` | string | Aktueller Status-Text |
+| `clearImageCache` | boolean | Trigger: Bild-Cache leeren |
 
-2. Configure JetFrame in the adapter settings:
-   - your home position
-   - nearest airport
-   - visible viewing direction
-   - Simple-API host and port
-   - visualization source
-   - optional image providers
-   - optional image caching
+### Aktueller Flug (`current.*`)
 
-3. Open the WebApp:
+| Datenpunkt | Beschreibung |
+|---|---|
+| `callsign` | IATA-Rufzeichen (z. B. `LH123`) |
+| `routeDisplayText` | Route als Text (z. B. `Frankfurt → München`) |
+| `routeCodesText` | Route als IATA-Codes (z. B. `FRA → MUC`) |
+| `airlineName` | Airline-Name |
+| `aircraftTypeText` | Flugzeugtyp (z. B. `Airbus A321`) |
+| `aircraftSize` | Größenklasse (`Narrowbody`, `Widebody`, `Jumbo`, …) |
+| `registration` | Kennzeichen (z. B. `D-AIBL`) |
+| `altitudeFt` | Höhe in Fuß |
+| `speedKt` | Geschwindigkeit in Knoten |
+| `verticalRate` | Steig-/Sinkrate (ft/min) |
+| `probableRunwayText` | Wahrscheinliche Runway (z. B. `RWY 25L`) |
+| `windowPositionText` | Fensterposition (z. B. `links vom Fenster · 12°`) |
+| `modeVisText` | Modus-Text (z. B. `🛬 Landung Frankfurt`) |
+| `localImageUrl` | URL zum gecachten Flugzeugfoto |
+| `speechText` | Sprachausgabe-Text |
+| `specialLiveryVisText` | Sonderlackierung (z. B. `100th Anniversary`) |
+| `emergencyText` | Notfall-Info (bei Squawk 7500/7600/7700) |
 
-    http://IPADRESSE:8082/jetframe/
+### Statistiken (`statistics.today.*`, `statistics.yesterday.*`, `statistics.alltime.*`)
 
-Direct pages:
+Tagesstatistiken mit Anzahl Flüge, Landungen, Starts, Überflüge, beste Spotterzeit, Heavy-Aircraft-Zähler, Special-Livery-Zähler, Top-Airlines und Top-Routen.
 
-    http://IPADRESSE:8082/jetframe/frame.html
-    http://IPADRESSE:8082/jetframe/heatmap.html
+## Bilder & Logos
 
-Example:
+JetFrame kann Flugzeugfotos, Airline-Logos und Hersteller-Logos anzeigen. Diese werden standardmäßig über öffentliche APIs abgerufen (JetPhotos für Fotos, HexDB für Routen-/Airline-Daten). Externe Logo-Quellen lassen sich in den Adaptereinstellungen konfigurieren. Optionales lokales Caching reduziert externe Anfragen und beschleunigt die Anzeige.
 
-    http://192.168.178.10:8082/jetframe/
+## Datenschutz & Rechtliches
 
-Optional URL overrides:
+JetFrame ruft öffentliche ADS-B-APIs ab:
 
-    http://IPADRESSE:8082/jetframe/frame.html?apiHost=192.168.178.10&apiPort=8087&source=current
+- **[adsb.lol](https://adsb.lol)** – primäre Datenquelle
+- **[adsb.fi](https://adsb.fi)** – automatischer Fallback
+- **[Jetphotos.com](https://www.jetphotos.com)** – Flugzeugfotos (nur URL-Lookup, kein Download ohne Cache-Einstellung)
+- **[HexDB.io](https://hexdb.io)** – Routen- und Airline-Informationen
+- **[Flightradar24](https://www.flightradar24.com)** – ergänzende Routeninformationen
 
-Available sources:
+Alle Daten werden ausschließlich lokal im ioBroker gespeichert. Es werden keine Nutzerdaten an Dritte weitergegeben.
 
-    current
-    airport
-    overflight
+ADS-B-Daten sind öffentlich zugängliche Signale, die von Flugzeugen ausgestrahlt werden. Die Nutzung ist in den meisten Ländern legal und wird von Luftfahrtbehörden toleriert. Die Verantwortung für die rechtskonforme Nutzung liegt beim Betreiber.
 
----
+Alle Markenzeichen, Logos, Airline-Namen, Flugzeugbilder und verwandte Inhalte bleiben Eigentum ihrer jeweiligen Rechteinhaber. JetFrame ist nicht verbunden mit, unterstützt von oder offiziell verbunden mit Airlines, Flughäfen, Flugzeugherstellern, JetPhotos, ADS-B-Anbietern oder Flugverfolgungsdiensten.
 
-# 🌐 Standalone WebApp
+Der Adapter ist ausschließlich für private, informative und nicht-kommerzielle lokale Visualisierungen vorgesehen. Nutzer sind selbst für die Einhaltung der Lizenzen und API-Bedingungen der konfigurierten externen Dienste verantwortlich.
 
-JetFrame now includes a modern standalone WebApp interface.
+## Changelog
 
-Includes:
+<!--
+    Placeholder for the next version (at the beginning of the line):
+    ### **WORK IN PROGRESS**
+-->
 
-- responsive mobile layout
-- fullscreen iPhone/iPad support
-- standalone kiosk mode
-- live flight frame
-- heatmap statistics
-- welcome/start page
-- navigation between pages
-- Apple-style UI
+### 1.0.5 (2026-06-23)
 
-Recommended setup:
+- (backfisch88) Maintenance release: cleaned up devDependencies, fixed io-package.json schema issues, updated admin/release-script dependency requirements, replaced plain setTimeout with adapter-managed timers, removed obsolete backup files
 
-1. Open in Safari
-2. Share
-3. Add to Home Screen
+### 1.0.0 (2026-05-22)
 
-JetFrame launches like a native fullscreen app.
+- (backfisch88) Complete redesign of the web UI (glassmorphism, fully responsive for iPhone, iPad and desktop)
+- (backfisch88) Improved ADS-B fallback system (adsb.lol → adsb.fi)
+- (backfisch88) New flight statistics with heatmap, heavy aircraft and special livery tracking
+- (backfisch88) Cleaner TypeScript codebase
 
-Optimized for:
+### 0.5.0 (2026-04-01)
 
-- iPad wall displays
-- kitchen dashboards
-- kiosk installations
-- airport spotting stations
+- (backfisch88) Added configurable visualization settings, visual source selection, aircraft prioritization
+- (backfisch88) Added squawk/emergency detection
+- (backfisch88) Improved admin map behavior and mobile layout fixes
 
----
+### 0.2.0 (2026-03-01)
 
-# 🖼️ Images & Logos
+- (backfisch88) Added HexDB route/image support, German airport city names
+- (backfisch88) Improved speech trigger handling, overflight-only mode
 
-JetFrame no longer ships with bundled images or logos.
+### 0.1.0 (2026-02-01)
 
-This keeps:
+- (backfisch88) Initial release
 
-- package size smaller
-- updates faster
-- licensing cleaner
-- customization easier
-
-Users can configure their own image/logo providers.
-
----
-
-## Manufacturer Logos
-
-Example using logo.dev:
-
-    AIRBUS=https://img.logo.dev/airbus.com?token=APIKEY&size=80&retina=true&format=png
-    BOEING=https://img.logo.dev/boeing.com?token=APIKEY&size=80&retina=true&format=png
-    EMBRAER=https://img.logo.dev/embraer.com?token=APIKEY&size=80&retina=true&format=png
-
-Configured via:
-
-- externalManufacturerLogos
-- manufacturerLogoUrls
-
----
-
-## Airline Logos
-
-Example airline logo source:
-
-    https://raw.githubusercontent.com/Jxck-S/airline-logos/refs/heads/main/fr24_banners
-
-Supports:
-
-- airline logos
-- aircraft images
-- optional local caching
-- external image providers
-
----
-
-# 💾 Optional Image Caching
-
-Caching of external images can now be enabled or disabled.
-
-Supports caching for:
-
-- airline logos
-- manufacturer logos
-- aircraft images
-
-Useful for:
-
-- kiosk systems
-- reducing API traffic
-- faster loading
-
----
-
-# 🌍 Configurable API Host
-
-The WebApp supports configurable API hosts.
-
-Example:
-
-    http://IP:8082/jetframe/frame.html?apiHost=192.168.178.10&apiPort=8087
-
-Useful for:
-
-- reverse proxies
-- Docker
-- Home Assistant dashboards
-- remote panels
-
----
-
-# 📡 Configurable ADS-B Sources
-
-Supported:
-
-- adsb.lol
-- adsb.fi
-- automatic fallback switching
-- configurable source priority
-
-Improved handling for:
-
-- 503 errors
-- connection resets
-- automatic failover
-
----
-
-# 🚨 Flight Prioritization
-
-JetFrame dynamically prioritizes aircraft.
-
-Priority examples:
-
-- special liveries
-- emergency squawks
-- emergency aircraft
-- runway relevance
-- airport relevance
-- aircraft near viewing direction
-
-Special aircraft automatically appear before normal traffic.
-
----
-
-# 📊 Heatmap
-
-Heatmap features:
-
-- responsive landscape mode
-- auto-fit layout
-- optimized iPhone usage
-- top airlines
-- top routes
-- best traffic time
-- current hour statistics
-- fullscreen-friendly layout
-
----
-
-# 📦 Installation
-
-    iobroker url https://github.com/backfisch88/ioBroker.jetframe/releases/latest/download/iobroker.jetframe-0.6.0.tgz --host this
-
----
-
-# ⚠️ Legal Notice
-
-JetFrame may display publicly available aviation-related information including:
-
-- airline names
-- aircraft metadata
-- airport information
-- aircraft images
-- airline logos
-- manufacturer logos
-- live flight tracking data
-
-All trademarks, logos, airline names, aircraft images and related content remain the property of their respective owners.
-
-JetFrame is not affiliated with, endorsed by or officially connected to any airline, airport, aircraft manufacturer, JetPhotos, ADS-B provider or flight tracking service.
-
-The adapter is intended exclusively for:
-
-- private use
-- informational purposes
-- non-commercial local visualizations
-
-Users are responsible for complying with the licenses and API terms of configured external services.
-
----
-
-# 🚀 Roadmap
-
-Planned future features:
-
-- historical statistics
-- better airport heatmaps
-- optional map integration
-
----
-
-# Changelog
-
-## WORK IN PROGRESS
-
-### v1.0.0
-
-✨ New
-
-- Added standalone WebApp
-- Added welcome/start page
-- Added responsive heatmap
-- Added fullscreen iPhone/iPad support
-- Added configurable API host support
-- Added external manufacturer logo support
-- Added external airline logo support
-- Added optional image caching
-- Added improved aircraft prioritization
-- Added automatic ADS-B fallback handling
-- Added landscape auto-fit layout
-- Added top airlines and routes statistics
-- Added configurable image provider support
-
-🛠 Improvements
-
-- Improved mobile layouts
-- Improved iPhone standalone support
-- Improved heatmap scaling
-- Improved emergency prioritization
-- Improved image handling
-- Reduced package size significantly
-- Removed bundled image/logo dependencies
-- Improved fallback handling for adsb.lol / adsb.fi
-- Improved fullscreen experience
-- Improved Apple-style UI consistency
-
-### v0.5.0
-
-- Added configurable visualization settings
-- Added aircraft prioritization
-- Added emergency / Squawk support
-- Added overflight mode
-- Added improved visualization handling
-
-### v0.4.0
-
-- Initial release
-
----
-
-# License
+## License
 
 MIT License
 
-Copyright (c) 2026 backfisch88
+Copyright (c) 2026 backfisch88 <h@h.de>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files.
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
-OF ANY KIND.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

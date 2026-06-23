@@ -28,6 +28,7 @@ export interface AdapterLike {
 
 	setTimeout(cb: (...args: any[]) => void, ms: number): ioBroker.Timeout | undefined;
 	clearTimeout(timer: ioBroker.Timeout): void;
+	delay(ms: number): Promise<void>;
 }
 
 export type FlightMode = 'TAKEOFF' | 'LANDING' | 'OVERFLIGHT' | '';

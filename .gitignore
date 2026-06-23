@@ -32,3 +32,6 @@ coverage/
 # Temp
 tmp/
 temp/
+
+# Release-script leftover file
+.commitinfo

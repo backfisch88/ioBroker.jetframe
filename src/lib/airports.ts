@@ -1,5 +1,5 @@
 import type { AdapterLike } from './types';
-import * as https from 'https';
+import * as https from 'node:https';
 import { loadGermanIataNames } from './airportNamesDe';
 
 /**
@@ -81,8 +81,6 @@ export interface RunwayEntry {
 
 const AIRPORTS_URL = 'https://ourairports.com/data/airports.csv';
 const RUNWAYS_URL = 'https://ourairports.com/data/runways.csv';
-
-const IATA_WIKI_DE_BASE = 'https://de.wikipedia.org/wiki/Liste_der_IATA-Codes/';
 
 function countryFlagEmoji(countryCode: string): string {
 	if (!countryCode || countryCode.length !== 2) {

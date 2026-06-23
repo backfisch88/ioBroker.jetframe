@@ -1,6 +1,6 @@
 import * as utils from '@iobroker/adapter-core';
-import * as https from 'https';
-import * as http from 'http';
+import * as https from 'node:https';
+import * as http from 'node:http';
 
 import type { Aircraft } from './lib/types';
 import { copyStaticFiles } from './lib/staticFiles';
@@ -1379,8 +1379,8 @@ class Jetframe extends utils.Adapter {
 		const data = await fetchAdsb(
 			config,
 			this.httpJsonRaw.bind(this),
-			this.logWarn.bind(this),
 			this.logDebug.bind(this),
+			this.delay.bind(this),
 		);
 
 		this.log.debug('[JetFrame] ADSB Fetch OK');
@@ -1429,8 +1429,8 @@ class Jetframe extends utils.Adapter {
 		const data = await fetchAdsb(
 			config,
 			this.httpJsonRaw.bind(this),
-			this.logWarn.bind(this),
 			this.logDebug.bind(this),
+			this.delay.bind(this),
 		);
 
 		const aircraft = parseAircraft(data);
@@ -1873,7 +1873,6 @@ class Jetframe extends utils.Adapter {
 	}
 
 	private logDebug(msg: string): void {
-		const config = readConfig(this);
 		this.log.debug(`[JetFrame] ${msg}`);
 	}
 
@@ -1886,7 +1885,16 @@ class Jetframe extends utils.Adapter {
 	}
 
 	private clean(v: unknown): string {
-		return String(v || '').trim();
+		if (v === null || v === undefined) {
+			return '';
+		}
+		if (typeof v === 'string') {
+			return v.trim();
+		}
+		if (typeof v === 'number' || typeof v === 'boolean') {
+			return String(v).trim();
+		}
+		return '';
 	}
 
 	private errorText(e: unknown): string {
@@ -1903,7 +1911,10 @@ class Jetframe extends utils.Adapter {
 		try {
 			return JSON.stringify(e);
 		} catch {
-			return String(e);
+			// Last-resort fallback for values JSON.stringify can't handle
+			// (e.g. circular references). Object.prototype.toString.call()
+			// is always type-safe, unlike a bare String(e) coercion.
+			return Object.prototype.toString.call(e);
 		}
 	}
 

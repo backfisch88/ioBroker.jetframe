@@ -190,8 +190,6 @@ export async function ensureFlightStates(adapter: AdapterLike, base: string): Pr
 		await ensureState(adapter, base + s, '', 'string', 'text');
 	}
 
-	const bools = ['.statistics.today.rushHourNow'];
-
 	const nums = [
 		'.altitudeFt',
 		'.speedKt',
@@ -225,34 +223,6 @@ export async function ensureFlightStates(adapter: AdapterLike, base: string): Pr
 	await ensureState(adapter, `${base}.isSpecial`, false, 'boolean', 'indicator');
 	await ensureState(adapter, `${base}.isEmergency`, false, 'boolean', 'indicator');
 	await ensureState(adapter, `${base}.speechTrigger`, false, 'boolean', 'button');
-}
-
-function cleanRouteCallsign(a: Aircraft): string {
-	const v = String(a.routeCallsign || '')
-		.trim()
-		.toUpperCase();
-
-	const own = String(a.callsign || '')
-		.trim()
-		.toUpperCase();
-
-	if (!v) {
-		return '';
-	}
-	if (v === own) {
-		return '';
-	}
-	if (/^\d+$/.test(v)) {
-		return '';
-	}
-	if (!/[A-Z]/.test(v)) {
-		return '';
-	}
-	if (v.length < 4 || v.length > 8) {
-		return '';
-	}
-
-	return v;
 }
 
 /**
@@ -638,18 +608,10 @@ async function buildDisplayInfo(
 
 	const specialDisplayText = String(a.specialLiveryVisText || a.specialLiveryFull || a.specialText || '').trim();
 
-	const speechText = buildSpeechText(a, {
-		originDisplayName,
-		destDisplayName,
-		departureAirport,
-		approachAirport,
-		routeDisplayText,
-		routeCodesText,
-		specialDisplayText,
-		windowPositionSpeechText: window.speechText,
-		aircraftTypeText: aircraft.aircraftTypeText,
-		aircraftSize: aircraft.aircraftSize,
-	});
+	// Note: speech text is intentionally NOT computed here. writeFlight() always
+	// overwrites display.speechText with buildSpeechTextForWrite(), which
+	// supports a user-configurable template — computing it here as well would
+	// be wasted work.
 
 	return {
 		modeVisText,
@@ -676,10 +638,8 @@ async function buildDisplayInfo(
 }
 
 function airportLabel(name: unknown, iata: unknown): string {
-	const n = String(name || '').trim();
-	const c = String(iata || '')
-		.trim()
-		.toUpperCase();
+	const n = (typeof name === 'string' ? name : '').trim();
+	const c = (typeof iata === 'string' ? iata : '').trim().toUpperCase();
 
 	if (n && c && n !== '—') {
 		return `${n} (${c})`;
@@ -1024,68 +984,6 @@ function aircraftSizeLabel(allText: string): string {
 	return 'Unknown';
 }
 
-function buildSpeechText(a: Aircraft, display: Record<string, string>): string {
-	const mode = String(a.mode || '').toUpperCase();
-
-	let modeSpeechText = 'Flug';
-	let routeDirectionText = 'von';
-	let routeOtherAirport = display.originDisplayName || display.destDisplayName || '';
-
-	if (mode === 'LANDING') {
-		modeSpeechText = 'Landung';
-		routeDirectionText = 'aus';
-		routeOtherAirport = display.originDisplayName || '';
-	}
-
-	if (mode === 'TAKEOFF') {
-		modeSpeechText = 'Start';
-		routeDirectionText = 'nach';
-		routeOtherAirport = display.destDisplayName || '';
-	}
-
-	if (mode === 'OVERFLIGHT') {
-		modeSpeechText = 'Überflug';
-		routeDirectionText = 'von';
-		routeOtherAirport = display.routeDisplayText || '';
-	}
-
-	const bestCallsign = String(a.routeCallsign || a.callsign || '').trim();
-
-	const template =
-		'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuß. {windowPositionSpeechText}.';
-
-	const values: Record<string, string> = {
-		modeSpeechText,
-		routeDirectionText,
-		routeOtherAirport,
-		bestCallsign,
-
-		airlineName: String(a.airlineName || 'Unbekannte Airline'),
-		callsign: String(a.callsign || ''),
-		operationalCallsign: String(a.operationalCallsign || a.callsign || ''),
-		routeCallsign: String(a.routeCallsign || a.callsign || ''),
-		originDisplayName: display.originDisplayName || '',
-		destDisplayName: display.destDisplayName || '',
-		routeDisplayText: display.routeDisplayText || '',
-		routeCodesText: display.routeCodesText || '',
-		aircraftTypeText: display.aircraftTypeText || '',
-		aircraftSize: display.aircraftSize || '',
-		registration: String(a.registration || ''),
-		altitudeFt: String(Math.round(a.altFt || 0)),
-		speedKt: String(Math.round(a.speedKt || 0)),
-		verticalRate: String(Math.round(a.verticalRate || 0)),
-		trackDeg: String(Math.round(a.trackDeg || 0)),
-		windowPositionSpeechText: display.windowPositionSpeechText || '',
-		specialDisplayText: display.specialDisplayText || '',
-	};
-
-	return template
-		.replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, key) => values[key] || '')
-		.replace(/\s+/g, ' ')
-		.replace(/\s+\./g, '.')
-		.trim();
-}
-
 async function maybeTriggerSpeech(adapter: AdapterLike, base: string, a: Aircraft, speechText: string): Promise<void> {
 	if (!base.endsWith('.current')) {
 		return;
@@ -1142,7 +1040,9 @@ async function buildSpeechTextForWrite(
 		if (st?.val) {
 			template = String(st.val);
 		}
-	} catch {}
+	} catch {
+		// State not readable — fall back to the default template defined above.
+	}
 
 	return buildSpeechTextFromTemplate(a, display, template);
 }
@@ -1207,7 +1107,7 @@ function buildSpeechTextFromTemplate(a: Aircraft, display: Record<string, string
 }
 
 function cityOnly(name: unknown): string {
-	const v = String(name || '')
+	const v = (typeof name === 'string' ? name : '')
 		.replace(/\bAirport\b/gi, '')
 		.replace(/\bInternational\b/gi, '')
 		.replace(/\bIntl\b/gi, '')
@@ -1304,7 +1204,7 @@ export async function ensureStates(adapter: AdapterLike, config: JetFrameConfig)
 }
 
 async function keepExistingStringState(adapter: AdapterLike, id: string, value: unknown): Promise<string> {
-	const next = String(value || '').trim();
+	const next = (typeof value === 'string' ? value : '').trim();
 
 	if (next) {
 		return next;

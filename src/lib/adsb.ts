@@ -1,14 +1,21 @@
-import type { Aircraft, JetFrameConfig, AdapterLike } from './types';
+import type { Aircraft, JetFrameConfig } from './types';
 
 /** HTTP helper type: fetches a URL and returns the parsed JSON body. */
 export type HttpJsonRaw = (url: string) => Promise<unknown>;
 
 const ADSB_ERROR_STATE: Record<string, { count: number; lastWarn: number }> = {};
 
-const ADSB_503_STATE: Record<string, { count: number; lastWarn: number }> = {};
-
 function clean(v: unknown): string {
-	return String(v || '').trim();
+	if (v === null || v === undefined) {
+		return '';
+	}
+	if (typeof v === 'string') {
+		return v.trim();
+	}
+	if (typeof v === 'number' || typeof v === 'boolean') {
+		return String(v).trim();
+	}
+	return '';
 }
 
 function toNumber(v: unknown): number | null {
@@ -37,16 +44,19 @@ function parseAltitude(v: unknown): number {
 }
 
 /**
+ * Fetches current ADS-B traffic for the configured airport/area.
+ * Tries adsb.lol first, falling back to adsb.fi on error.
  *
- * @param config
- * @param httpJsonRaw
- * @param logWarn
+ * @param config adapter configuration
+ * @param httpJsonRaw HTTP helper that fetches and parses JSON
+ * @param logDebug optional debug logger
+ * @param delayFn delay implementation used between retries (defaults to a plain setTimeout-based sleep)
  */
 export async function fetchAdsb(
 	config: JetFrameConfig,
 	httpJsonRaw: HttpJsonRaw,
-	logWarn: (msg: string) => void,
 	logDebug?: (msg: string) => void,
+	delayFn: (ms: number) => Promise<void> = sleep,
 ): Promise<any> {
 	const urls = buildAdsbUrls(config);
 
@@ -110,7 +120,7 @@ export async function fetchAdsb(
 					ADSB_ERROR_STATE[key] = st;
 
 					if (attempt < maxAttempts) {
-						await sleep(1500);
+						await delayFn(1500);
 					}
 				}
 			}
@@ -267,6 +277,12 @@ export function parseAircraft(body: any): Aircraft[] {
 		);
 }
 
+/**
+ * Fallback delay implementation used only when no adapter-managed
+ * `delayFn` is supplied (e.g. in unit tests). In production, `main.ts`
+ * passes `this.delay.bind(this)`, which is properly tracked and cancelled
+ * by the ioBroker adapter base class on unload.
+ */
 function sleep(ms: number): Promise<void> {
 	return new Promise(resolve => {
 		setTimeout(resolve, ms);
@@ -287,6 +303,9 @@ function errorText(e: unknown): string {
 	try {
 		return JSON.stringify(e);
 	} catch {
-		return String(e);
+		// Last-resort fallback for values JSON.stringify can't handle
+		// (e.g. circular references). Object.prototype.toString.call()
+		// is always type-safe, unlike a bare String(e) coercion.
+		return Object.prototype.toString.call(e);
 	}
 }

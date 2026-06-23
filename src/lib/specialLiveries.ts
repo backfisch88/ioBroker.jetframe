@@ -1,6 +1,6 @@
 import type { AdapterLike } from './types';
-import * as https from 'https';
-import * as http from 'http';
+import * as https from 'node:https';
+import * as http from 'node:http';
 
 /**
  *
@@ -277,9 +277,13 @@ function decodeHtml(s: string): string {
 }
 
 function clean(v: unknown): string {
-	return String(v || '')
-		.replace(/\s+/g, ' ')
-		.trim();
+	let str = '';
+	if (typeof v === 'string') {
+		str = v;
+	} else if (typeof v === 'number' || typeof v === 'boolean') {
+		str = String(v);
+	}
+	return str.replace(/\s+/g, ' ').trim();
 }
 
 function cleanRegistration(v: unknown): string {
@@ -464,6 +468,9 @@ function errorText(e: unknown): string {
 	try {
 		return JSON.stringify(e);
 	} catch {
-		return String(e);
+		// Last-resort fallback for values JSON.stringify can't handle
+		// (e.g. circular references). Object.prototype.toString.call()
+		// is always type-safe, unlike a bare String(e) coercion.
+		return Object.prototype.toString.call(e);
 	}
 }

@@ -1,4 +1,4 @@
-import type { Aircraft, JetFrameConfig, AdapterLike } from './types';
+import type { Aircraft, JetFrameConfig } from './types';
 import { bearingDeg, distanceNm, smallestAngleDiff, signedAngleDiff } from './geo';
 
 /**
@@ -460,5 +460,14 @@ export function flightKey(a: Aircraft | null): string {
 }
 
 function clean(v: unknown): string {
-	return String(v || '').trim();
+	if (v === null || v === undefined) {
+		return '';
+	}
+	if (typeof v === 'string') {
+		return v.trim();
+	}
+	if (typeof v === 'number' || typeof v === 'boolean') {
+		return String(v).trim();
+	}
+	return '';
 }

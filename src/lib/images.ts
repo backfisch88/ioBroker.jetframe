@@ -1,7 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as https from 'https';
-import * as http from 'http';
+import * as https from 'node:https';
+import * as http from 'node:http';
 
 import type { Aircraft, JetFrameConfig, AdapterLike } from './types';
 
@@ -634,6 +632,9 @@ function errorText(e: unknown): string {
 	try {
 		return JSON.stringify(e);
 	} catch {
-		return String(e);
+		// Last-resort fallback for values JSON.stringify can't handle
+		// (e.g. circular references). Object.prototype.toString.call()
+		// is always type-safe, unlike a bare String(e) coercion.
+		return Object.prototype.toString.call(e);
 	}
 }

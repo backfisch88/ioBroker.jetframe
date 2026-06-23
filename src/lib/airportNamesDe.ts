@@ -1,4 +1,4 @@
-import * as https from 'https';
+import * as https from 'node:https';
 
 const IATA_WIKI_DE_BASE = 'https://de.wikipedia.org/wiki/Liste_der_IATA-Codes/';
 
