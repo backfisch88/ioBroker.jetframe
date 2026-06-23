@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "jetframe",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "news": {
+      "1.0.7": {
+        "en": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "de": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "ru": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "pt": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "nl": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "fr": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "it": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "es": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "pl": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "uk": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
+        "zh-cn": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries."
+      },
       "1.0.6": {
         "en": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
         "de": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",

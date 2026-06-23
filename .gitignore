@@ -1,5 +1,6 @@
-# Build output
-build/
+# Build output is intentionally committed (see README/checker notes) —
+# the ioBroker repo-checker requires build/main.js to exist in the git tree.
+# build/
 node_modules/
 
 # Backup files
