@@ -8,130 +8,130 @@
 
 ## JetFrame
 
-**JetFrame** ist ein ioBroker-Adapter zur Live-Flugverfolgung und -visualisierung auf Basis von ADS-B-Daten. Er erkennt Flugzeuge, die an deinem Fenster vorbeifliegen, und zeigt sie in einer modernen Web-App mit Foto, Fluginformationen und Statistiken an.
+**JetFrame** is an ioBroker adapter for live flight tracking and visualization based on ADS-B data. It detects aircraft flying past your window and displays them in a modern web app with photo, flight information and statistics.
 
-## Funktionen
+## Features
 
-- **Live-Flugverfolgung** über ADS-B (adsb.lol mit automatischem Fallback auf adsb.fi)
-- **Fenstererkennung** – zeigt nur Flugzeuge, die tatsächlich durch dein Sichtfeld fliegen
-- **Echtzeit-Visualisierung** mit Flugzeugfoto, Airline-Logo, Hersteller-Logo und Flugroute
-- **Heatmap** – Tagesstatistik mit Spotterzeitanalyse und bester Spotterzeit
-- **Statistiken** – Rekordtage, Heavy-Aircraft-Tracking, Special-Livery-Erkennung
-- **Sprachausgabe** – optional über Browser-TTS oder externe ioBroker-Objekte
-- **Runway-Erkennung** – zeigt die wahrscheinliche Start-/Landebahn an
-- **Responsive Web-UI** – optimiert für iPhone, iPad und Desktop (Portrait und Landscape)
-- **Überflugmodus** – optionale Erkennung von Flugzeugen, die direkt über dich fliegen
-- **Notfallerkennung** – Squawk 7500/7600/7700 werden hervorgehoben
+- **Live flight tracking** via ADS-B (adsb.lol with automatic fallback to adsb.fi)
+- **Window detection** – only shows aircraft that actually pass through your field of view
+- **Real-time visualization** with aircraft photo, airline logo, manufacturer logo and flight route
+- **Heatmap** – daily statistics with spotter-time analysis and best spotting time
+- **Statistics** – record days, heavy-aircraft tracking, special-livery detection
+- **Speech output** – optional, via browser TTS or external ioBroker objects
+- **Runway detection** – shows the probable departure/arrival runway
+- **Responsive web UI** – optimized for iPhone, iPad and desktop (portrait and landscape)
+- **Overflight mode** – optional detection of aircraft passing directly overhead
+- **Emergency detection** – squawk 7500/7600/7700 are highlighted
 
-## Voraussetzungen
+## Requirements
 
 - ioBroker js-controller ≥ 6.0.11
 - Node.js ≥ 22
-- Simple-API Adapter (für die Web-Oberfläche)
-- ADS-B-Empfang in deiner Nähe (öffentliche APIs werden genutzt, kein eigener Receiver nötig)
+- Simple-API adapter (for the web interface)
+- ADS-B coverage near you (public APIs are used, no own receiver required)
 
-## Konfiguration
+## Configuration
 
-Nach der Installation im ioBroker-Admin unter **Adapter → JetFrame → Instanz → Einstellungen**:
+After installation, configure the adapter under **Admin → JetFrame → Instance → Settings**:
 
-| Einstellung | Beschreibung |
+| Setting | Description |
 |---|---|
-| **Heimat-Koordinaten** | Breitengrad und Längengrad deines Standorts |
-| **Flughafen** | IATA-Code, Name und Koordinaten des nächsten Flughafens |
-| **Suchradius (nm)** | Radius (in Seemeilen) um den Flughafen, in dem ADS-B-Daten abgerufen werden |
-| **Fensterrichtung** | Himmelsrichtung, in die dein Fenster zeigt (0° = Norden) |
-| **Fenster-Öffnungswinkel** | Sichtfeld deines Fensters in Grad (z. B. 90°) |
-| **Höhengrenzen** | Minimale und maximale Flughöhe (ft), bei der Flugzeuge angezeigt werden |
-| **Poll-Intervall** | Wie oft nach neuen Flugzeugen gesucht wird (Suche und Live-Tracking) |
-| **Überflüge** | Aktiviert die Erkennung von Flugzeugen, die direkt über dich fliegen |
-| **Sprachausgabe** | Browser-TTS, externes ioBroker-Objekt oder deaktiviert |
-| **Bilder** | Konfiguration für externe Airline- und Hersteller-Logos |
+| **Home coordinates** | Latitude and longitude of your location |
+| **Airport** | IATA code, name and coordinates of the nearest airport |
+| **Search radius (nm)** | Radius (nautical miles) around the airport used for ADS-B queries |
+| **Window direction** | Compass bearing your window faces (0° = north) |
+| **Window field of view** | Field of view of your window, in degrees (e.g. 90°) |
+| **Altitude limits** | Minimum/maximum altitude (ft) at which aircraft are shown |
+| **Poll interval** | How often new aircraft are searched for (search and live tracking) |
+| **Overflights** | Enables detection of aircraft passing directly overhead |
+| **Speech output** | Browser TTS, external ioBroker object, or disabled |
+| **Images** | Configuration for external airline and manufacturer logos |
 
-## Web-Oberfläche
+## Web Interface
 
-Die Web-App ist über den Simple-API-Adapter erreichbar:
+The web app is reachable through the Simple-API adapter:
 
 ```
 http://<iobroker-ip>:<simple-api-port>/jetframe.admin/index.html
 ```
 
-### Seiten
+### Pages
 
-| Seite | URL | Beschreibung |
+| Page | URL | Description |
 |---|---|---|
-| **Startseite** | `index.html` | Übersicht, Systemstatus, Navigation |
-| **Live Frame** | `frame.html` | Echtzeit-Flugzeigeanzeige mit Foto |
-| **Heatmap** | `heatmap.html` | Tagesstatistik und beste Spotterzeit |
-| **Statistik** | `stats.html` | Rekorde, Alltime-Rankings, Tageshistorie |
+| **Home** | `index.html` | Overview, system status, navigation |
+| **Live Frame** | `frame.html` | Real-time aircraft display with photo |
+| **Heatmap** | `heatmap.html` | Daily statistics and best spotting time |
+| **Statistics** | `stats.html` | Records, all-time rankings, daily history |
 
-### URL-Parameter
+### URL Parameters
 
-| Parameter | Beispiel | Beschreibung |
+| Parameter | Example | Description |
 |---|---|---|
-| `instance` | `?instance=1` | Adapter-Instanz (Standard: `0`) |
-| `apiHost` | `?apiHost=192.168.1.10` | Simple-API Hostname |
-| `apiPort` | `?apiPort=8087` | Simple-API Port |
-| `source` | `?source=overflight` | Anzeigemodus: `current`, `airport`, `overflight` |
+| `instance` | `?instance=1` | Adapter instance (default: `0`) |
+| `apiHost` | `?apiHost=192.168.1.10` | Simple-API hostname |
+| `apiPort` | `?apiPort=8087` | Simple-API port |
+| `source` | `?source=overflight` | Display mode: `current`, `airport`, `overflight` |
 
-## ioBroker-Datenpunkte
+## ioBroker States
 
-Der Adapter legt unter `jetframe.0.*` folgende Datenpunkte an:
+The adapter creates the following states under `jetframe.0.*`:
 
 ### Status
 
-| Datenpunkt | Typ | Beschreibung |
+| State | Type | Description |
 |---|---|---|
-| `enabled` | boolean | Adapter aktivieren/deaktivieren |
-| `status` | string | Aktueller Status-Text |
-| `clearImageCache` | boolean | Trigger: Bild-Cache leeren |
+| `enabled` | boolean | Enable/disable the adapter |
+| `status` | string | Current status text |
+| `clearImageCache` | boolean | Trigger: clear the image cache |
 
-### Aktueller Flug (`current.*`)
+### Current flight (`current.*`)
 
-| Datenpunkt | Beschreibung |
+| State | Description |
 |---|---|
-| `callsign` | IATA-Rufzeichen (z. B. `LH123`) |
-| `routeDisplayText` | Route als Text (z. B. `Frankfurt → München`) |
-| `routeCodesText` | Route als IATA-Codes (z. B. `FRA → MUC`) |
-| `airlineName` | Airline-Name |
-| `aircraftTypeText` | Flugzeugtyp (z. B. `Airbus A321`) |
-| `aircraftSize` | Größenklasse (`Narrowbody`, `Widebody`, `Jumbo`, …) |
-| `registration` | Kennzeichen (z. B. `D-AIBL`) |
-| `altitudeFt` | Höhe in Fuß |
-| `speedKt` | Geschwindigkeit in Knoten |
-| `verticalRate` | Steig-/Sinkrate (ft/min) |
-| `probableRunwayText` | Wahrscheinliche Runway (z. B. `RWY 25L`) |
-| `windowPositionText` | Fensterposition (z. B. `links vom Fenster · 12°`) |
-| `modeVisText` | Modus-Text (z. B. `🛬 Landung Frankfurt`) |
-| `localImageUrl` | URL zum gecachten Flugzeugfoto |
-| `speechText` | Sprachausgabe-Text |
-| `specialLiveryVisText` | Sonderlackierung (z. B. `100th Anniversary`) |
-| `emergencyText` | Notfall-Info (bei Squawk 7500/7600/7700) |
+| `callsign` | IATA callsign (e.g. `LH123`) |
+| `routeDisplayText` | Route as text (e.g. `Frankfurt → Munich`) |
+| `routeCodesText` | Route as IATA codes (e.g. `FRA → MUC`) |
+| `airlineName` | Airline name |
+| `aircraftTypeText` | Aircraft type (e.g. `Airbus A321`) |
+| `aircraftSize` | Size class (`Narrowbody`, `Widebody`, `Jumbo`, …) |
+| `registration` | Registration (e.g. `D-AIBL`) |
+| `altitudeFt` | Altitude in feet |
+| `speedKt` | Speed in knots |
+| `verticalRate` | Climb/descent rate (ft/min) |
+| `probableRunwayText` | Probable runway (e.g. `RWY 25L`) |
+| `windowPositionText` | Window position (e.g. `left of window · 12°`) |
+| `modeVisText` | Mode text (e.g. `🛬 Landing Frankfurt`) |
+| `localImageUrl` | URL to the cached aircraft photo |
+| `speechText` | Speech-output text |
+| `specialLiveryVisText` | Special livery (e.g. `100th Anniversary`) |
+| `emergencyText` | Emergency info (for squawk 7500/7600/7700) |
 
-### Statistiken (`statistics.today.*`, `statistics.yesterday.*`, `statistics.alltime.*`)
+### Statistics (`statistics.today.*`, `statistics.yesterday.*`, `statistics.alltime.*`)
 
-Tagesstatistiken mit Anzahl Flüge, Landungen, Starts, Überflüge, beste Spotterzeit, Heavy-Aircraft-Zähler, Special-Livery-Zähler, Top-Airlines und Top-Routen.
+Daily statistics with flight count, landings, departures, overflights, best spotting time, heavy-aircraft counter, special-livery counter, top airlines and top routes.
 
-## Bilder & Logos
+## Images & Logos
 
-JetFrame kann Flugzeugfotos, Airline-Logos und Hersteller-Logos anzeigen. Diese werden standardmäßig über öffentliche APIs abgerufen (JetPhotos für Fotos, HexDB für Routen-/Airline-Daten). Externe Logo-Quellen lassen sich in den Adaptereinstellungen konfigurieren. Optionales lokales Caching reduziert externe Anfragen und beschleunigt die Anzeige.
+JetFrame can display aircraft photos, airline logos and manufacturer logos. By default these are fetched from public APIs (JetPhotos for photos, HexDB for route/airline data). External logo sources can be configured in the adapter settings. Optional local caching reduces external requests and speeds up display.
 
-## Datenschutz & Rechtliches
+## Privacy & Legal Notice
 
-JetFrame ruft öffentliche ADS-B-APIs ab:
+JetFrame queries public ADS-B APIs:
 
-- **[adsb.lol](https://adsb.lol)** – primäre Datenquelle
-- **[adsb.fi](https://adsb.fi)** – automatischer Fallback
-- **[Jetphotos.com](https://www.jetphotos.com)** – Flugzeugfotos (nur URL-Lookup, kein Download ohne Cache-Einstellung)
-- **[HexDB.io](https://hexdb.io)** – Routen- und Airline-Informationen
-- **[Flightradar24](https://www.flightradar24.com)** – ergänzende Routeninformationen
+- **[adsb.lol](https://adsb.lol)** – primary data source
+- **[adsb.fi](https://adsb.fi)** – automatic fallback
+- **[Jetphotos.com](https://www.jetphotos.com)** – aircraft photos (URL lookup only, no download unless caching is enabled)
+- **[HexDB.io](https://hexdb.io)** – route and airline information
+- **[Flightradar24](https://www.flightradar24.com)** – supplementary route information
 
-Alle Daten werden ausschließlich lokal im ioBroker gespeichert. Es werden keine Nutzerdaten an Dritte weitergegeben.
+All data is stored exclusively locally within ioBroker. No user data is shared with third parties.
 
-ADS-B-Daten sind öffentlich zugängliche Signale, die von Flugzeugen ausgestrahlt werden. Die Nutzung ist in den meisten Ländern legal und wird von Luftfahrtbehörden toleriert. Die Verantwortung für die rechtskonforme Nutzung liegt beim Betreiber.
+ADS-B data consists of publicly broadcast signals transmitted by aircraft. Its use is legal in most countries and is tolerated by aviation authorities. Responsibility for lawful use lies with the operator.
 
-Alle Markenzeichen, Logos, Airline-Namen, Flugzeugbilder und verwandte Inhalte bleiben Eigentum ihrer jeweiligen Rechteinhaber. JetFrame ist nicht verbunden mit, unterstützt von oder offiziell verbunden mit Airlines, Flughäfen, Flugzeugherstellern, JetPhotos, ADS-B-Anbietern oder Flugverfolgungsdiensten.
+All trademarks, logos, airline names, aircraft images and related content remain the property of their respective rights holders. JetFrame is not affiliated with, endorsed by, or officially connected to any airline, airport, aircraft manufacturer, JetPhotos, ADS-B provider, or flight-tracking service.
 
-Der Adapter ist ausschließlich für private, informative und nicht-kommerzielle lokale Visualisierungen vorgesehen. Nutzer sind selbst für die Einhaltung der Lizenzen und API-Bedingungen der konfigurierten externen Dienste verantwortlich.
+This adapter is intended exclusively for private, informational, non-commercial local visualization. Users are responsible for complying with the licenses and API terms of the configured external services.
 
 ## Changelog
 
@@ -139,6 +139,10 @@ Der Adapter ist ausschließlich für private, informative und nicht-kommerzielle
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+
+### 1.0.6 (2026-06-23)
+
+- (backfisch88) Bugfix release: removed invalid io-package.json schema property, translated README.md to English, removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay()
 
 ### 1.0.5 (2026-06-23)
 

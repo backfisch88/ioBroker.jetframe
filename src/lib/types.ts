@@ -26,7 +26,7 @@ export interface AdapterLike {
 	writeFileAsync(adapter: string, path: string, data: Buffer | string): Promise<any>;
 	unlinkAsync(adapter: string, path: string): Promise<any>;
 
-	setTimeout(cb: (...args: any[]) => void, ms: number): ioBroker.Timeout | undefined;
+	setTimeout: (cb: (...args: any[]) => void, ms: number) => ioBroker.Timeout | undefined;
 	clearTimeout(timer: ioBroker.Timeout): void;
 	delay(ms: number): Promise<void>;
 }

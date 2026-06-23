@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "jetframe",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "news": {
+      "1.0.6": {
+        "en": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "de": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "ru": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "pt": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "nl": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "fr": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "it": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "es": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "pl": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "uk": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay().",
+        "zh-cn": "Bugfix release: removed invalid io-package.json schema property, translated README.md to English (required by ioBroker policy), removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay()."
+      },
       "1.0.5": {
         "en": "Maintenance release: cleaned up devDependencies, fixed io-package.json schema issues, updated admin/release-script dependency requirements, replaced plain setTimeout with adapter-managed timers, removed obsolete backup files.",
         "de": "Wartungs-Release: devDependencies bereinigt, io-package.json Schema-Fehler behoben, Admin-/Release-Script-Abh\u00e4ngigkeiten aktualisiert, einfache setTimeout-Aufrufe durch adapter-verwaltete Timer ersetzt, veraltete Backup-Dateien entfernt.",
@@ -94,8 +107,7 @@
       {
         "admin": ">=7.6.20"
       }
-    ],
-    "noGit": true
+    ]
   },
   "native": {
     "enabled": true,

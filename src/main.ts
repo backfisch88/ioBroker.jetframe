@@ -1379,8 +1379,8 @@ class Jetframe extends utils.Adapter {
 		const data = await fetchAdsb(
 			config,
 			this.httpJsonRaw.bind(this),
-			this.logDebug.bind(this),
 			this.delay.bind(this),
+			this.logDebug.bind(this),
 		);
 
 		this.log.debug('[JetFrame] ADSB Fetch OK');
@@ -1429,8 +1429,8 @@ class Jetframe extends utils.Adapter {
 		const data = await fetchAdsb(
 			config,
 			this.httpJsonRaw.bind(this),
-			this.logDebug.bind(this),
 			this.delay.bind(this),
+			this.logDebug.bind(this),
 		);
 
 		const aircraft = parseAircraft(data);

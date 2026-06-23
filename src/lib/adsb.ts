@@ -49,14 +49,16 @@ function parseAltitude(v: unknown): number {
  *
  * @param config adapter configuration
  * @param httpJsonRaw HTTP helper that fetches and parses JSON
+ * @param delayFn delay implementation used between retries. In production this
+ *   is always `this.delay.bind(this)` from the adapter base class, so the
+ *   retry pause is properly tracked and cancelled by ioBroker on unload.
  * @param logDebug optional debug logger
- * @param delayFn delay implementation used between retries (defaults to a plain setTimeout-based sleep)
  */
 export async function fetchAdsb(
 	config: JetFrameConfig,
 	httpJsonRaw: HttpJsonRaw,
+	delayFn: (ms: number) => Promise<void>,
 	logDebug?: (msg: string) => void,
-	delayFn: (ms: number) => Promise<void> = sleep,
 ): Promise<any> {
 	const urls = buildAdsbUrls(config);
 
@@ -275,18 +277,6 @@ export function parseAircraft(body: any): Aircraft[] {
 				Number.isFinite(a.seenSec) &&
 				a.seenSec <= 90,
 		);
-}
-
-/**
- * Fallback delay implementation used only when no adapter-managed
- * `delayFn` is supplied (e.g. in unit tests). In production, `main.ts`
- * passes `this.delay.bind(this)`, which is properly tracked and cancelled
- * by the ioBroker adapter base class on unload.
- */
-function sleep(ms: number): Promise<void> {
-	return new Promise(resolve => {
-		setTimeout(resolve, ms);
-	});
 }
 
 function errorText(e: unknown): string {
