@@ -37,6 +37,7 @@ export async function ensureState(
 	role: string,
 ): Promise<void> {
 	const obj = await adapter.getForeignObjectAsync(id);
+	const desiredWrite = !READ_ONLY_ROLES.has(role);
 
 	if (!obj) {
 		await adapter.setForeignObjectAsync(id, {
@@ -46,12 +47,27 @@ export async function ensureState(
 				type,
 				role,
 				read: true,
-				write: !READ_ONLY_ROLES.has(role),
+				write: desiredWrite,
 			},
 			native: {},
 		});
 
 		await adapter.setForeignStateAsync(id, def, true);
+		return;
+	}
+
+	// Object already exists (e.g. from before this fix): heal stale metadata
+	// (role/type/write) in place without touching the current state value.
+	const common = obj.common || {};
+	if (common.role !== role || common.type !== type || common.write !== desiredWrite) {
+		await adapter.extendForeignObjectAsync(id, {
+			common: {
+				type,
+				role,
+				read: true,
+				write: desiredWrite,
+			},
+		});
 	}
 }
 

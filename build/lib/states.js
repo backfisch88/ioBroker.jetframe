@@ -46,6 +46,7 @@ async function ensureChannel(adapter, id, name) {
 }
 async function ensureState(adapter, id, def, type, role) {
   const obj = await adapter.getForeignObjectAsync(id);
+  const desiredWrite = !READ_ONLY_ROLES.has(role);
   if (!obj) {
     await adapter.setForeignObjectAsync(id, {
       type: "state",
@@ -54,11 +55,23 @@ async function ensureState(adapter, id, def, type, role) {
         type,
         role,
         read: true,
-        write: !READ_ONLY_ROLES.has(role)
+        write: desiredWrite
       },
       native: {}
     });
     await adapter.setForeignStateAsync(id, def, true);
+    return;
+  }
+  const common = obj.common || {};
+  if (common.role !== role || common.type !== type || common.write !== desiredWrite) {
+    await adapter.extendForeignObjectAsync(id, {
+      common: {
+        type,
+        role,
+        read: true,
+        write: desiredWrite
+      }
+    });
   }
 }
 async function ensureBaseStates(adapter, config) {

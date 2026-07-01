@@ -20,6 +20,7 @@ export interface AdapterLike {
 
 	getForeignObjectAsync(id: string): Promise<ioBroker.Object | null | undefined>;
 	setForeignObjectAsync(id: string, obj: any): Promise<any>;
+	extendForeignObjectAsync(id: string, obj: any): Promise<any>;
 
 	readDirAsync(adapter: string, path: string): Promise<any[]>;
 	readFileAsync(adapter: string, path: string): Promise<any>;
