@@ -2,10 +2,10 @@
 	"jetframe adapter settings": "Adapterinstellingen voor jetframe",
 	"option1": "optie1",
 	"option2": "optie2",
-	"speechMode": "Sprachausgabe",
-	"speechModeBrowser": "Browser intern",
-	"speechModeExternal": "Extern per Datenpunkt",
+	"speechMode": "Spraakuitvoer",
+	"speechModeBrowser": "Browser-intern",
+	"speechModeExternal": "Extern via datapunt",
 	"speechModeBoth": "Browser + extern",
-	"speechModeOff": "Aus",
-	"speechTemplate": "Ansage-Template"
+	"speechModeOff": "Uit",
+	"speechTemplate": "Aankondigingssjabloon"
 }

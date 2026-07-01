@@ -9,7 +9,7 @@ import { updateSpecialLiveries } from './lib/specialLiveries';
 import { readConfig } from './lib/config';
 import { fetchAdsb, parseAircraft } from './lib/adsb';
 import { getMatches } from './lib/classify';
-import { ensureStates, writeFlight, clearFlight } from './lib/states';
+import { ensureStates, writeFlight, clearFlight, ensureChannel } from './lib/states';
 
 import { clearImageCache, ensureImageDirs, saveImages } from './lib/images';
 import { writeVisConfig } from './lib/visConfig';
@@ -330,6 +330,12 @@ class Jetframe extends utils.Adapter {
 
 	private async ensureStatisticsStates(dpRoot: string): Promise<void> {
 		const base = `${dpRoot}.statistics`;
+
+		await ensureChannel(this, base, 'statistics');
+		await ensureChannel(this, `${base}.today`, 'today');
+		await ensureChannel(this, `${base}.yesterday`, 'yesterday');
+		await ensureChannel(this, `${base}.alltime`, 'alltime');
+		await ensureChannel(this, `${base}.history`, 'history');
 
 		await this.ensureSimpleState(`${base}.totalFlightsSeen`, 'Total flights seen', 'number', 'value');
 		await this.ensureSimpleState(`${base}.landings`, 'Landings', 'number', 'value');

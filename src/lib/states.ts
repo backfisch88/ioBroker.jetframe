@@ -4,6 +4,28 @@ import { cacheExternalLogoUrl, MANUFACTURER_LOGO_CACHE_DIR } from './images';
 
 const LAST_SPEECH_TRIGGER: Record<string, string> = {};
 
+// Roles that require common.write = false per ioBroker state-roles spec
+// (read-only sensor/indicator values). See:
+// https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/stateroles.md
+const READ_ONLY_ROLES = new Set(['value', 'indicator']);
+
+/**
+ * Ensure that an intermediate channel/folder object exists for the given id.
+ */
+export async function ensureChannel(adapter: AdapterLike, id: string, name?: string): Promise<void> {
+	const obj = await adapter.getForeignObjectAsync(id);
+
+	if (!obj) {
+		await adapter.setForeignObjectAsync(id, {
+			type: 'channel',
+			common: {
+				name: name || id.split('.').pop() || id,
+			},
+			native: {},
+		});
+	}
+}
+
 /**
  *
  */
@@ -24,7 +46,7 @@ export async function ensureState(
 				type,
 				role,
 				read: true,
-				write: true,
+				write: !READ_ONLY_ROLES.has(role),
 			},
 			native: {},
 		});
@@ -103,6 +125,8 @@ export async function ensureBaseStates(adapter: AdapterLike, config: JetFrameCon
  *
  */
 export async function ensureFlightStates(adapter: AdapterLike, base: string): Promise<void> {
+	await ensureChannel(adapter, base);
+
 	const strings = [
 		'.text',
 		'.callsign',

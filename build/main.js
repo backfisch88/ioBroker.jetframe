@@ -273,6 +273,11 @@ class Jetframe extends utils.Adapter {
   }
   async ensureStatisticsStates(dpRoot) {
     const base = `${dpRoot}.statistics`;
+    await (0, import_states.ensureChannel)(this, base, "statistics");
+    await (0, import_states.ensureChannel)(this, `${base}.today`, "today");
+    await (0, import_states.ensureChannel)(this, `${base}.yesterday`, "yesterday");
+    await (0, import_states.ensureChannel)(this, `${base}.alltime`, "alltime");
+    await (0, import_states.ensureChannel)(this, `${base}.history`, "history");
     await this.ensureSimpleState(`${base}.totalFlightsSeen`, "Total flights seen", "number", "value");
     await this.ensureSimpleState(`${base}.landings`, "Landings", "number", "value");
     await this.ensureSimpleState(`${base}.departures`, "Departures", "number", "value");

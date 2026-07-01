@@ -20,6 +20,7 @@ var states_exports = {};
 __export(states_exports, {
   clearFlight: () => clearFlight,
   ensureBaseStates: () => ensureBaseStates,
+  ensureChannel: () => ensureChannel,
   ensureFlightStates: () => ensureFlightStates,
   ensureState: () => ensureState,
   ensureStates: () => ensureStates,
@@ -30,6 +31,19 @@ module.exports = __toCommonJS(states_exports);
 var import_geo = require("./geo");
 var import_images = require("./images");
 const LAST_SPEECH_TRIGGER = {};
+const READ_ONLY_ROLES = /* @__PURE__ */ new Set(["value", "indicator"]);
+async function ensureChannel(adapter, id, name) {
+  const obj = await adapter.getForeignObjectAsync(id);
+  if (!obj) {
+    await adapter.setForeignObjectAsync(id, {
+      type: "channel",
+      common: {
+        name: name || id.split(".").pop() || id
+      },
+      native: {}
+    });
+  }
+}
 async function ensureState(adapter, id, def, type, role) {
   const obj = await adapter.getForeignObjectAsync(id);
   if (!obj) {
@@ -40,7 +54,7 @@ async function ensureState(adapter, id, def, type, role) {
         type,
         role,
         read: true,
-        write: true
+        write: !READ_ONLY_ROLES.has(role)
       },
       native: {}
     });
@@ -100,6 +114,7 @@ async function ensureBaseStates(adapter, config) {
   await ensureFlightStates(adapter, `${config.dpRoot}.overflight`);
 }
 async function ensureFlightStates(adapter, base) {
+  await ensureChannel(adapter, base);
   const strings = [
     ".text",
     ".callsign",
@@ -882,6 +897,7 @@ async function keepExistingStringState(adapter, id, value) {
 0 && (module.exports = {
   clearFlight,
   ensureBaseStates,
+  ensureChannel,
   ensureFlightStates,
   ensureState,
   ensureStates,

@@ -2,10 +2,10 @@
 	"jetframe adapter settings": "jetframe的适配器设置",
 	"option1": "选项1",
 	"option2": "选项2",
-	"speechMode": "Sprachausgabe",
-	"speechModeBrowser": "Browser intern",
-	"speechModeExternal": "Extern per Datenpunkt",
-	"speechModeBoth": "Browser + extern",
-	"speechModeOff": "Aus",
-	"speechTemplate": "Ansage-Template"
+	"speechMode": "语音输出",
+	"speechModeBrowser": "浏览器内部",
+	"speechModeExternal": "通过数据点外部输出",
+	"speechModeBoth": "浏览器 + 外部",
+	"speechModeOff": "关闭",
+	"speechTemplate": "播报模板"
 }
