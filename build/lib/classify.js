@@ -61,7 +61,7 @@ function classifyAircraft(config, a) {
       ...a,
       mode: "LANDING",
       icon: "\u{1F6EC}",
-      directionText: `nach ${config.airport.iata}`,
+      directionText: `to ${config.airport.iata}`,
       relevant: true,
       priority: 1
     };
@@ -71,7 +71,7 @@ function classifyAircraft(config, a) {
       ...a,
       mode: "TAKEOFF",
       icon: "\u{1F6EB}",
-      directionText: `von ${config.airport.iata}`,
+      directionText: `from ${config.airport.iata}`,
       relevant: true,
       priority: 2
     };
@@ -82,7 +82,7 @@ function classifyAircraft(config, a) {
       ...a,
       mode: "OVERFLIGHT",
       icon: "\u{1F6E9}\uFE0F",
-      directionText: "\xDCberflug",
+      directionText: "Overflight",
       relevant: true,
       priority: 3
     };
@@ -101,7 +101,7 @@ function getMatches(config, aircraft) {
       ...a,
       mode: "OVERFLIGHT",
       icon: "\u{1F6E9}\uFE0F",
-      directionText: "\xDCberflug",
+      directionText: "Overflight",
       relevant: true,
       priority: 1
     })).sort((a, b) => sortOverflightAircraft(config, a, b));

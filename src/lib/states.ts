@@ -93,7 +93,7 @@ export async function ensureBaseStates(adapter: AdapterLike, config: JetFrameCon
 	await ensureState(
 		adapter,
 		`${config.dpRoot}.speechTemplate`,
-		'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuß. {windowPositionSpeechText}.',
+		'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}.',
 		'string',
 		'text',
 	);
@@ -107,7 +107,7 @@ export async function ensureBaseStates(adapter: AdapterLike, config: JetFrameCon
 			await adapter.setForeignObjectAsync(`${config.dpRoot}.speechEnabled`, {
 				type: 'state',
 				common: {
-					name: 'Sprachausgabe aktiv',
+					name: 'Speech output active',
 					type: 'boolean',
 					role: 'switch',
 					read: true,
@@ -128,7 +128,7 @@ export async function ensureBaseStates(adapter: AdapterLike, config: JetFrameCon
 	await adapter.setForeignStateAsync(
 		`${config.dpRoot}.speechTemplate`,
 		config.speechTemplate ||
-			'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.',
+			'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}.',
 		true,
 	);
 
@@ -277,7 +277,7 @@ export function trackDirectionText(degRaw: unknown): string {
 
 	const normalized = ((deg % 360) + 360) % 360;
 
-	const dirs = ['↑ Norden', '↗ Nordost', '→ Osten', '↘ Südost', '↓ Süden', '↙ Südwest', '← Westen', '↖ Nordwest'];
+	const dirs = ['↑ North', '↗ Northeast', '→ East', '↘ Southeast', '↓ South', '↙ Southwest', '← West', '↖ Northwest'];
 
 	const index = Math.round(normalized / 45) % 8;
 
@@ -700,15 +700,15 @@ function modeVisTextFromFlight(a: Aircraft, originDisplayName: string, destDispl
 	const mode = String(a.mode || '').toUpperCase();
 
 	if (mode === 'TAKEOFF') {
-		return `🛫 Start ${originDisplayName !== '—' ? originDisplayName : ''}`.trim();
+		return `🛫 Takeoff ${originDisplayName !== '—' ? originDisplayName : ''}`.trim();
 	}
 
 	if (mode === 'LANDING') {
-		return `🛬 Landung ${destDisplayName !== '—' ? destDisplayName : ''}`.trim();
+		return `🛬 Landing ${destDisplayName !== '—' ? destDisplayName : ''}`.trim();
 	}
 
 	if (mode === 'OVERFLIGHT') {
-		return '🛩️ Überflug';
+		return '🛩️ Overflight';
 	}
 
 	return '✈️ Flight';
@@ -724,7 +724,7 @@ function windowPositionInfo(a: Aircraft): {
 
 	if (!bearing && !diff) {
 		return {
-			text: '↗️ Position unbekannt',
+			text: '↗️ Position unknown',
 			className: 'side',
 			speechText: 'am Fenster',
 		};
@@ -1073,7 +1073,7 @@ async function buildSpeechTextForWrite(
 	const root = base.split('.').slice(0, -1).join('.');
 
 	let template =
-		'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.';
+		'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}.';
 
 	try {
 		const st = await adapter.getForeignStateAsync(`${root}.speechTemplate`);
@@ -1174,10 +1174,10 @@ function buildMessage(a: Aircraft): string {
 	lines.push('');
 
 	lines.push(`${a.icon || '✈️'} ${modeText(a.mode || '')}`);
-	lines.push(`Flug: ${a.callsign || a.hex || 'unbekannt'}`);
+	lines.push(`Flight: ${a.callsign || a.hex || 'unknown'}`);
 
 	if (routeCallsign) {
-		lines.push(`Route über: ${routeCallsign}`);
+		lines.push(`Route via: ${routeCallsign}`);
 	}
 
 	if (a.airlineName) {
@@ -1191,49 +1191,49 @@ function buildMessage(a: Aircraft): string {
 	} else if (a.routeWarning) {
 		lines.push(`Route: ${a.routeWarning}`);
 	} else if (a.directionText) {
-		lines.push(`Richtung: ${a.directionText}`);
+		lines.push(`Direction: ${a.directionText}`);
 	}
 
 	if (a.routeSource) {
-		lines.push(`Quelle: ${a.routeSource}`);
+		lines.push(`Source: ${a.routeSource}`);
 	}
 
 	if (a.aircraftModel) {
-		lines.push(`Flugzeug: ${a.aircraftModel}`);
+		lines.push(`Aircraft: ${a.aircraftModel}`);
 	} else if (a.aircraftType || a.type) {
-		lines.push(`Typ: ${a.aircraftType || a.type}`);
+		lines.push(`Type: ${a.aircraftType || a.type}`);
 	}
 
 	if (a.registration) {
-		lines.push(`Kennz.: ${a.registration}`);
+		lines.push(`Reg.: ${a.registration}`);
 	}
 
 	lines.push('');
-	lines.push(`Höhe: ${Math.round(a.altFt || 0)} ft`);
+	lines.push(`Altitude: ${Math.round(a.altFt || 0)} ft`);
 	lines.push(`Speed: ${Math.round(a.speedKt || 0)} kt`);
-	lines.push(`Steigrate: ${Math.round(a.verticalRate || 0)} ft/min`);
-	lines.push(`Kurs: ${Math.round(a.trackDeg || 0)}°`);
+	lines.push(`Climb rate: ${Math.round(a.verticalRate || 0)} ft/min`);
+	lines.push(`Heading: ${Math.round(a.trackDeg || 0)}°`);
 
 	const specialDisplayText = a.specialLiveryVisText || a.specialLiveryFull || a.specialText || '';
 
 	if (specialDisplayText) {
 		lines.push('');
-		lines.push(`${a.isSpecial ? '⭐ Besonderheit: ' : 'ℹ️ Info: '}${specialDisplayText}`);
+		lines.push(`${a.isSpecial ? '⭐ Special: ' : 'ℹ️ Info: '}${specialDisplayText}`);
 	}
 	return lines.join('\n');
 }
 
 function modeText(mode: string): string {
 	if (mode === 'LANDING') {
-		return 'Landung';
+		return 'Landing';
 	}
 	if (mode === 'TAKEOFF') {
-		return 'Start';
+		return 'Takeoff';
 	}
 	if (mode === 'OVERFLIGHT') {
-		return 'Überflug';
+		return 'Overflight';
 	}
-	return 'Flug';
+	return 'Flight';
 }
 
 /**

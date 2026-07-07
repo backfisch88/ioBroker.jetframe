@@ -44,7 +44,7 @@ function countryFlagEmoji(countryCode) {
 }
 async function updateAirportJson(adapter, logDebug, logWarn) {
   try {
-    logDebug == null ? void 0 : logDebug("Lade Airport Datenbank...", 1);
+    logDebug == null ? void 0 : logDebug("Loading airport database...", 1);
     const csv = await downloadCsv(AIRPORTS_URL, 0, "iata_code");
     const runwayCsv = await downloadCsv(RUNWAYS_URL, 0, "airport_ident");
     const runwaysByIdent = parseRunwayCsv(runwayCsv);
@@ -52,17 +52,17 @@ async function updateAirportJson(adapter, logDebug, logWarn) {
       ...a,
       runways: runwaysByIdent[a.ident] || []
     }));
-    logDebug == null ? void 0 : logDebug(`Airport DB parsed: ${airports.length} Airports`, 1);
-    logDebug == null ? void 0 : logDebug(`Runways parsed: ${Object.keys(runwaysByIdent).length} Airports mit Runways`, 1);
+    logDebug == null ? void 0 : logDebug(`Airport DB parsed: ${airports.length} airports`, 1);
+    logDebug == null ? void 0 : logDebug(`Runways parsed: ${Object.keys(runwaysByIdent).length} airports with runways`, 1);
     try {
       const deNames = await getGermanIataNamesCached(adapter, logDebug);
       airports = airports.map((a) => ({
         ...a,
         city_DE: deNames[a.iata] || ""
       }));
-      logDebug == null ? void 0 : logDebug(`Airport DB DE-Namen erg\xE4nzt: ${Object.keys(deNames).length}`, 1);
+      logDebug == null ? void 0 : logDebug(`Airport DB DE names added: ${Object.keys(deNames).length}`, 1);
     } catch (e) {
-      logWarn == null ? void 0 : logWarn(`Airport DB DE-Namen Fehler: ${(e == null ? void 0 : e.message) || e}`);
+      logWarn == null ? void 0 : logWarn(`Airport DB DE names error: ${(e == null ? void 0 : e.message) || e}`);
     }
     await adapter.setForeignStateAsync(`${adapter.namespace}.airportjson`, JSON.stringify(airports), true);
     await adapter.setForeignStateAsync(
@@ -70,9 +70,9 @@ async function updateAirportJson(adapter, logDebug, logWarn) {
       (/* @__PURE__ */ new Date()).toISOString(),
       true
     );
-    logDebug == null ? void 0 : logDebug("Airport Datenbank aktualisiert", 1);
+    logDebug == null ? void 0 : logDebug("Airport database updated", 1);
   } catch (e) {
-    logWarn == null ? void 0 : logWarn(`Airport DB Fehler: ${(e == null ? void 0 : e.message) || e}`);
+    logWarn == null ? void 0 : logWarn(`Airport DB error: ${(e == null ? void 0 : e.message) || e}`);
   }
 }
 async function getGermanIataNamesCached(adapter, logDebug) {
@@ -91,7 +91,7 @@ async function getGermanIataNamesCached(adapter, logDebug) {
           }
         }
         if (Object.keys(cached).length > 100) {
-          logDebug == null ? void 0 : logDebug(`Airport DB DE-Namen aus Cache \xFCbernommen: ${Object.keys(cached).length}`, 1);
+          logDebug == null ? void 0 : logDebug(`Airport DB DE names loaded from cache: ${Object.keys(cached).length}`, 1);
           return cached;
         }
       }
@@ -257,10 +257,10 @@ function downloadCsv(url, redirects = 0, expectedHeader = "iata_code") {
             return reject(new Error("Airport CSV leer"));
           }
           if (text.startsWith("<")) {
-            return reject(new Error("Airport CSV Download lieferte HTML statt CSV"));
+            return reject(new Error("Airport CSV download returned HTML instead of CSV"));
           }
           if (expectedHeader && !text.includes(expectedHeader)) {
-            return reject(new Error(`CSV sieht ung\xFCltig aus: Header ${expectedHeader} fehlt`));
+            return reject(new Error(`CSV looks invalid: header ${expectedHeader} is missing`));
           }
           resolve(text);
         });

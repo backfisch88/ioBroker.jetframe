@@ -69,7 +69,7 @@ export function classifyAircraft(config: JetFrameConfig, a: Aircraft): Aircraft 
 			...a,
 			mode: 'LANDING',
 			icon: '🛬',
-			directionText: `nach ${config.airport.iata}`,
+			directionText: `to ${config.airport.iata}`,
 			relevant: true,
 			priority: 1,
 		};
@@ -80,7 +80,7 @@ export function classifyAircraft(config: JetFrameConfig, a: Aircraft): Aircraft 
 			...a,
 			mode: 'TAKEOFF',
 			icon: '🛫',
-			directionText: `von ${config.airport.iata}`,
+			directionText: `from ${config.airport.iata}`,
 			relevant: true,
 			priority: 2,
 		};
@@ -98,7 +98,7 @@ export function classifyAircraft(config: JetFrameConfig, a: Aircraft): Aircraft 
 			...a,
 			mode: 'OVERFLIGHT',
 			icon: '🛩️',
-			directionText: 'Überflug',
+			directionText: 'Overflight',
 			relevant: true,
 			priority: 3,
 		};
@@ -133,7 +133,7 @@ export function getMatches(config: JetFrameConfig, aircraft: Aircraft[]): Aircra
 				...a,
 				mode: 'OVERFLIGHT' as const,
 				icon: '🛩️',
-				directionText: 'Überflug',
+				directionText: 'Overflight',
 				relevant: true,
 				priority: 1,
 			}))

@@ -147,7 +147,7 @@
     "overflightMinAltitudeFt": 4000,
     "overflightMaxAltitudeFt": 45000,
     "speechMode": "browser",
-    "speechTemplate": "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuß. {windowPositionSpeechText}.",
+    "speechTemplate": "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}.",
     "overflightRequiresWindow": false,
     "overflightOnly": false,
     "simpleApiHost": "",

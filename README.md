@@ -73,6 +73,10 @@ http://<iobroker-ip>:<simple-api-port>/jetframe.admin/index.html
 | `apiPort` | `?apiPort=8087` | Simple-API port |
 | `source` | `?source=overflight` | Display mode: `current`, `airport`, `overflight` |
 
+### Language
+
+The web UI pages (`index.html`, `frame.html`, `heatmap.html`, `stats.html`) are currently **German-only** and do not yet have an i18n mechanism. This is a known limitation; multi-language support for the web UI is planned for a future release. The admin configuration page itself is fully translated into all 11 supported ioBroker languages.
+
 ## ioBroker States
 
 The adapter creates the following states under `jetframe.0.*`:

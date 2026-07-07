@@ -55,13 +55,13 @@ export async function updateSpecialLiveries(
 	logWarn?: (msg: string) => void,
 ): Promise<void> {
 	try {
-		logDebug?.('Lade Special-Liveries Datenbank...', 1);
+		logDebug?.('Loading special liveries database...', 1);
 
 		const html = await downloadText(SPECIAL_LIVERIES_URL);
-		logDebug?.(`Special-Liveries HTML Länge: ${html.length}`, 1);
+		logDebug?.(`Special liveries HTML length: ${html.length}`, 1);
 
 		const liveries = parseSpecialLiveriesHtml(html);
-		logDebug?.(`Special-Liveries parsed: ${liveries.length}`, 1);
+		logDebug?.(`Special liveries parsed: ${liveries.length}`, 1);
 
 		await adapter.setForeignStateAsync(`${adapter.namespace}.specialLiveries`, JSON.stringify(liveries), true);
 
@@ -71,9 +71,9 @@ export async function updateSpecialLiveries(
 			true,
 		);
 
-		logDebug?.(`Special-Liveries DB aktualisiert: ${liveries.length} Einträge`, 1);
+		logDebug?.(`Special liveries DB updated: ${liveries.length} entries`, 1);
 	} catch (e) {
-		logWarn?.(`Special-Liveries DB Fehler: ${errorText(e)}`);
+		logWarn?.(`Special liveries DB error: ${errorText(e)}`);
 	}
 }
 
@@ -456,7 +456,7 @@ function downloadText(url: string, redirects = 0): Promise<string> {
 
 function errorText(e: unknown): string {
 	if (!e) {
-		return 'unbekannter Fehler';
+		return 'unknown error';
 	}
 	if (typeof e === 'string') {
 		return e;

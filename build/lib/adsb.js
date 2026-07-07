@@ -23,6 +23,7 @@ __export(adsb_exports, {
 });
 module.exports = __toCommonJS(adsb_exports);
 const ADSB_ERROR_STATE = {};
+const ADSB_ERROR_STATE_MAX_KEYS = 20;
 function clean(v) {
   if (v === null || v === void 0) {
     return "";
@@ -70,33 +71,38 @@ async function fetchAdsb(config, httpJsonRaw, delayFn, logDebug) {
     for (const source of sources) {
       const maxAttempts = source.name === "adsb.lol" ? 1 : 2;
       if (source.name !== "adsb.lol") {
-        logDebug == null ? void 0 : logDebug(`ADSB adsb.lol fehlgeschlagen \u2013 versuche ${source.name} Fallback`);
+        logDebug == null ? void 0 : logDebug(`ADSB adsb.lol failed \u2013 trying ${source.name} fallback`);
       }
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           body = await httpJsonRaw(source.url);
           usedSource = source.name;
           if (source.name !== "adsb.lol") {
-            logDebug == null ? void 0 : logDebug(`ADSB Fallback aktiv: ${source.name}`);
+            logDebug == null ? void 0 : logDebug(`ADSB fallback active: ${source.name}`);
           }
-          logDebug == null ? void 0 : logDebug(`ADSB Quelle: ${source.name}`);
+          logDebug == null ? void 0 : logDebug(`ADSB source: ${source.name}`);
           break;
         } catch (e) {
           const errText = errorText(e);
-          const isSoftAdsbError = errText.includes("HTTP 502") || errText.includes("HTTP 503") || errText.toLowerCase().includes("timeout") || errText.includes("HTML statt JSON");
+          const isSoftAdsbError = errText.includes("HTTP 502") || errText.includes("HTTP 503") || errText.toLowerCase().includes("timeout") || errText.includes("Received HTML instead of JSON");
           const key = `${source.name}:${source.url}`;
           const now = Date.now();
           const st = ADSB_ERROR_STATE[key] || { count: 0, lastWarn: 0 };
           st.count++;
           if (!isSoftAdsbError || now - st.lastWarn > 3e5) {
             if (isSoftAdsbError) {
-              logDebug == null ? void 0 : logDebug(`ADSB ${source.name} tempor\xE4r nicht erreichbar (${errText})`);
+              logDebug == null ? void 0 : logDebug(`ADSB ${source.name} temporarily unreachable (${errText})`);
             } else {
-              logDebug == null ? void 0 : logDebug(`ADSB ${source.name} Fehler Versuch ${attempt}: ${errText}`);
+              logDebug == null ? void 0 : logDebug(`ADSB ${source.name} error attempt ${attempt}: ${errText}`);
             }
             st.lastWarn = now;
           }
           ADSB_ERROR_STATE[key] = st;
+          if (Object.keys(ADSB_ERROR_STATE).length > ADSB_ERROR_STATE_MAX_KEYS) {
+            for (const k of Object.keys(ADSB_ERROR_STATE)) {
+              delete ADSB_ERROR_STATE[k];
+            }
+          }
           if (attempt < maxAttempts) {
             await delayFn(1500);
           }
@@ -110,7 +116,7 @@ async function fetchAdsb(config, httpJsonRaw, delayFn, logDebug) {
       continue;
     }
     if (usedSource) {
-      logDebug == null ? void 0 : logDebug(`ADSB Daten empfangen \xFCber ${usedSource}`);
+      logDebug == null ? void 0 : logDebug(`ADSB data received via ${usedSource}`);
     }
     const arr = Array.isArray(body == null ? void 0 : body.aircraft) ? body.aircraft : Array.isArray(body == null ? void 0 : body.ac) ? body.ac : [];
     for (const item of arr) {
@@ -199,7 +205,7 @@ function parseAircraft(body) {
 }
 function errorText(e) {
   if (!e) {
-    return "unbekannter Fehler";
+    return "unknown error";
   }
   if (typeof e === "string") {
     return e;

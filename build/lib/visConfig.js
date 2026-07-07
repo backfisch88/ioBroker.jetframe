@@ -39,10 +39,10 @@ async function writeVisConfig(adapter, config, logDebug, logWarn) {
       Buffer.from(JSON.stringify(data, null, 2), "utf8")
     );
     logDebug(
-      `VIS Config geschrieben: source=${data.visualSource}, apiHost=${data.simpleApiHost || "auto"}, apiPort=${data.simpleApiPort}`
+      `VIS config written: source=${data.visualSource}, apiHost=${data.simpleApiHost || "auto"}, apiPort=${data.simpleApiPort}`
     );
   } catch (e) {
-    logWarn(`VIS Config konnte nicht geschrieben werden: ${e instanceof Error ? e.message : String(e)}`);
+    logWarn(`VIS config could not be written: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 // Annotate the CommonJS export names for ESM import in node:

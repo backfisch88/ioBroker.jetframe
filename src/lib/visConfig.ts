@@ -26,9 +26,9 @@ export async function writeVisConfig(
 		);
 
 		logDebug(
-			`VIS Config geschrieben: source=${data.visualSource}, apiHost=${data.simpleApiHost || 'auto'}, apiPort=${data.simpleApiPort}`,
+			`VIS config written: source=${data.visualSource}, apiHost=${data.simpleApiHost || 'auto'}, apiPort=${data.simpleApiPort}`,
 		);
 	} catch (e) {
-		logWarn(`VIS Config konnte nicht geschrieben werden: ${e instanceof Error ? e.message : String(e)}`);
+		logWarn(`VIS config could not be written: ${e instanceof Error ? e.message : String(e)}`);
 	}
 }

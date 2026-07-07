@@ -39,7 +39,7 @@ async function loadGermanIataNames(logDebug) {
   for (const letter of letters) {
     try {
       const url = IATA_WIKI_DE_BASE + letter;
-      logDebug == null ? void 0 : logDebug(`Lade IATA-DE Namen ${letter}...`, 2);
+      logDebug == null ? void 0 : logDebug(`Loading IATA-DE names ${letter}...`, 2);
       const html = await downloadText(url);
       const parsed = parseGermanIataPage(html);
       for (const [iata, city] of Object.entries(parsed)) {

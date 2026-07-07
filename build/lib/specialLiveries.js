@@ -37,20 +37,20 @@ var http = __toESM(require("node:http"));
 const SPECIAL_LIVERIES_URL = "https://airportwebcams.net/special-liveries/";
 async function updateSpecialLiveries(adapter, logDebug, logWarn) {
   try {
-    logDebug == null ? void 0 : logDebug("Lade Special-Liveries Datenbank...", 1);
+    logDebug == null ? void 0 : logDebug("Loading special liveries database...", 1);
     const html = await downloadText(SPECIAL_LIVERIES_URL);
-    logDebug == null ? void 0 : logDebug(`Special-Liveries HTML L\xE4nge: ${html.length}`, 1);
+    logDebug == null ? void 0 : logDebug(`Special liveries HTML length: ${html.length}`, 1);
     const liveries = parseSpecialLiveriesHtml(html);
-    logDebug == null ? void 0 : logDebug(`Special-Liveries parsed: ${liveries.length}`, 1);
+    logDebug == null ? void 0 : logDebug(`Special liveries parsed: ${liveries.length}`, 1);
     await adapter.setForeignStateAsync(`${adapter.namespace}.specialLiveries`, JSON.stringify(liveries), true);
     await adapter.setForeignStateAsync(
       `${adapter.namespace}.specialLiveriesLastUpdate`,
       (/* @__PURE__ */ new Date()).toISOString(),
       true
     );
-    logDebug == null ? void 0 : logDebug(`Special-Liveries DB aktualisiert: ${liveries.length} Eintr\xE4ge`, 1);
+    logDebug == null ? void 0 : logDebug(`Special liveries DB updated: ${liveries.length} entries`, 1);
   } catch (e) {
-    logWarn == null ? void 0 : logWarn(`Special-Liveries DB Fehler: ${errorText(e)}`);
+    logWarn == null ? void 0 : logWarn(`Special liveries DB error: ${errorText(e)}`);
   }
 }
 function parseSpecialLiveriesHtml(html) {
@@ -326,7 +326,7 @@ function downloadText(url, redirects = 0) {
 }
 function errorText(e) {
   if (!e) {
-    return "unbekannter Fehler";
+    return "unknown error";
   }
   if (typeof e === "string") {
     return e;

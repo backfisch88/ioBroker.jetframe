@@ -99,7 +99,7 @@ export async function updateAirportJson(
 	logWarn?: (msg: string) => void,
 ): Promise<void> {
 	try {
-		logDebug?.('Lade Airport Datenbank...', 1);
+		logDebug?.('Loading airport database...', 1);
 
 		const csv = await downloadCsv(AIRPORTS_URL, 0, 'iata_code');
 		const runwayCsv = await downloadCsv(RUNWAYS_URL, 0, 'airport_ident');
@@ -111,8 +111,8 @@ export async function updateAirportJson(
 			runways: runwaysByIdent[a.ident] || [],
 		}));
 
-		logDebug?.(`Airport DB parsed: ${airports.length} Airports`, 1);
-		logDebug?.(`Runways parsed: ${Object.keys(runwaysByIdent).length} Airports mit Runways`, 1);
+		logDebug?.(`Airport DB parsed: ${airports.length} airports`, 1);
+		logDebug?.(`Runways parsed: ${Object.keys(runwaysByIdent).length} airports with runways`, 1);
 
 		try {
 			const deNames = await getGermanIataNamesCached(adapter, logDebug);
@@ -122,9 +122,9 @@ export async function updateAirportJson(
 				city_DE: deNames[a.iata] || '',
 			}));
 
-			logDebug?.(`Airport DB DE-Namen ergänzt: ${Object.keys(deNames).length}`, 1);
+			logDebug?.(`Airport DB DE names added: ${Object.keys(deNames).length}`, 1);
 		} catch (e: any) {
-			logWarn?.(`Airport DB DE-Namen Fehler: ${e?.message || e}`);
+			logWarn?.(`Airport DB DE names error: ${e?.message || e}`);
 		}
 
 		await adapter.setForeignStateAsync(`${adapter.namespace}.airportjson`, JSON.stringify(airports), true);
@@ -135,9 +135,9 @@ export async function updateAirportJson(
 			true,
 		);
 
-		logDebug?.('Airport Datenbank aktualisiert', 1);
+		logDebug?.('Airport database updated', 1);
 	} catch (e: any) {
-		logWarn?.(`Airport DB Fehler: ${e?.message || e}`);
+		logWarn?.(`Airport DB error: ${e?.message || e}`);
 	}
 }
 
@@ -169,7 +169,7 @@ async function getGermanIataNamesCached(
 				}
 
 				if (Object.keys(cached).length > 100) {
-					logDebug?.(`Airport DB DE-Namen aus Cache übernommen: ${Object.keys(cached).length}`, 1);
+					logDebug?.(`Airport DB DE names loaded from cache: ${Object.keys(cached).length}`, 1);
 
 					return cached;
 				}
@@ -427,10 +427,10 @@ function downloadCsv(url: string, redirects = 0, expectedHeader = 'iata_code'): 
 						return reject(new Error('Airport CSV leer'));
 					}
 					if (text.startsWith('<')) {
-						return reject(new Error('Airport CSV Download lieferte HTML statt CSV'));
+						return reject(new Error('Airport CSV download returned HTML instead of CSV'));
 					}
 					if (expectedHeader && !text.includes(expectedHeader)) {
-						return reject(new Error(`CSV sieht ungültig aus: Header ${expectedHeader} fehlt`));
+						return reject(new Error(`CSV looks invalid: header ${expectedHeader} is missing`));
 					}
 
 					resolve(text);

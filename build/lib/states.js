@@ -90,7 +90,7 @@ async function ensureBaseStates(adapter, config) {
   await ensureState(
     adapter,
     `${config.dpRoot}.speechTemplate`,
-    "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fu\xDF. {windowPositionSpeechText}.",
+    "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}.",
     "string",
     "text"
   );
@@ -101,7 +101,7 @@ async function ensureBaseStates(adapter, config) {
       await adapter.setForeignObjectAsync(`${config.dpRoot}.speechEnabled`, {
         type: "state",
         common: {
-          name: "Sprachausgabe aktiv",
+          name: "Speech output active",
           type: "boolean",
           role: "switch",
           read: true,
@@ -119,7 +119,7 @@ async function ensureBaseStates(adapter, config) {
   }
   await adapter.setForeignStateAsync(
     `${config.dpRoot}.speechTemplate`,
-    config.speechTemplate || "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.",
+    config.speechTemplate || "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}.",
     true
   );
   await ensureFlightStates(adapter, `${config.dpRoot}.current`);
@@ -231,7 +231,7 @@ function trackDirectionText(degRaw) {
     return "";
   }
   const normalized = (deg % 360 + 360) % 360;
-  const dirs = ["\u2191 Norden", "\u2197 Nordost", "\u2192 Osten", "\u2198 S\xFCdost", "\u2193 S\xFCden", "\u2199 S\xFCdwest", "\u2190 Westen", "\u2196 Nordwest"];
+  const dirs = ["\u2191 North", "\u2197 Northeast", "\u2192 East", "\u2198 Southeast", "\u2193 South", "\u2199 Southwest", "\u2190 West", "\u2196 Northwest"];
   const index = Math.round(normalized / 45) % 8;
   return dirs[index];
 }
@@ -536,13 +536,13 @@ function airportLabel(name, iata) {
 function modeVisTextFromFlight(a, originDisplayName, destDisplayName) {
   const mode = String(a.mode || "").toUpperCase();
   if (mode === "TAKEOFF") {
-    return `\u{1F6EB} Start ${originDisplayName !== "\u2014" ? originDisplayName : ""}`.trim();
+    return `\u{1F6EB} Takeoff ${originDisplayName !== "\u2014" ? originDisplayName : ""}`.trim();
   }
   if (mode === "LANDING") {
-    return `\u{1F6EC} Landung ${destDisplayName !== "\u2014" ? destDisplayName : ""}`.trim();
+    return `\u{1F6EC} Landing ${destDisplayName !== "\u2014" ? destDisplayName : ""}`.trim();
   }
   if (mode === "OVERFLIGHT") {
-    return "\u{1F6E9}\uFE0F \xDCberflug";
+    return "\u{1F6E9}\uFE0F Overflight";
   }
   return "\u2708\uFE0F Flight";
 }
@@ -551,7 +551,7 @@ function windowPositionInfo(a) {
   const diff = Number(a.windowDiffDeg || 0);
   if (!bearing && !diff) {
     return {
-      text: "\u2197\uFE0F Position unbekannt",
+      text: "\u2197\uFE0F Position unknown",
       className: "side",
       speechText: "am Fenster"
     };
@@ -771,7 +771,7 @@ async function maybeTriggerSpeech(adapter, base, a, speechText) {
 }
 async function buildSpeechTextForWrite(adapter, base, a, display) {
   const root = base.split(".").slice(0, -1).join(".");
-  let template = "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.";
+  let template = "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}.";
   try {
     const st = await adapter.getForeignStateAsync(`${root}.speechTemplate`);
     if (st == null ? void 0 : st.val) {
@@ -840,9 +840,9 @@ function buildMessage(a) {
   lines.push("\u2708\uFE0F JetFrame");
   lines.push("");
   lines.push(`${a.icon || "\u2708\uFE0F"} ${modeText(a.mode || "")}`);
-  lines.push(`Flug: ${a.callsign || a.hex || "unbekannt"}`);
+  lines.push(`Flight: ${a.callsign || a.hex || "unknown"}`);
   if (routeCallsign) {
-    lines.push(`Route \xFCber: ${routeCallsign}`);
+    lines.push(`Route via: ${routeCallsign}`);
   }
   if (a.airlineName) {
     lines.push(`Airline: ${a.airlineName}`);
@@ -854,42 +854,42 @@ function buildMessage(a) {
   } else if (a.routeWarning) {
     lines.push(`Route: ${a.routeWarning}`);
   } else if (a.directionText) {
-    lines.push(`Richtung: ${a.directionText}`);
+    lines.push(`Direction: ${a.directionText}`);
   }
   if (a.routeSource) {
-    lines.push(`Quelle: ${a.routeSource}`);
+    lines.push(`Source: ${a.routeSource}`);
   }
   if (a.aircraftModel) {
-    lines.push(`Flugzeug: ${a.aircraftModel}`);
+    lines.push(`Aircraft: ${a.aircraftModel}`);
   } else if (a.aircraftType || a.type) {
-    lines.push(`Typ: ${a.aircraftType || a.type}`);
+    lines.push(`Type: ${a.aircraftType || a.type}`);
   }
   if (a.registration) {
-    lines.push(`Kennz.: ${a.registration}`);
+    lines.push(`Reg.: ${a.registration}`);
   }
   lines.push("");
-  lines.push(`H\xF6he: ${Math.round(a.altFt || 0)} ft`);
+  lines.push(`Altitude: ${Math.round(a.altFt || 0)} ft`);
   lines.push(`Speed: ${Math.round(a.speedKt || 0)} kt`);
-  lines.push(`Steigrate: ${Math.round(a.verticalRate || 0)} ft/min`);
-  lines.push(`Kurs: ${Math.round(a.trackDeg || 0)}\xB0`);
+  lines.push(`Climb rate: ${Math.round(a.verticalRate || 0)} ft/min`);
+  lines.push(`Heading: ${Math.round(a.trackDeg || 0)}\xB0`);
   const specialDisplayText = a.specialLiveryVisText || a.specialLiveryFull || a.specialText || "";
   if (specialDisplayText) {
     lines.push("");
-    lines.push(`${a.isSpecial ? "\u2B50 Besonderheit: " : "\u2139\uFE0F Info: "}${specialDisplayText}`);
+    lines.push(`${a.isSpecial ? "\u2B50 Special: " : "\u2139\uFE0F Info: "}${specialDisplayText}`);
   }
   return lines.join("\n");
 }
 function modeText(mode) {
   if (mode === "LANDING") {
-    return "Landung";
+    return "Landing";
   }
   if (mode === "TAKEOFF") {
-    return "Start";
+    return "Takeoff";
   }
   if (mode === "OVERFLIGHT") {
-    return "\xDCberflug";
+    return "Overflight";
   }
-  return "Flug";
+  return "Flight";
 }
 async function ensureStates(adapter, config) {
   await ensureBaseStates(adapter, config);

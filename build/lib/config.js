@@ -29,6 +29,10 @@ function cfgNum(native, key, def) {
   const n = Number(native[key]);
   return Number.isFinite(n) ? n : def;
 }
+function cfgNumClamped(native, key, def, min, max) {
+  const n = cfgNum(native, key, def);
+  return Math.max(min, Math.min(n, max));
+}
 function cfgBool(native, key, def) {
   const v = native[key];
   if (v === true || v === "true") {
@@ -55,9 +59,9 @@ function readConfig(adapter) {
     radiusNm: cfgNum(native, "radiusNm", 15),
     adsbCustomUrl: cfgStr(native, "adsbCustomUrl", ""),
     maxHomeDistanceNm: cfgNum(native, "maxHomeDistanceNm", 3.5),
-    searchPollSeconds: cfgNum(native, "searchPollSeconds", 20),
-    livePollSeconds: cfgNum(native, "livePollSeconds", 5),
-    liveMaxSeconds: cfgNum(native, "liveMaxSeconds", 120),
+    searchPollSeconds: cfgNumClamped(native, "searchPollSeconds", 20, 5, 3600),
+    livePollSeconds: cfgNumClamped(native, "livePollSeconds", 5, 2, 3600),
+    liveMaxSeconds: cfgNumClamped(native, "liveMaxSeconds", 120, 10, 3600),
     windowBearingDeg: cfgNum(native, "windowBearingDeg", 184),
     windowFovDeg: cfgNum(native, "windowFovDeg", 120),
     minAltitudeFt: cfgNum(native, "minAltitudeFt", 1e3),

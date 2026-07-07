@@ -54,7 +54,7 @@ class Jetframe extends utils.Adapter {
     this.on("stateChange", this.onStateChange.bind(this));
   }
   async onReady() {
-    this.log.info("JetFrame Adapter gestartet");
+    this.log.info("JetFrame adapter started");
     await (0, import_staticFiles.copyStaticFiles)(this);
     try {
       const config = (0, import_config.readConfig)(this);
@@ -70,17 +70,17 @@ class Jetframe extends utils.Adapter {
       await (0, import_visConfig.writeVisConfig)(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
       this.log.debug("[JetFrame] Images OK");
       (0, import_airports.updateAirportJson)(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch((e) => {
-        this.logWarn(`Airport DB Update Fehler: ${this.errorText(e)}`);
+        this.logWarn(`Airport DB update error: ${this.errorText(e)}`);
       });
       (0, import_specialLiveries.updateSpecialLiveries)(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch((e) => {
-        this.logWarn(`Special-Liveries DB Update Fehler: ${this.errorText(e)}`);
+        this.logWarn(`Special liveries DB update error: ${this.errorText(e)}`);
       });
       this.log.debug("[JetFrame] Starte Loop");
       this.loop().catch((e) => {
-        this.logError(`Loop Start Fehler: ${this.errorText(e)}`);
+        this.logError(`Loop start error: ${this.errorText(e)}`);
       });
     } catch (e) {
-      this.logError(`onReady Fehler: ${this.errorText(e)}`);
+      this.logError(`onReady error: ${this.errorText(e)}`);
     }
   }
   async onStateChange(id, state) {
@@ -94,9 +94,9 @@ class Jetframe extends utils.Adapter {
     try {
       await (0, import_images.clearImageCache)(this, this.logDebug.bind(this), this.logWarn.bind(this));
       await this.setForeignStateAsync(`${config.dpRoot}.clearImageCache`, false, true);
-      this.log.info("JetFrame Bild-/Logo-Cache wurde geleert");
+      this.log.info("JetFrame image/logo cache was cleared");
     } catch (e) {
-      this.logWarn(`Cache leeren fehlgeschlagen: ${this.errorText(e)}`);
+      this.logWarn(`Clearing cache failed: ${this.errorText(e)}`);
       await this.setForeignStateAsync(`${config.dpRoot}.clearImageCache`, false, true);
     }
   }
@@ -114,7 +114,7 @@ class Jetframe extends utils.Adapter {
         native: {}
       });
     } catch (e) {
-      this.logWarn(`idleRunwayText State konnte nicht erstellt werden: ${this.errorText(e)}`);
+      this.logWarn(`idleRunwayText state could not be created: ${this.errorText(e)}`);
     }
   }
   async updateIdleRunway(a, config) {
@@ -162,11 +162,11 @@ class Jetframe extends utils.Adapter {
     }
     let runway = "";
     if (bestName && bestDiff <= 35) {
-      runway = `RWY ${bestGroup || bestName} aktiv`;
+      runway = `RWY ${bestGroup || bestName} active`;
     } else {
-      runway = `Aktive Richtung ${Math.round(track)}\xB0`;
+      runway = `Active heading ${Math.round(track)}\xB0`;
     }
-    const mode = a.mode === "LANDING" ? "Landungen" : a.mode === "TAKEOFF" ? "Starts" : "Traffic";
+    const mode = a.mode === "LANDING" ? "Landings" : a.mode === "TAKEOFF" ? "Departures" : "Traffic";
     const text = `${runway} \xB7 ${mode}`;
     if (text === this.lastIdleRunwayText) {
       return;
@@ -206,7 +206,7 @@ class Jetframe extends utils.Adapter {
         await this.setForeignStateAsync(id, type === "number" ? 0 : type === "boolean" ? false : "", true);
       }
     } catch (e) {
-      this.logWarn(`State konnte nicht erstellt/initialisiert werden: ${id} | ${this.errorText(e)}`);
+      this.logWarn(`State could not be created/initialized: ${id} | ${this.errorText(e)}`);
     }
   }
   async applyProbableRunway(a, config) {
@@ -263,7 +263,7 @@ class Jetframe extends utils.Adapter {
       return;
     }
     const modeIcon = a.mode === "LANDING" ? "\u{1F6EC}" : a.mode === "TAKEOFF" ? "\u{1F6EB}" : "\u{1F4E1}";
-    const modeText = a.mode === "LANDING" ? "Landung" : a.mode === "TAKEOFF" ? "Start" : "Traffic";
+    const modeText = a.mode === "LANDING" ? "Landing" : a.mode === "TAKEOFF" ? "Takeoff" : "Traffic";
     const confidence = Math.max(0, Math.min(100, Math.round(100 - bestDiff / 35 * 100)));
     a.probableRunway = bestGroup || bestName;
     a.probableRunwayHeading = Math.round(bestHeading);
@@ -627,7 +627,7 @@ class Jetframe extends utils.Adapter {
     await this.setForeignStateAsync(`${yesterdayBase}.overflights`, overflights, true);
     await this.setForeignStateAsync(
       `${yesterdayBase}.bestSpotterHour`,
-      bestHour.hour ? `${bestHour.hour} \xB7 ${bestHour.total} Fl\xFCge` : "",
+      bestHour.hour ? `${bestHour.hour} \xB7 ${bestHour.total} flights` : "",
       true
     );
     await this.setForeignStateAsync(`${yesterdayBase}.bestHourFlights`, bestHour.total, true);
@@ -661,12 +661,12 @@ class Jetframe extends utils.Adapter {
     };
     const limitedHistory = [entry, ...history.filter((item) => this.clean(item == null ? void 0 : item.date) !== storedDate)].slice(0, 365);
     const historyText = limitedHistory.slice(0, 14).map((item) => {
-      const best = item.bestHour ? ` \xB7 beste Zeit ${item.bestHour}` : "";
+      const best = item.bestHour ? ` \xB7 best time ${item.bestHour}` : "";
       const special = Number(item.specialLiveryCount || 0) > 0 ? ` \xB7 \u2B50 ${item.specialLiveryCount}` : "";
       const heavy = Number(item.heavyAircraftCount || 0) > 0 ? ` \xB7 Heavy ${item.heavyAircraftCount}` : "";
       const a380 = Number(item.a380Count || 0) > 0 ? ` \xB7 A380 ${item.a380Count}` : "";
       const b747 = Number(item.b747Count || 0) > 0 ? ` \xB7 B747 ${item.b747Count}` : "";
-      return `${item.date}: ${item.totalFlights} Fl\xFCge${best}${heavy}${a380}${b747}${special}`;
+      return `${item.date}: ${item.totalFlights} flights${best}${heavy}${a380}${b747}${special}`;
     }).join("\n");
     await this.setForeignStateAsync(historyId, JSON.stringify(limitedHistory), true);
     await this.setForeignStateAsync(`${base}.history.dailyText`, historyText, true);
@@ -753,7 +753,7 @@ class Jetframe extends utils.Adapter {
       aircraftTypeSorted.length ? `${aircraftTypeSorted[0][0]} \xB7 ${aircraftTypeSorted[0][1]}` : "",
       true
     );
-    this.log.info(`[JetFrame] Tagesstatistik archiviert: ${storedDate} \xB7 ${totalFlights} Fl\xFCge`);
+    this.log.info(`[JetFrame] Daily statistics archived: ${storedDate} \xB7 ${totalFlights} flights`);
   }
   todayDateKey() {
     const d = /* @__PURE__ */ new Date();
@@ -845,12 +845,12 @@ class Jetframe extends utils.Adapter {
     const currentHourTotal = ((_a = hourly[hour]) == null ? void 0 : _a.total) || 0;
     const avgActive = activeEntries.length > 0 ? activeEntries.reduce((sum, [, v]) => sum + v.total, 0) / activeEntries.length : 0;
     const rushHourNow = currentHourTotal >= 5 && currentHourTotal >= Math.max(3, Math.ceil(avgActive * 1.35));
-    const rushHourText = rushHourNow ? `\u{1F525} Rushhour: ${currentHourTotal} Fl\xFCge seit ${hour}:00` : currentHourTotal > 0 ? `Aktuelle Stunde: ${currentHourTotal} Fl\xFCge` : "";
+    const rushHourText = rushHourNow ? `\u{1F525} Rush hour: ${currentHourTotal} flights since ${hour}:00` : currentHourTotal > 0 ? `Current hour: ${currentHourTotal} flights` : "";
     await this.setForeignStateAsync(`${todayBase}.hourly`, JSON.stringify(hourly), true);
     await this.setForeignStateAsync(`${todayBase}.hourlyText`, hourlyText, true);
     await this.setForeignStateAsync(
       `${todayBase}.bestSpotterHour`,
-      best ? `${best[0]}:00 \xB7 ${best[1].total} Fl\xFCge` : "",
+      best ? `${best[0]}:00 \xB7 ${best[1].total} flights` : "",
       true
     );
     await this.setForeignStateAsync(`${todayBase}.currentHourFlights`, currentHourTotal, true);
@@ -1036,14 +1036,14 @@ class Jetframe extends utils.Adapter {
         await this.searchLoop();
       }
     } catch (e) {
-      this.logError(`JetFrame Fehler: ${this.errorText(e)}`);
+      this.logError(`JetFrame error: ${this.errorText(e)}`);
       const config = (0, import_config.readConfig)(this);
       this.scheduleNext(config.searchPollSeconds);
     }
   }
   async searchLoop() {
     const config = (0, import_config.readConfig)(this);
-    this.log.debug("Search Loop gestartet");
+    this.log.debug("Search loop started");
     await this.setForeignStateAsync(`${config.dpRoot}.status`, "searching", true);
     const data = await (0, import_adsb.fetchAdsb)(
       config,
@@ -1059,14 +1059,14 @@ class Jetframe extends utils.Adapter {
     if (matches.length) {
       await this.updateIdleRunway(matches[0], config);
     }
-    this.log.debug(`Matches gefunden: ${matches.length}`);
+    this.log.debug(`Matches found: ${matches.length}`);
     await this.setForeignStateAsync(`${config.dpRoot}.lastUpdate`, (/* @__PURE__ */ new Date()).toISOString(), true);
     await this.setForeignStateAsync(`${config.dpRoot}.allCount`, aircraft.length, true);
     await this.setForeignStateAsync(`${config.dpRoot}.matchCount`, matches.length, true);
     if (!matches.length) {
       await this.setForeignStateAsync(
         `${config.dpRoot}.current.text`,
-        `Kein Start/Landung/\xDCberflug bei ${config.airport.iata}`,
+        `No takeoff/landing/overflight near ${config.airport.iata}`,
         true
       );
       this.scheduleNext(config.searchPollSeconds);
@@ -1095,7 +1095,7 @@ class Jetframe extends utils.Adapter {
     const live = this.findCurrentLive(matches, this.liveTarget);
     const bestNow = matches[0];
     if (bestNow && !live && this.isDifferentAircraft(bestNow, this.liveTarget)) {
-      this.log.info(`Neues Flugzeug erkannt, schalte um: ${bestNow.callsign || bestNow.hex}`);
+      this.log.info(`New aircraft detected, switching: ${bestNow.callsign || bestNow.hex}`);
       await this.startNewFlight(bestNow);
       return;
     }
@@ -1111,7 +1111,7 @@ class Jetframe extends utils.Adapter {
     if (!live) {
       this.liveTarget = null;
       this.liveStarted = 0;
-      this.log.info("Live Flug verloren");
+      this.log.info("Live flight lost");
       await (0, import_states.clearFlight)(this, `${config.dpRoot}.current`);
       await this.setForeignStateAsync(`${config.dpRoot}.status`, "lost", true);
       this.scheduleNext(config.searchPollSeconds);
@@ -1183,9 +1183,9 @@ class Jetframe extends utils.Adapter {
       a.specialLiveryFull = description || title;
       a.specialLiveryVisText = `${emoji} ${title}`;
       a.specialText = `${emoji} ${title}${airline ? ` \xB7 ${airline}` : ""}`;
-      this.log.info(`Special Livery erkannt: ${reg} \xB7 ${title}`);
+      this.log.info(`Special livery detected: ${reg} \xB7 ${title}`);
     } catch (e) {
-      this.logWarn(`Special-Livery Match Fehler: ${this.errorText(e)}`);
+      this.logWarn(`Special livery match error: ${this.errorText(e)}`);
     }
   }
   async startNewFlight(rawMatch) {
@@ -1193,13 +1193,13 @@ class Jetframe extends utils.Adapter {
     const startKey = this.flightKey(rawMatch);
     const now = Date.now();
     if (startKey && startKey === this.lastStartKey && now - this.lastStartTs < 15e3) {
-      this.log.debug(`Gleicher Flug wurde gerade erst gestartet \u2192 ignoriere: ${startKey}`);
+      this.log.debug(`Same flight was just started \u2192 ignoring: ${startKey}`);
       this.scheduleNext(config.livePollSeconds);
       return;
     }
     this.lastStartKey = startKey;
     this.lastStartTs = now;
-    this.log.debug(`Starte neuen Flug: ${rawMatch.callsign || rawMatch.hex}`);
+    this.log.debug(`Starting new flight: ${rawMatch.callsign || rawMatch.hex}`);
     const best = await (0, import_flightInfo.enrichFlightInfo)(
       this,
       config,
@@ -1212,7 +1212,7 @@ class Jetframe extends utils.Adapter {
     await this.applySpecialLivery(best, config.dpRoot);
     await this.applyProbableRunway(best, config);
     this.log.info(
-      `Neuer Flug: callsign=${best.callsign || ""} route=${best.originIata || "?"} \u2192 ${best.destIata || "?"} | ${best.originName || "?"} \u2192 ${best.destName || "?"}${best.probableRunwayText ? ` | ${best.probableRunwayText}` : ""}`
+      `New flight: callsign=${best.callsign || ""} route=${best.originIata || "?"} \u2192 ${best.destIata || "?"} | ${best.originName || "?"} \u2192 ${best.destName || "?"}${best.probableRunwayText ? ` | ${best.probableRunwayText}` : ""}`
     );
     await this.updateStatistics(config.dpRoot, best);
     this.liveTarget = {
@@ -1296,7 +1296,7 @@ class Jetframe extends utils.Adapter {
     }
     this.statisticsTimer = this.setInterval(() => {
       this.resetTodayStatisticsIfNeeded(`${dpRoot}.statistics`).catch((e) => {
-        this.logWarn(`Tagesstatistik-Rotation fehlgeschlagen: ${this.errorText(e)}`);
+        this.logWarn(`Daily statistics rotation failed: ${this.errorText(e)}`);
       });
     }, 6e4);
   }
@@ -1342,7 +1342,7 @@ class Jetframe extends utils.Adapter {
     if (typeof res === "string") {
       const text = res.trim();
       if (text.startsWith("<")) {
-        throw new Error("HTML statt JSON erhalten");
+        throw new Error("Received HTML instead of JSON");
       }
       return JSON.parse(text);
     }
@@ -1393,25 +1393,6 @@ class Jetframe extends utils.Adapter {
       });
     });
   }
-  async ensureMetaObject() {
-    const id = `${this.namespace}.meta`;
-    try {
-      const obj = await this.getObjectAsync(id);
-      if (!obj) {
-        await this.setObjectAsync(id, {
-          type: "meta",
-          common: {
-            name: "JetFrame Files",
-            type: "meta.user"
-          },
-          native: {}
-        });
-        this.log.info("Meta-Objekt f\xFCr Dateien erstellt");
-      }
-    } catch (e) {
-      this.log.error(`Meta-Objekt Fehler: ${this.errorText(e)}`);
-    }
-  }
   logDebug(msg) {
     this.log.debug(`[JetFrame] ${msg}`);
   }
@@ -1435,7 +1416,7 @@ class Jetframe extends utils.Adapter {
   }
   errorText(e) {
     if (!e) {
-      return "unbekannter Fehler";
+      return "unknown error";
     }
     if (typeof e === "string") {
       return e;

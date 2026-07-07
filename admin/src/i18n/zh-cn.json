@@ -1,7 +1,5 @@
 {
 	"jetframe adapter settings": "jetframe的适配器设置",
-	"option1": "选项1",
-	"option2": "选项2",
 	"speechMode": "语音输出",
 	"speechModeBrowser": "浏览器内部",
 	"speechModeExternal": "通过数据点外部输出",

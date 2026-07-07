@@ -1,7 +1,5 @@
 {
 	"jetframe adapter settings": "Настройки адаптера для jetframe",
-	"option1": "вариант 1",
-	"option2": "вариант 2",
 	"speechMode": "Голосовой вывод",
 	"speechModeBrowser": "Внутри браузера",
 	"speechModeExternal": "Внешний через точку данных",

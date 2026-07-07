@@ -4,6 +4,7 @@ import type { Aircraft, JetFrameConfig } from './types';
 export type HttpJsonRaw = (url: string) => Promise<unknown>;
 
 const ADSB_ERROR_STATE: Record<string, { count: number; lastWarn: number }> = {};
+const ADSB_ERROR_STATE_MAX_KEYS = 20;
 
 function clean(v: unknown): string {
 	if (v === null || v === undefined) {
@@ -80,7 +81,7 @@ export async function fetchAdsb(
 			const maxAttempts = source.name === 'adsb.lol' ? 1 : 2;
 
 			if (source.name !== 'adsb.lol') {
-				logDebug?.(`ADSB adsb.lol fehlgeschlagen – versuche ${source.name} Fallback`);
+				logDebug?.(`ADSB adsb.lol failed – trying ${source.name} fallback`);
 			}
 
 			for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -89,10 +90,10 @@ export async function fetchAdsb(
 					usedSource = source.name;
 
 					if (source.name !== 'adsb.lol') {
-						logDebug?.(`ADSB Fallback aktiv: ${source.name}`);
+						logDebug?.(`ADSB fallback active: ${source.name}`);
 					}
 
-					logDebug?.(`ADSB Quelle: ${source.name}`);
+					logDebug?.(`ADSB source: ${source.name}`);
 
 					break;
 				} catch (e) {
@@ -101,7 +102,7 @@ export async function fetchAdsb(
 						errText.includes('HTTP 502') ||
 						errText.includes('HTTP 503') ||
 						errText.toLowerCase().includes('timeout') ||
-						errText.includes('HTML statt JSON');
+						errText.includes('Received HTML instead of JSON');
 
 					const key = `${source.name}:${source.url}`;
 					const now = Date.now();
@@ -111,15 +112,24 @@ export async function fetchAdsb(
 
 					if (!isSoftAdsbError || now - st.lastWarn > 300000) {
 						if (isSoftAdsbError) {
-							logDebug?.(`ADSB ${source.name} temporär nicht erreichbar (${errText})`);
+							logDebug?.(`ADSB ${source.name} temporarily unreachable (${errText})`);
 						} else {
-							logDebug?.(`ADSB ${source.name} Fehler Versuch ${attempt}: ${errText}`);
+							logDebug?.(`ADSB ${source.name} error attempt ${attempt}: ${errText}`);
 						}
 
 						st.lastWarn = now;
 					}
 
 					ADSB_ERROR_STATE[key] = st;
+
+					// Defensive bound: this map is normally tiny (one entry per
+					// configured ADS-B source), but reset it if it ever grows
+					// unexpectedly large instead of retaining entries forever.
+					if (Object.keys(ADSB_ERROR_STATE).length > ADSB_ERROR_STATE_MAX_KEYS) {
+						for (const k of Object.keys(ADSB_ERROR_STATE)) {
+							delete ADSB_ERROR_STATE[k];
+						}
+					}
 
 					if (attempt < maxAttempts) {
 						await delayFn(1500);
@@ -137,7 +147,7 @@ export async function fetchAdsb(
 		}
 
 		if (usedSource) {
-			logDebug?.(`ADSB Daten empfangen über ${usedSource}`);
+			logDebug?.(`ADSB data received via ${usedSource}`);
 		}
 
 		const arr = Array.isArray(body?.aircraft) ? body.aircraft : Array.isArray(body?.ac) ? body.ac : [];
@@ -281,7 +291,7 @@ export function parseAircraft(body: any): Aircraft[] {
 
 function errorText(e: unknown): string {
 	if (!e) {
-		return 'unbekannter Fehler';
+		return 'unknown error';
 	}
 	if (typeof e === 'string') {
 		return e;

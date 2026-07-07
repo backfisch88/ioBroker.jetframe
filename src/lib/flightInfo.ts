@@ -63,7 +63,7 @@ export async function enrichFlightInfo(
 				parsed.airlineIcao || guessAirlineIcao(operationalCallsign),
 				parsed.airlineIata || '',
 			);
-			logDebug(`HexDB Airline bevorzugt: ${parsed.airlineName}`);
+			logDebug(`HexDB airline preferred: ${parsed.airlineName}`);
 		}
 
 		const regForRoute = parsed.registration || a.registration;
@@ -106,12 +106,12 @@ export async function enrichFlightInfo(
 					? 'flightera-live-route-conflict-hexdb+airportjson'
 					: 'hexdb-route-verified-conflict+airportjson';
 			} else if (hexRoute?.originIata && hexRoute?.destIata) {
-				parsed.routeWarning = flighteraRoute ? 'HexDB + Flightera geprüft' : 'HexDB Route';
+				parsed.routeWarning = flighteraRoute ? 'HexDB + Flightera verified' : 'HexDB route';
 				parsed.routeSource = flighteraRoute
 					? 'hexdb-route+flightera-check+airportjson'
 					: 'hexdb-route+airportjson';
 			} else {
-				parsed.routeWarning = flighteraRoute?.isLive ? 'Live-Flug erkannt' : '';
+				parsed.routeWarning = flighteraRoute?.isLive ? 'Live flight detected' : '';
 				parsed.routeSource = flighteraRoute?.isLive
 					? 'flightera-plane-live-route+airportjson'
 					: 'flightera-plane-callsign-route+airportjson';
@@ -209,7 +209,7 @@ export async function enrichFlightInfo(
 			...specialInfo,
 		};
 	} catch (e) {
-		logWarn(`FlightInfo Fehler: ${errorText(e)}`);
+		logWarn(`FlightInfo error: ${errorText(e)}`);
 
 		return {
 			...a,
@@ -236,12 +236,12 @@ async function resolveAirlineViaHexDb(
 	const cached = hexdbAirlineCache[cleanHex];
 
 	if (cached && now - cached.ts < CACHE.hexdbAirlineMs) {
-		logDebug(`HexDB Airline Cache hit: ${cleanHex}`);
+		logDebug(`HexDB airline cache hit: ${cleanHex}`);
 		return cached.data || null;
 	}
 
 	try {
-		logDebug(`HexDB Airline Anfrage: ${cleanHex}`);
+		logDebug(`HexDB airline request: ${cleanHex}`);
 
 		const data = await httpText(`https://hexdb.io/hex-airline?hex=${encodeURIComponent(cleanHex)}`);
 
@@ -270,7 +270,7 @@ async function resolveAirlineViaHexDb(
 			data: null,
 		};
 
-		logDebug(`HexDB Airline nicht nutzbar: ${errorText(e)}`);
+		logDebug(`HexDB airline not usable: ${errorText(e)}`);
 		return null;
 	}
 }
@@ -296,7 +296,7 @@ async function loadAdsbdbByCallsign(
 	const cs = clean(callsign).toUpperCase();
 
 	if (!cs || cs.length < 3) {
-		logDebug('ADSBDB übersprungen: ungültiger Callsign');
+		logDebug('ADSBDB skipped: invalid callsign');
 		return null;
 	}
 
@@ -304,12 +304,12 @@ async function loadAdsbdbByCallsign(
 	const cached = adsbdbCallsignCache[cs];
 
 	if (cached && now - cached.ts < CACHE.adsbdbMs) {
-		logDebug(`ADSBDB Cache hit: ${cs}`);
+		logDebug(`ADSBDB cache hit: ${cs}`);
 		return cached.data || null;
 	}
 
 	try {
-		logDebug(`ADSBDB Anfrage EINMALIG: ${cs}`);
+		logDebug(`ADSBDB request ONCE: ${cs}`);
 
 		const data = await httpJson(`https://api.adsbdb.com/v0/callsign/${encodeURIComponent(cs)}`);
 
@@ -325,7 +325,7 @@ async function loadAdsbdbByCallsign(
 			data: null,
 		};
 
-		logWarn(`ADSBDB Fehler gecached für ${cs}: ${errorText(e)}`);
+		logWarn(`ADSBDB error cached for ${cs}: ${errorText(e)}`);
 		return null;
 	}
 }
@@ -462,14 +462,14 @@ async function resolveRouteViaHexDb(
 	const cached = hexdbRouteCache[op];
 
 	if (cached && now - cached.ts < CACHE.hexdbRouteMs) {
-		logDebug(`HexDB Route Cache hit: ${op}`);
+		logDebug(`HexDB route cache hit: ${op}`);
 		return cached.data || null;
 	}
 
 	try {
 		const url = `https://hexdb.io/api/v1/route/icao/${encodeURIComponent(op)}`;
 
-		logDebug(`HexDB Route Anfrage: ${op} → ${url}`);
+		logDebug(`HexDB route request: ${op} → ${url}`);
 
 		const data = await httpJson(url);
 
@@ -479,7 +479,7 @@ async function resolveRouteViaHexDb(
 				data: null,
 			};
 
-			logDebug(`HexDB Route nicht gefunden: ${op}`);
+			logDebug(`HexDB route not found: ${op}`);
 			return null;
 		}
 
@@ -516,7 +516,7 @@ async function resolveRouteViaHexDb(
 				data: null,
 			};
 
-			logDebug(`HexDB Route ohne IATA-Mapping: ${originIcao}-${destIcao}`);
+			logDebug(`HexDB route without IATA mapping: ${originIcao}-${destIcao}`);
 			return null;
 		}
 
@@ -532,7 +532,7 @@ async function resolveRouteViaHexDb(
 			data: result,
 		};
 
-		logDebug(`HexDB Route parsed: ${op} | ${originIata} → ${destIata}`);
+		logDebug(`HexDB route parsed: ${op} | ${originIata} → ${destIata}`);
 
 		return result;
 	} catch (e) {
@@ -541,7 +541,7 @@ async function resolveRouteViaHexDb(
 			data: null,
 		};
 
-		logDebug(`HexDB Route Fehler für ${op}: ${errorText(e)}`);
+		logDebug(`HexDB route error for ${op}: ${errorText(e)}`);
 		return null;
 	}
 }
@@ -650,7 +650,7 @@ async function resolveRouteViaFlighteraPlane(
 	const cached = flighteraPlaneRouteCache[cacheKey];
 
 	if (cached && now - cached.ts < CACHE.flighteraMs) {
-		logDebug(`Flightera Plane Cache hit: ${cacheKey}`);
+		logDebug(`Flightera plane cache hit: ${cacheKey}`);
 		return cached.data || null;
 	}
 
@@ -661,7 +661,7 @@ async function resolveRouteViaFlighteraPlane(
 
 	for (const url of urls) {
 		try {
-			logDebug(`Flightera Plane Anfrage EINMALIG: ${cacheKey} → ${url}`);
+			logDebug(`Flightera plane request ONCE: ${cacheKey} → ${url}`);
 
 			const htmlRaw = await httpText(url);
 			const html = normalizeHtml(htmlRaw);
@@ -682,7 +682,7 @@ async function resolveRouteViaFlighteraPlane(
 				return parsed;
 			}
 		} catch (e) {
-			logWarn(`Flightera Plane Fehler für ${cacheKey}: ${errorText(e)}`);
+			logWarn(`Flightera plane error for ${cacheKey}: ${errorText(e)}`);
 		}
 	}
 
@@ -691,7 +691,7 @@ async function resolveRouteViaFlighteraPlane(
 		data: null,
 	};
 
-	logDebug(`Flightera Plane keine Route gefunden für ${cacheKey}`);
+	logDebug(`Flightera plane: no route found for ${cacheKey}`);
 	return null;
 }
 
@@ -718,7 +718,7 @@ function parseFlighteraPlaneRoute(
 		};
 	}
 
-	logDebug('[Flightera] Keine passende Live/Callsign-Zeile → Route verworfen.');
+	logDebug('[Flightera] No matching live/callsign row → route discarded.');
 	return null;
 }
 
@@ -768,7 +768,7 @@ function extractFlighteraRowsStrict(
 
 		addBlock(fullText.substring(start, end), 'op-live-scope', opIndex);
 	} else {
-		logDebug(`Flightera op-live-scope: Operational Callsign nicht gefunden: ${op}`);
+		logDebug(`Flightera op-live-scope: operational callsign not found: ${op}`);
 	}
 
 	const iataLike = operationalToLikelyIataCallsign(op);
@@ -1016,7 +1016,7 @@ function pickBestFlighteraRow(
 		return scoreAndSort(exact, 10000);
 	}
 
-	logDebug(`Flightera: keine passende Live/Callsign-Zeile für ${op}`);
+	logDebug(`Flightera: no matching live/callsign row for ${op}`);
 	return null;
 }
 
@@ -1081,14 +1081,14 @@ async function resolveRouteViaFr24Live(
 	const cached = fr24LiveRouteCache[op];
 
 	if (cached && now - cached.ts < CACHE.fr24LiveMs) {
-		logDebug(`FR24 Live Cache hit: ${op}`);
+		logDebug(`FR24 live cache hit: ${op}`);
 		return cached.data || null;
 	}
 
 	const url = `https://www.flightradar24.com/${encodeURIComponent(op)}`;
 
 	try {
-		logDebug(`FR24 Live Anfrage EINMALIG: ${op} → ${url}`);
+		logDebug(`FR24 live request ONCE: ${op} → ${url}`);
 
 		const htmlRaw = await httpText(url);
 		const html = normalizeHtml(htmlRaw);
@@ -1119,7 +1119,7 @@ async function resolveRouteViaFr24Live(
 			data: null,
 		};
 
-		logWarn(`FR24 Live Fehler gecached für ${op}: ${errorText(e)}`);
+		logWarn(`FR24 live error cached for ${op}: ${errorText(e)}`);
 		return null;
 	}
 }
@@ -1332,14 +1332,14 @@ export async function resolveImageViaFr24Aircraft(
 	const cached = fr24AircraftCache[reg];
 
 	if (cached && now - cached.ts < CACHE.fr24Ms) {
-		logDebug(`FR24 Bild Cache hit: ${reg}`);
+		logDebug(`FR24 image cache hit: ${reg}`);
 		return cached.imageUrl || '';
 	}
 
 	const url = `https://www.flightradar24.com/data/aircraft/${encodeURIComponent(reg)}`;
 
 	try {
-		logDebug(`FR24 Aircraft Bild Anfrage EINMALIG: ${reg} / ${op} → ${url}`);
+		logDebug(`FR24 aircraft image request ONCE: ${reg} / ${op} → ${url}`);
 
 		const htmlRaw = await httpText(url);
 		const html = normalizeHtml(htmlRaw);
@@ -1358,7 +1358,7 @@ export async function resolveImageViaFr24Aircraft(
 			imageUrl: '',
 		};
 
-		logWarn(`FR24 Bild Fehler gecached für ${reg}: ${errorText(e)}`);
+		logWarn(`FR24 image error cached for ${reg}: ${errorText(e)}`);
 		return '';
 	}
 }
@@ -1466,7 +1466,7 @@ async function cityNameFromIata(
 
 		return code;
 	} catch (e) {
-		logWarn(`airportjson Lookup Fehler für ${code}: ${errorText(e)}`);
+		logWarn(`airportjson lookup error for ${code}: ${errorText(e)}`);
 		return code;
 	}
 }
@@ -1494,7 +1494,7 @@ function makeUnknownAirportRoute(mode: string, parsed: ParsedInfo, config: JetFr
 			routeText: `${A} → ?`,
 			routeTextLong: '',
 			routeReliable: false,
-			routeWarning: 'Ziel unbekannt',
+			routeWarning: 'Destination unknown',
 			routeSource: 'no-route',
 		};
 	}
@@ -1509,7 +1509,7 @@ function makeUnknownAirportRoute(mode: string, parsed: ParsedInfo, config: JetFr
 			routeText: `? → ${A}`,
 			routeTextLong: '',
 			routeReliable: false,
-			routeWarning: 'Start unbekannt',
+			routeWarning: 'Origin unknown',
 			routeSource: 'no-route',
 		};
 	}
@@ -1521,7 +1521,7 @@ function makeUnknownAirportRoute(mode: string, parsed: ParsedInfo, config: JetFr
 		routeText: '',
 		routeTextLong: '',
 		routeReliable: false,
-		routeWarning: 'Route unbekannt',
+		routeWarning: 'Route unknown',
 		routeSource: 'no-route',
 	};
 }
@@ -1666,11 +1666,11 @@ function buildSpecialInfo(a: Partial<Aircraft>): Partial<Aircraft> {
 	}
 
 	// --------------------------------------------------
-	// Regierungs-/Militärflug
+	// Government/military flight
 	// --------------------------------------------------
 
 	if (containsAny(callsign, ['GAF', 'GOV', 'BAF', 'NAF', 'RCH', 'IAM'])) {
-		tags.push('Regierungs-/Militärflug');
+		tags.push('Government/military flight');
 		score += 8;
 	}
 
@@ -2001,7 +2001,7 @@ function clean(v: unknown): string {
 
 function errorText(e: unknown): string {
 	if (!e) {
-		return 'unbekannter Fehler';
+		return 'unknown error';
 	}
 	if (typeof e === 'string') {
 		return e;

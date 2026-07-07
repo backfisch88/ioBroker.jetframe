@@ -13,6 +13,17 @@ function cfgNum(native: NativeConfig, key: string, def: number): number {
 	return Number.isFinite(n) ? n : def;
 }
 
+/**
+ * Reads a numeric config value and clamps it into a safe range.
+ * Protects against zero/negative values (which would break setTimeout-based
+ * loops) and against unreasonably large values that would hammer external
+ * APIs or approach the Node.js setTimeout limit.
+ */
+function cfgNumClamped(native: NativeConfig, key: string, def: number, min: number, max: number): number {
+	const n = cfgNum(native, key, def);
+	return Math.max(min, Math.min(n, max));
+}
+
 function cfgBool(native: NativeConfig, key: string, def: boolean): boolean {
 	const v = native[key];
 
@@ -50,9 +61,9 @@ export function readConfig(adapter: AdapterLike): JetFrameConfig {
 		adsbCustomUrl: cfgStr(native, 'adsbCustomUrl', ''),
 		maxHomeDistanceNm: cfgNum(native, 'maxHomeDistanceNm', 3.5),
 
-		searchPollSeconds: cfgNum(native, 'searchPollSeconds', 20),
-		livePollSeconds: cfgNum(native, 'livePollSeconds', 5),
-		liveMaxSeconds: cfgNum(native, 'liveMaxSeconds', 120),
+		searchPollSeconds: cfgNumClamped(native, 'searchPollSeconds', 20, 5, 3600),
+		livePollSeconds: cfgNumClamped(native, 'livePollSeconds', 5, 2, 3600),
+		liveMaxSeconds: cfgNumClamped(native, 'liveMaxSeconds', 120, 10, 3600),
 
 		windowBearingDeg: cfgNum(native, 'windowBearingDeg', 184),
 		windowFovDeg: cfgNum(native, 'windowFovDeg', 120),

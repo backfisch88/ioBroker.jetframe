@@ -1,7 +1,5 @@
 {
 	"jetframe adapter settings": "Configurações do adaptador para jetframe",
-	"option1": "opção1",
-	"option2": "opção2",
 	"speechMode": "Saída de voz",
 	"speechModeBrowser": "Interno do navegador",
 	"speechModeExternal": "Externo via ponto de dados",

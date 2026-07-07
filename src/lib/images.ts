@@ -11,6 +11,52 @@ const IMAGE_CACHE = {
 
 const NEGATIVE_IMAGE_CACHE = new Map<string, number>();
 
+const MAX_CACHED_JET_IMAGES = 300;
+const MAX_CACHED_LOGOS = 500;
+
+/**
+ * Keeps the number of files in a cache directory bounded by evicting the
+ * oldest files (by modification time) once the count exceeds maxFiles.
+ * Without this, the aircraft/airline image cache grows without bound over
+ * the adapter's lifetime, since every newly seen registration/airline gets
+ * a permanently cached image that is never removed.
+ */
+async function enforceCacheLimit(
+	adapter: AdapterLike,
+	dir: string,
+	maxFiles: number,
+	logDebug: (msg: string, level?: number) => void,
+): Promise<void> {
+	try {
+		const files = await adapter.readDirAsync('jetframe.admin', dir);
+		const entries = (files || []).filter((f: any) => f?.file && !f.isDir);
+
+		if (entries.length <= maxFiles) {
+			return;
+		}
+
+		entries.sort((a: any, b: any) => {
+			const ta = new Date(a.modifiedAt || a.stats?.mtime || 0).getTime();
+			const tb = new Date(b.modifiedAt || b.stats?.mtime || 0).getTime();
+			return ta - tb;
+		});
+
+		const toDelete = entries.slice(0, entries.length - maxFiles);
+
+		for (const file of toDelete) {
+			try {
+				await adapter.unlinkAsync('jetframe.admin', `${dir}/${file.file}`);
+			} catch {
+				// ignore single file
+			}
+		}
+
+		logDebug(`Cache limit enforced for ${dir}: removed ${toDelete.length} old file(s), keeping max ${maxFiles}`, 1);
+	} catch {
+		// directory may not exist yet - nothing to enforce
+	}
+}
+
 const NEGATIVE_CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6h
 const NEGATIVE_CACHE_SPECIAL_TTL_MS = 1000 * 60 * 30; // 30min
 
@@ -27,9 +73,9 @@ export async function ensureImageDirs(
 	try {
 		await adapter.writeFileAsync('jetframe.admin', '.keep', Buffer.from(''));
 
-		logDebug('jetframe.admin Datei-Storage bereit');
+		logDebug('jetframe.admin file storage ready');
 	} catch (e) {
-		logWarn(`jetframe.admin Storage Fehler: ${errorText(e)}`);
+		logWarn(`jetframe.admin storage error: ${errorText(e)}`);
 	}
 }
 
@@ -100,11 +146,11 @@ export async function clearImageCache(
 		try {
 			await deleteFolderFiles(adapter, dir, logDebug);
 		} catch (e) {
-			logWarn(`Cache-Ordner konnte nicht geleert werden: ${dir} | ${errorText(e)}`);
+			logWarn(`Cache folder could not be cleared: ${dir} | ${errorText(e)}`);
 		}
 	}
 
-	logDebug('Bild-/Logo-Cache geleert');
+	logDebug('Image/logo cache cleared');
 }
 
 async function deleteFolderFiles(
@@ -124,7 +170,7 @@ async function deleteFolderFiles(
 
 			try {
 				await adapter.unlinkAsync('jetframe.admin', relPath);
-				logDebug(`Cache gelöscht: ${relPath}`);
+				logDebug(`Cache deleted: ${relPath}`);
 			} catch {
 				// ignore single file
 			}
@@ -158,14 +204,14 @@ export async function cacheExternalLogoUrl(
 	if (existing) {
 		if (!MANUFACTURER_CACHE_LOGGED[existing.url]) {
 			MANUFACTURER_CACHE_LOGGED[existing.url] = true;
-			logDebug(`Logo Cache hit: ${existing.url}`);
+			logDebug(`Logo cache hit: ${existing.url}`);
 		}
 
 		return existing.url;
 	}
 
 	try {
-		logDebug(`Logo Download: ${cleanUrl}`);
+		logDebug(`Logo download: ${cleanUrl}`);
 
 		const buffer = await downloadImageBuffer(cleanUrl, false);
 
@@ -177,11 +223,11 @@ export async function cacheExternalLogoUrl(
 
 		const cachedUrl = publicUrl(relPath);
 
-		logDebug(`Logo gespeichert: ${cachedUrl}`);
+		logDebug(`Logo saved: ${cachedUrl}`);
 
 		return cachedUrl;
 	} catch (e) {
-		logWarn(`Logo Download/Speichern Fehler: ${errorText(e)}`);
+		logWarn(`Logo download/save error: ${errorText(e)}`);
 
 		return cleanUrl;
 	}
@@ -209,12 +255,12 @@ async function cacheLogoIfNeeded(
 	const existing = await findExistingImage(adapter, IMAGE_CACHE.logoDir, fileBase);
 
 	if (existing) {
-		logDebug(`Airline Logo Cache hit: ${existing.url}`);
+		logDebug(`Airline logo cache hit: ${existing.url}`);
 		return existing.url;
 	}
 
 	try {
-		logDebug(`Logo Download: ${a.logoUrl}`);
+		logDebug(`Logo download: ${a.logoUrl}`);
 
 		const buffer = await downloadImageBuffer(a.logoUrl, false);
 
@@ -226,11 +272,13 @@ async function cacheLogoIfNeeded(
 
 		const url = publicUrl(relPath);
 
-		logDebug(`Logo gespeichert: ${url}`);
+		logDebug(`Logo saved: ${url}`);
+
+		await enforceCacheLimit(adapter, IMAGE_CACHE.logoDir, MAX_CACHED_LOGOS, logDebug);
 
 		return url;
 	} catch (e) {
-		logWarn(`Logo Download/Speichern Fehler: ${errorText(e)}`);
+		logWarn(`Logo download/save error: ${errorText(e)}`);
 
 		return '';
 	}
@@ -287,7 +335,7 @@ async function cacheJetIfNeeded(
 	const negativeTs = NEGATIVE_IMAGE_CACHE.get(negativeKey);
 
 	if (negativeTs && Date.now() - negativeTs < ttl) {
-		logDebug(`Jet Negativ-Cache hit: ${negativeKey}`);
+		logDebug(`Jet negative-cache hit: ${negativeKey}`);
 
 		return '';
 	}
@@ -295,7 +343,7 @@ async function cacheJetIfNeeded(
 	const existing = await findExistingImage(adapter, IMAGE_CACHE.jetDir, fileBase);
 
 	if (existing) {
-		logDebug(`Aircraft Bild Cache hit: ${existing.url}`);
+		logDebug(`Aircraft image cache hit: ${existing.url}`);
 		return existing.url;
 	}
 
@@ -303,7 +351,7 @@ async function cacheJetIfNeeded(
 
 	if (hexUrl) {
 		try {
-			logDebug(`Jet Bild Download (HexDB): ${hexUrl}`);
+			logDebug(`Jet image download (HexDB): ${hexUrl}`);
 
 			const buffer = await downloadImageBuffer(hexUrl, false);
 
@@ -315,11 +363,13 @@ async function cacheJetIfNeeded(
 
 			const url = publicUrl(relPath);
 
-			logDebug(`Jet gespeichert (HexDB): ${url}`);
+			logDebug(`Jet saved (HexDB): ${url}`);
+
+			await enforceCacheLimit(adapter, IMAGE_CACHE.jetDir, MAX_CACHED_JET_IMAGES, logDebug);
 
 			return url;
 		} catch (e) {
-			logDebug(`Jet Bild HexDB nicht nutzbar: ${errorText(e)}`);
+			logDebug(`Jet image HexDB not usable: ${errorText(e)}`);
 		}
 	}
 
@@ -332,13 +382,13 @@ async function cacheJetIfNeeded(
 	if (!fr24Url) {
 		NEGATIVE_IMAGE_CACHE.set(negativeKey, Date.now());
 
-		logDebug(`Jet Bild negativ gecached: ${negativeKey}`);
+		logDebug(`Jet image negative-cached: ${negativeKey}`);
 
 		return '';
 	}
 
 	try {
-		logDebug(`Jet Bild Download (FR24 Fallback): ${fr24Url}`);
+		logDebug(`Jet image download (FR24 fallback): ${fr24Url}`);
 
 		const buffer = await downloadImageBuffer(fr24Url, true);
 
@@ -350,15 +400,17 @@ async function cacheJetIfNeeded(
 
 		const url = publicUrl(relPath);
 
-		logDebug(`Jet gespeichert (FR24 Fallback): ${url}`);
+		logDebug(`Jet saved (FR24 fallback): ${url}`);
+
+		await enforceCacheLimit(adapter, IMAGE_CACHE.jetDir, MAX_CACHED_JET_IMAGES, logDebug);
 
 		return url;
 	} catch (e) {
-		logWarn(`FR24 Bild Download/Speichern Fehler: ${errorText(e)}`);
+		logWarn(`FR24 image download/save error: ${errorText(e)}`);
 
 		NEGATIVE_IMAGE_CACHE.set(negativeKey, Date.now());
 
-		logDebug(`Jet Bild negativ gecached: ${negativeKey}`);
+		logDebug(`Jet image negative-cached: ${negativeKey}`);
 
 		return '';
 	}
@@ -406,7 +458,7 @@ async function resolveFr24AircraftImageFromPage(
 	const url = `https://www.flightradar24.com/data/aircraft/${encodeURIComponent(reg)}`;
 
 	try {
-		logDebug(`FR24 Aircraft Page Anfrage: ${url}`);
+		logDebug(`FR24 aircraft page request: ${url}`);
 
 		const html = await new Promise<string>((resolve, reject) => {
 			const req = https.get(
@@ -446,18 +498,18 @@ async function resolveFr24AircraftImageFromPage(
 		const matches = [...html.matchAll(/https:\/\/cdn\.jetphotos\.com\/[^"' ]+\.(jpg|jpeg|png|webp)/gi)];
 
 		if (!matches.length) {
-			logDebug(`FR24 Aircraft kein Bild gefunden: ${reg}`);
+			logDebug(`FR24 aircraft no image found: ${reg}`);
 
 			return '';
 		}
 
 		const imageUrl = String(matches[0][0] || '').trim();
 
-		logDebug(`FR24 Aircraft Bild gefunden: ${imageUrl}`);
+		logDebug(`FR24 aircraft image found: ${imageUrl}`);
 
 		return imageUrl;
 	} catch (e) {
-		logWarn(`FR24 Aircraft Fehler: ${errorText(e)}`);
+		logWarn(`FR24 aircraft error: ${errorText(e)}`);
 
 		return '';
 	}
@@ -598,7 +650,7 @@ function downloadImageBuffer(url: string, useReferer: boolean, redirects = 0): P
 					}
 
 					if (!looksLikeImageBuffer(buffer)) {
-						reject(new Error('Antwort ist kein Bild'));
+						reject(new Error('Response is not an image'));
 
 						return;
 					}
@@ -618,7 +670,7 @@ function downloadImageBuffer(url: string, useReferer: boolean, redirects = 0): P
 
 function errorText(e: unknown): string {
 	if (!e) {
-		return 'unbekannter Fehler';
+		return 'unknown error';
 	}
 
 	if (typeof e === 'string') {
