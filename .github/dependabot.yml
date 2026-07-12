@@ -1,35 +1,35 @@
+# Dependabot configuration
+# Cooldown delays updating normal npm dependencies by 7 days but allows security updates to be processed immediately.
+# Note: Cooldown is not supported for the github-actions ecosystem.
+# Reference: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
 version: 2
 updates:
-    - package-ecosystem: npm
-      directory: '/'
-      schedule:
-          # Random cron instead of a fixed monthly day to spread load
-          # across the day/week (recommended by ioBroker checker).
-          interval: cron
-          cron: '17 3 * * 2'
-          timezone: Europe/Berlin
-      open-pull-requests-limit: 15
-      # Wait at least 7 days after a new version is published before
-      # opening a PR for it, to reduce supply-chain risk from very fresh releases.
-      cooldown:
-          default: 7
-      assignees:
-          - backfisch88
-      versioning-strategy: increase
-      ignore:
-          # Major Node.js type updates often require code changes; review manually.
-          - dependency-name: '@types/node'
-            update-types:
-                - version-update:semver-major
 
-    - package-ecosystem: github-actions
-      directory: '/'
-      schedule:
-          interval: cron
-          cron: '32 3 * * 2'
-          timezone: Europe/Berlin
-      open-pull-requests-limit: 15
-      cooldown:
-          default: 7
-      assignees:
-          - backfisch88
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'cron'
+      cron: '17 3 * * 2'
+      timezone: 'Europe/Berlin'
+    open-pull-requests-limit: 15
+    cooldown:
+      default-days: 7
+    assignees:
+      - 'backfisch88'
+    versioning-strategy: 'increase'
+    ignore:
+      - dependency-name: '@types/node'
+        update-types:
+          - 'version-update:semver-major'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'cron'
+      cron: '32 3 * * 2'
+      timezone: 'Europe/Berlin'
+    open-pull-requests-limit: 15
+    cooldown:
+      default: 7
+    assignees:
+      - 'backfisch88'
