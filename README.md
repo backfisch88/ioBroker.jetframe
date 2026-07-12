@@ -144,6 +144,10 @@ This adapter is intended exclusively for private, informational, non-commercial 
     ### **WORK IN PROGRESS**
 -->
 
+
+### **WORK IN PROGRESS**
+- (ioBroker-Bot) Adapter requires admin >= 7.8.23 now.
+
 ### 1.0.7 (2026-06-23)
 
 - (backfisch88) Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries
