@@ -244,7 +244,7 @@ function sortAircraft(config: JetFrameConfig, a: Aircraft, b: Aircraft): number 
 function candidateScore(config: JetFrameConfig, a: Aircraft): number {
 	let score = 0;
 
-	// 1) Absolute Priorität: Emergency / Special / Government / große Flugzeuge
+	// 1) Absolute priority: Emergency / Special / Government / large aircraft
 	score += priorityBonus(config, a);
 
 	// 2) Modus-Basis
@@ -274,7 +274,7 @@ function candidateScore(config: JetFrameConfig, a: Aircraft): number {
 		score += Math.max(0, 2200 - (a.takeoffTrackDiffDeg || 999) * 35);
 	}
 
-	// 5) Nähe zu Zuhause
+	// 5) Proximity to home
 	score += Math.max(0, 2600 - (a.distHomeNm || 999) * 260);
 
 	// 6) Frische ADS-B-Daten
@@ -303,7 +303,7 @@ function priorityBonus(config: JetFrameConfig, a: Aircraft): number {
 
 	let bonus = 0;
 
-	// Notfall schlägt alles
+	// Emergency beats everything
 	bonus += emergencyBonus(config, a);
 
 	// Special soll Center deutlich schlagen

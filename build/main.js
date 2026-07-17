@@ -75,7 +75,7 @@ class Jetframe extends utils.Adapter {
       (0, import_specialLiveries.updateSpecialLiveries)(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch((e) => {
         this.logWarn(`Special liveries DB update error: ${this.errorText(e)}`);
       });
-      this.log.debug("[JetFrame] Starte Loop");
+      this.log.debug("[JetFrame] Starting loop");
       this.loop().catch((e) => {
         this.logError(`Loop start error: ${this.errorText(e)}`);
       });
@@ -498,7 +498,7 @@ class Jetframe extends utils.Adapter {
     return sorted;
   }
   async updateGlobalDetailedStatistics(base, a, info) {
-    const type = this.clean(a.aircraftTypeText) || this.clean(a.aircraftModel) || this.clean(a.aircraftType) || this.clean(a.type) || "Unbekannt";
+    const type = this.clean(a.aircraftTypeText) || this.clean(a.aircraftModel) || this.clean(a.aircraftType) || this.clean(a.type) || "Unknown";
     await this.incrementRankingState(`${base}.aircraftTypeRanking`, `${base}.aircraftTypeRankingText`, type, 40, 8);
     if (info.registration) {
       await this.incrementRankingState(
@@ -965,7 +965,7 @@ class Jetframe extends utils.Adapter {
     const base = `${dpRoot}.statistics`;
     const mode = String(a.mode || "").toUpperCase();
     const callsign = this.clean(a.routeCallsign || a.callsign || a.hex || "");
-    const airline = this.clean(a.airlineName || "Unbekannte Airline");
+    const airline = this.clean(a.airlineName || "Unknown Airline");
     const registration = this.clean(a.registration || "");
     const origin = this.clean(a.originIata || "");
     const dest = this.clean(a.destIata || "");
@@ -1127,7 +1127,7 @@ class Jetframe extends utils.Adapter {
       ...this.liveInfo || {},
       ...live,
       // Diese Werte kommen nur aus saveImages()/enrichFlightInfo
-      // und dürfen vom Live-ADS-B-Update nicht wieder leer überschrieben werden.
+      // and must not be overwritten with empty values by the live ADS-B update.
       localLogoUrl: ((_b = this.liveInfo) == null ? void 0 : _b.localLogoUrl) || live.localLogoUrl || "",
       localImageUrl: ((_c = this.liveInfo) == null ? void 0 : _c.localImageUrl) || live.localImageUrl || "",
       finalImageUrl: ((_d = this.liveInfo) == null ? void 0 : _d.finalImageUrl) || live.finalImageUrl || "",
@@ -1380,7 +1380,7 @@ class Jetframe extends utils.Adapter {
               return;
             }
             if (res.statusCode && res.statusCode >= 400) {
-              reject(new Error(`HTTP ${res.statusCode} bei ${url}`));
+              reject(new Error(`HTTP ${res.statusCode} at ${url}`));
               return;
             }
             resolve(body);

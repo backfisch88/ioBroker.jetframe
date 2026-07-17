@@ -79,7 +79,7 @@ async function enrichFlightInfo(adapter, config, a, httpJson, httpText, logDebug
       parsed.destIata = mergedRoute.destIata;
       parsed.routeReliable = true;
       if ((hexRoute == null ? void 0 : hexRoute.originIata) && (hexRoute == null ? void 0 : hexRoute.destIata) && (flighteraRoute == null ? void 0 : flighteraRoute.originIata) && (flighteraRoute == null ? void 0 : flighteraRoute.destIata) && (hexRoute.originIata !== flighteraRoute.originIata || hexRoute.destIata !== flighteraRoute.destIata)) {
-        parsed.routeWarning = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? "Flightera Live bevorzugt, HexDB abweichend" : "HexDB bevorzugt, Flightera abweichend";
+        parsed.routeWarning = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? "Flightera live preferred, HexDB divergent" : "HexDB preferred, Flightera divergent";
         parsed.routeSource = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? "flightera-live-route-conflict-hexdb+airportjson" : "hexdb-route-verified-conflict+airportjson";
       } else if ((hexRoute == null ? void 0 : hexRoute.originIata) && (hexRoute == null ? void 0 : hexRoute.destIata)) {
         parsed.routeWarning = flighteraRoute ? "HexDB + Flightera verified" : "HexDB route";
@@ -105,7 +105,7 @@ async function enrichFlightInfo(adapter, config, a, httpJson, httpText, logDebug
         parsed.originIata = fr24Live.originIata;
         parsed.destIata = fr24Live.destIata;
         parsed.routeReliable = true;
-        parsed.routeWarning = "FR24 Live-Fallback";
+        parsed.routeWarning = "FR24 live fallback";
         parsed.routeSource = "fr24-live-route+airportjson";
         parsed.routeText = `${parsed.originIata} \u2192 ${parsed.destIata}`;
         routeFound = true;

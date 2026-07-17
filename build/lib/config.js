@@ -94,7 +94,7 @@ function readConfig(adapter) {
     speechTemplate: cfgStr(
       native,
       "speechTemplate",
-      "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}."
+      "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}."
     ),
     dpRoot: adapter.namespace,
     airportJsonDp: `${adapter.namespace}.airportjson`

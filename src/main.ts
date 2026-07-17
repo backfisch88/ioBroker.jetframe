@@ -66,7 +66,7 @@ class Jetframe extends utils.Adapter {
 				this.logWarn(`Special liveries DB update error: ${this.errorText(e)}`);
 			});
 
-			this.log.debug('[JetFrame] Starte Loop');
+			this.log.debug('[JetFrame] Starting loop');
 
 			this.loop().catch(e => {
 				this.logError(`Loop start error: ${this.errorText(e)}`);
@@ -614,7 +614,7 @@ class Jetframe extends utils.Adapter {
 			this.clean(a.aircraftModel) ||
 			this.clean(a.aircraftType) ||
 			this.clean((a as any).type) ||
-			'Unbekannt';
+			'Unknown';
 
 		await this.incrementRankingState(`${base}.aircraftTypeRanking`, `${base}.aircraftTypeRankingText`, type, 40, 8);
 
@@ -1272,14 +1272,14 @@ class Jetframe extends utils.Adapter {
 		const mode = String(a.mode || '').toUpperCase();
 
 		const callsign = this.clean(a.routeCallsign || a.callsign || a.hex || '');
-		const airline = this.clean(a.airlineName || 'Unbekannte Airline');
+		const airline = this.clean(a.airlineName || 'Unknown Airline');
 		const registration = this.clean(a.registration || '');
 
 		const origin = this.clean(a.originIata || '');
 		const dest = this.clean(a.destIata || '');
 
 		// Route nur verwenden, wenn Start UND Ziel bekannt sind.
-		// Unvollständige Routen wie "? → FRA" oder "FCO → ?" werden ignoriert.
+		// Incomplete routes like "? → FRA" or "FCO → ?" are ignored.
 		const route = origin && dest ? `${origin} → ${dest}` : '';
 
 		await this.setForeignStateAsync(
@@ -1500,7 +1500,7 @@ class Jetframe extends utils.Adapter {
 			...live,
 
 			// Diese Werte kommen nur aus saveImages()/enrichFlightInfo
-			// und dürfen vom Live-ADS-B-Update nicht wieder leer überschrieben werden.
+			// and must not be overwritten with empty values by the live ADS-B update.
 			localLogoUrl: this.liveInfo?.localLogoUrl || live.localLogoUrl || '',
 			localImageUrl: this.liveInfo?.localImageUrl || live.localImageUrl || '',
 			finalImageUrl: this.liveInfo?.finalImageUrl || live.finalImageUrl || '',
@@ -1622,7 +1622,7 @@ class Jetframe extends utils.Adapter {
 			mode: best.mode,
 		};
 
-		// Bilder/Logos nur EINMAL pro Flug behandeln.
+		// Handle images/logos only ONCE per flight.
 		const imageSaveKey = this.flightKey(best);
 
 		if (imageSaveKey && imageSaveKey !== this.lastImageSaveKey) {
@@ -1837,7 +1837,7 @@ class Jetframe extends utils.Adapter {
 						}
 
 						if (res.statusCode && res.statusCode >= 400) {
-							reject(new Error(`HTTP ${res.statusCode} bei ${url}`));
+							reject(new Error(`HTTP ${res.statusCode} at ${url}`));
 
 							return;
 						}

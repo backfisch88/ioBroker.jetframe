@@ -104,7 +104,7 @@ export function readConfig(adapter: AdapterLike): JetFrameConfig {
 		speechTemplate: cfgStr(
 			native,
 			'speechTemplate',
-			'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} Fuss. {windowPositionSpeechText}.',
+			'{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}.',
 		),
 
 		dpRoot: adapter.namespace,

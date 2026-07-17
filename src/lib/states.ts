@@ -9,6 +9,17 @@ const LAST_SPEECH_TRIGGER: Record<string, string> = {};
 // https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/stateroles.md
 const READ_ONLY_ROLES = new Set(['value', 'indicator']);
 
+// Roles that require common.read = false per the same spec (write-only
+// trigger states, e.g. buttons).
+const WRITE_ONLY_ROLES = new Set(['button']);
+
+function desiredReadWrite(role: string): { read: boolean; write: boolean } {
+	if (WRITE_ONLY_ROLES.has(role)) {
+		return { read: false, write: true };
+	}
+	return { read: true, write: !READ_ONLY_ROLES.has(role) };
+}
+
 /**
  * Ensure that an intermediate channel/folder object exists for the given id.
  */
@@ -37,7 +48,7 @@ export async function ensureState(
 	role: string,
 ): Promise<void> {
 	const obj = await adapter.getForeignObjectAsync(id);
-	const desiredWrite = !READ_ONLY_ROLES.has(role);
+	const { read: desiredRead, write: desiredWrite } = desiredReadWrite(role);
 
 	if (!obj) {
 		await adapter.setForeignObjectAsync(id, {
@@ -46,7 +57,7 @@ export async function ensureState(
 				name: id.split('.').pop() || id,
 				type,
 				role,
-				read: true,
+				read: desiredRead,
 				write: desiredWrite,
 			},
 			native: {},
@@ -57,14 +68,14 @@ export async function ensureState(
 	}
 
 	// Object already exists (e.g. from before this fix): heal stale metadata
-	// (role/type/write) in place without touching the current state value.
+	// (role/type/read/write) in place without touching the current state value.
 	const common = obj.common || {};
-	if (common.role !== role || common.type !== type || common.write !== desiredWrite) {
+	if (common.role !== role || common.type !== type || common.write !== desiredWrite || common.read !== desiredRead) {
 		await adapter.extendForeignObjectAsync(id, {
 			common: {
 				type,
 				role,
-				read: true,
+				read: desiredRead,
 				write: desiredWrite,
 			},
 		});
@@ -161,9 +172,6 @@ export async function ensureFlightStates(adapter: AdapterLike, base: string): Pr
 		'.windowPositionText',
 		'.windowPositionClass',
 		'.windowPositionSpeechText',
-
-		'.probableRunway',
-		'.probableRunwayText',
 
 		'.probableRunway',
 		'.probableRunwayText',
@@ -353,7 +361,7 @@ async function setForeignStateChanged(adapter: AdapterLike, id: string, value: a
 			return;
 		}
 	} catch {
-		// Wenn Lesen fehlschlägt, trotzdem schreiben
+		// If reading fails, write anyway
 	}
 
 	await adapter.setForeignStateAsync(id, value, ack);
@@ -726,7 +734,7 @@ function windowPositionInfo(a: Aircraft): {
 		return {
 			text: '↗️ Position unknown',
 			className: 'side',
-			speechText: 'am Fenster',
+			speechText: 'at the window',
 		};
 	}
 
@@ -734,24 +742,24 @@ function windowPositionInfo(a: Aircraft): {
 
 	if (abs <= 8) {
 		return {
-			text: '⬆️ direkt vor dem Fenster',
+			text: '⬆️ directly in front of the window',
 			className: 'center',
-			speechText: 'direkt vor dem Fenster',
+			speechText: 'directly in front of the window',
 		};
 	}
 
 	if (diff < 0) {
 		return {
-			text: `⬅️ links vom Fenster · ${Math.round(abs)}°`,
+			text: `⬅️ left of window · ${Math.round(abs)}°`,
 			className: 'side',
-			speechText: 'links vom Fenster',
+			speechText: 'left of the window',
 		};
 	}
 
 	return {
-		text: `➡️ rechts vom Fenster · ${Math.round(abs)}°`,
+		text: `➡️ right of window · ${Math.round(abs)}°`,
 		className: 'side',
-		speechText: 'rechts vom Fenster',
+		speechText: 'right of the window',
 	};
 }
 
@@ -778,7 +786,7 @@ async function aircraftDisplayInfo(
 
 	const all = `${type} ${model} ${raw}`.toUpperCase();
 
-	let manufacturer = 'Flugzeug';
+	let manufacturer = 'Aircraft';
 	let manufacturerLogoText = '✈';
 	let aircraftTypeText = raw || type || '—';
 
@@ -1090,25 +1098,25 @@ async function buildSpeechTextForWrite(
 function buildSpeechTextFromTemplate(a: Aircraft, display: Record<string, string>, template: string): string {
 	const mode = String(a.mode || '').toUpperCase();
 
-	let modeSpeechText = 'Flug';
-	let routeDirectionText = 'von';
+	let modeSpeechText = 'Flight';
+	let routeDirectionText = 'from';
 	let routeOtherAirport = display.originDisplayName || display.destDisplayName || '';
 
 	if (mode === 'LANDING') {
-		modeSpeechText = 'Landung';
-		routeDirectionText = 'aus';
+		modeSpeechText = 'Landing';
+		routeDirectionText = 'from';
 		routeOtherAirport = display.originDisplayName || '';
 	}
 
 	if (mode === 'TAKEOFF') {
-		modeSpeechText = 'Start';
-		routeDirectionText = 'nach';
+		modeSpeechText = 'Takeoff';
+		routeDirectionText = 'to';
 		routeOtherAirport = display.destDisplayName || '';
 	}
 
 	if (mode === 'OVERFLIGHT') {
-		modeSpeechText = 'Überflug';
-		routeDirectionText = 'von';
+		modeSpeechText = 'Overflight';
+		routeDirectionText = 'from';
 		routeOtherAirport = display.routeDisplayText || '';
 	}
 
@@ -1120,7 +1128,7 @@ function buildSpeechTextFromTemplate(a: Aircraft, display: Record<string, string
 		routeOtherAirport,
 		bestCallsign,
 
-		airlineName: String(a.airlineName || 'Unbekannte Airline'),
+		airlineName: String(a.airlineName || 'Unknown Airline'),
 		callsign: String(a.callsign || ''),
 		operationalCallsign: String(a.operationalCallsign || a.callsign || ''),
 		routeCallsign: String(a.routeCallsign || a.callsign || ''),

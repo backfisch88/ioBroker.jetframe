@@ -100,8 +100,8 @@ export async function enrichFlightInfo(
 				(hexRoute.originIata !== flighteraRoute.originIata || hexRoute.destIata !== flighteraRoute.destIata)
 			) {
 				parsed.routeWarning = flighteraRoute?.isLive
-					? 'Flightera Live bevorzugt, HexDB abweichend'
-					: 'HexDB bevorzugt, Flightera abweichend';
+					? 'Flightera live preferred, HexDB divergent'
+					: 'HexDB preferred, Flightera divergent';
 				parsed.routeSource = flighteraRoute?.isLive
 					? 'flightera-live-route-conflict-hexdb+airportjson'
 					: 'hexdb-route-verified-conflict+airportjson';
@@ -137,7 +137,7 @@ export async function enrichFlightInfo(
 				parsed.originIata = fr24Live.originIata;
 				parsed.destIata = fr24Live.destIata;
 				parsed.routeReliable = true;
-				parsed.routeWarning = 'FR24 Live-Fallback';
+				parsed.routeWarning = 'FR24 live fallback';
 				parsed.routeSource = 'fr24-live-route+airportjson';
 				parsed.routeText = `${parsed.originIata} → ${parsed.destIata}`;
 				routeFound = true;
@@ -169,7 +169,7 @@ export async function enrichFlightInfo(
 		}
 
 		// Kein FR24-Bildabruf in flightInfo.
-		// Bildlogik läuft zentral in images.ts:
+		// Image logic runs centrally in images.ts:
 		// Cache → HexDB → FR24-Fallback nur bei HexDB-Fehler.
 		if (!parsed.fr24ImageUrl) {
 			parsed.fr24ImageUrl = '';
@@ -553,7 +553,7 @@ async function iataFromIcao(adapter: AdapterLike, config: JetFrameConfig, icao: 
 		return '';
 	}
 
-	// schnelle lokale Hauptairport-Abkürzung
+	// fast local main-airport shortcut
 	if (icao === clean(config.airport.icao).toUpperCase()) {
 		return clean(config.airport.iata).toUpperCase();
 	}
@@ -593,7 +593,7 @@ function mergeHexAndFlighteraRoute(
 	const hexComplete = !!hexRoute?.originIata && !!hexRoute?.destIata;
 
 	// Wichtig:
-	// Wenn Flightera eine vollständige LIVE-Zeile hat,
+	// If Flightera has a complete LIVE row,
 	// gewinnt Flightera gegen HexDB.
 	// HexDB ist oft gut, aber bei historischen/alten Callsigns
 	// teilweise falsch.
@@ -601,7 +601,7 @@ function mergeHexAndFlighteraRoute(
 		return flighteraRoute;
 	}
 
-	// Wenn Flightera vollständig ist und Hex fehlt,
+	// If Flightera is complete and hex is missing,
 	// gewinnt ebenfalls Flightera.
 	if (flighteraComplete && !hexComplete) {
 		return flighteraRoute;
@@ -612,7 +612,7 @@ function mergeHexAndFlighteraRoute(
 		return hexRoute;
 	}
 
-	// Falls nur Flightera vollständig ist, nehmen.
+	// If only Flightera is complete, use it.
 	if (flighteraComplete) {
 		return flighteraRoute;
 	}
@@ -872,7 +872,7 @@ function parseFlighteraSingleRow(
 	let routeCallsign = '';
 
 	// WICHTIG:
-	// Zuerst LIVE-Zeilen-Paare prüfen:
+	// First check LIVE row pairs:
 	// EN8760 DLA7WL
 	// LH54 DLH1KN
 

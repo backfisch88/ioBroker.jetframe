@@ -32,6 +32,13 @@ var import_geo = require("./geo");
 var import_images = require("./images");
 const LAST_SPEECH_TRIGGER = {};
 const READ_ONLY_ROLES = /* @__PURE__ */ new Set(["value", "indicator"]);
+const WRITE_ONLY_ROLES = /* @__PURE__ */ new Set(["button"]);
+function desiredReadWrite(role) {
+  if (WRITE_ONLY_ROLES.has(role)) {
+    return { read: false, write: true };
+  }
+  return { read: true, write: !READ_ONLY_ROLES.has(role) };
+}
 async function ensureChannel(adapter, id, name) {
   const obj = await adapter.getForeignObjectAsync(id);
   if (!obj) {
@@ -46,7 +53,7 @@ async function ensureChannel(adapter, id, name) {
 }
 async function ensureState(adapter, id, def, type, role) {
   const obj = await adapter.getForeignObjectAsync(id);
-  const desiredWrite = !READ_ONLY_ROLES.has(role);
+  const { read: desiredRead, write: desiredWrite } = desiredReadWrite(role);
   if (!obj) {
     await adapter.setForeignObjectAsync(id, {
       type: "state",
@@ -54,7 +61,7 @@ async function ensureState(adapter, id, def, type, role) {
         name: id.split(".").pop() || id,
         type,
         role,
-        read: true,
+        read: desiredRead,
         write: desiredWrite
       },
       native: {}
@@ -63,12 +70,12 @@ async function ensureState(adapter, id, def, type, role) {
     return;
   }
   const common = obj.common || {};
-  if (common.role !== role || common.type !== type || common.write !== desiredWrite) {
+  if (common.role !== role || common.type !== type || common.write !== desiredWrite || common.read !== desiredRead) {
     await adapter.extendForeignObjectAsync(id, {
       common: {
         type,
         role,
-        read: true,
+        read: desiredRead,
         write: desiredWrite
       }
     });
@@ -144,8 +151,6 @@ async function ensureFlightStates(adapter, base) {
     ".windowPositionText",
     ".windowPositionClass",
     ".windowPositionSpeechText",
-    ".probableRunway",
-    ".probableRunwayText",
     ".probableRunway",
     ".probableRunwayText",
     ".airlineName",
@@ -553,28 +558,28 @@ function windowPositionInfo(a) {
     return {
       text: "\u2197\uFE0F Position unknown",
       className: "side",
-      speechText: "am Fenster"
+      speechText: "at the window"
     };
   }
   const abs = Math.abs(diff);
   if (abs <= 8) {
     return {
-      text: "\u2B06\uFE0F direkt vor dem Fenster",
+      text: "\u2B06\uFE0F directly in front of the window",
       className: "center",
-      speechText: "direkt vor dem Fenster"
+      speechText: "directly in front of the window"
     };
   }
   if (diff < 0) {
     return {
-      text: `\u2B05\uFE0F links vom Fenster \xB7 ${Math.round(abs)}\xB0`,
+      text: `\u2B05\uFE0F left of window \xB7 ${Math.round(abs)}\xB0`,
       className: "side",
-      speechText: "links vom Fenster"
+      speechText: "left of the window"
     };
   }
   return {
-    text: `\u27A1\uFE0F rechts vom Fenster \xB7 ${Math.round(abs)}\xB0`,
+    text: `\u27A1\uFE0F right of window \xB7 ${Math.round(abs)}\xB0`,
     className: "side",
-    speechText: "rechts vom Fenster"
+    speechText: "right of the window"
   };
 }
 async function aircraftDisplayInfo(adapter, config, a) {
@@ -582,7 +587,7 @@ async function aircraftDisplayInfo(adapter, config, a) {
   const type = String(a.aircraftType || a.type || "").trim().toUpperCase();
   const model = String(a.aircraftModel || "").trim().toUpperCase();
   const all = `${type} ${model} ${raw}`.toUpperCase();
-  let manufacturer = "Flugzeug";
+  let manufacturer = "Aircraft";
   let manufacturerLogoText = "\u2708";
   let aircraftTypeText = raw || type || "\u2014";
   if (all.includes("AIRBUS") || /^A\d/.test(type)) {
@@ -783,22 +788,22 @@ async function buildSpeechTextForWrite(adapter, base, a, display) {
 }
 function buildSpeechTextFromTemplate(a, display, template) {
   const mode = String(a.mode || "").toUpperCase();
-  let modeSpeechText = "Flug";
-  let routeDirectionText = "von";
+  let modeSpeechText = "Flight";
+  let routeDirectionText = "from";
   let routeOtherAirport = display.originDisplayName || display.destDisplayName || "";
   if (mode === "LANDING") {
-    modeSpeechText = "Landung";
-    routeDirectionText = "aus";
+    modeSpeechText = "Landing";
+    routeDirectionText = "from";
     routeOtherAirport = display.originDisplayName || "";
   }
   if (mode === "TAKEOFF") {
-    modeSpeechText = "Start";
-    routeDirectionText = "nach";
+    modeSpeechText = "Takeoff";
+    routeDirectionText = "to";
     routeOtherAirport = display.destDisplayName || "";
   }
   if (mode === "OVERFLIGHT") {
-    modeSpeechText = "\xDCberflug";
-    routeDirectionText = "von";
+    modeSpeechText = "Overflight";
+    routeDirectionText = "from";
     routeOtherAirport = display.routeDisplayText || "";
   }
   const bestCallsign = String(a.routeCallsign || a.callsign || "").trim();
@@ -807,7 +812,7 @@ function buildSpeechTextFromTemplate(a, display, template) {
     routeDirectionText,
     routeOtherAirport,
     bestCallsign,
-    airlineName: String(a.airlineName || "Unbekannte Airline"),
+    airlineName: String(a.airlineName || "Unknown Airline"),
     callsign: String(a.callsign || ""),
     operationalCallsign: String(a.operationalCallsign || a.callsign || ""),
     routeCallsign: String(a.routeCallsign || a.callsign || ""),
