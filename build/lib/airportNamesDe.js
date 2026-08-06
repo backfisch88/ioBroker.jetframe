@@ -97,7 +97,7 @@ function downloadText(url, redirects = 0) {
       (res) => {
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           if (redirects >= 5) {
-            reject(new Error("Zu viele Redirects"));
+            reject(new Error("Too many redirects"));
             return;
           }
           const nextUrl = res.headers.location.startsWith("http") ? res.headers.location : new URL(res.headers.location, url).toString();

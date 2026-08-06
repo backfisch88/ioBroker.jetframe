@@ -367,7 +367,7 @@ function safeFileName(name) {
 function downloadImageBuffer(url, useReferer, redirects = 0) {
   return new Promise((resolve, reject) => {
     if (redirects > 5) {
-      reject(new Error("Zu viele Redirects beim Bilddownload"));
+      reject(new Error("Too many redirects during image download"));
       return;
     }
     const client = url.startsWith("https") ? https : http;
@@ -419,7 +419,7 @@ function downloadImageBuffer(url, useReferer, redirects = 0) {
       }
     );
     req.on("timeout", () => {
-      req.destroy(new Error("Bild Download Timeout"));
+      req.destroy(new Error("Image download timeout"));
     });
     req.on("error", reject);
   });

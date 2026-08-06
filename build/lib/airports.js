@@ -235,7 +235,7 @@ function downloadCsv(url, redirects = 0, expectedHeader = "iata_code") {
       (res) => {
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           if (redirects >= 5) {
-            reject(new Error("Zu viele Redirects beim Airport CSV Download"));
+            reject(new Error("Too many redirects during airport CSV download"));
             return;
           }
           const nextUrl = res.headers.location.startsWith("http") ? res.headers.location : new URL(res.headers.location, url).toString();
@@ -243,7 +243,7 @@ function downloadCsv(url, redirects = 0, expectedHeader = "iata_code") {
           return;
         }
         if (res.statusCode && res.statusCode >= 400) {
-          reject(new Error(`HTTP ${res.statusCode} beim Airport CSV Download`));
+          reject(new Error(`HTTP ${res.statusCode} during airport CSV download`));
           return;
         }
         let body = "";
@@ -254,7 +254,7 @@ function downloadCsv(url, redirects = 0, expectedHeader = "iata_code") {
         res.on("end", () => {
           const text = String(body || "").trim();
           if (!text) {
-            return reject(new Error("Airport CSV leer"));
+            return reject(new Error("Airport CSV is empty"));
           }
           if (text.startsWith("<")) {
             return reject(new Error("Airport CSV download returned HTML instead of CSV"));
@@ -267,7 +267,7 @@ function downloadCsv(url, redirects = 0, expectedHeader = "iata_code") {
       }
     );
     req.on("timeout", () => {
-      req.destroy(new Error("Airport CSV Download Timeout"));
+      req.destroy(new Error("Airport CSV download timeout"));
     });
     req.on("error", reject);
   });

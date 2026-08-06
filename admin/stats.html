@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-  <title>JetFrame Statistik</title>
+  <title>JetFrame Statistics</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="jetframe.png">
   <link rel="icon" type="image/png" href="jetframe.png">
@@ -16,17 +16,17 @@
 <body class="jf-page-stats">
 
 <div id="simpleApiWarning" class="simpleApiWarning">
-  ⚠️ Simple-API nicht erreichbar<br>
+  ⚠️ Simple API unreachable<br>
   <span id="simpleApiWarningText"></span>
 </div>
 
 <div id="app">
   <div class="jf-shell">
     <div class="header">
-      <a class="backBtn" href="index.html" aria-label="Zurück">‹</a>
+      <a class="backBtn" href="index.html" aria-label="Back">‹</a>
       <div>
         <div class="title">✈️ JetFrame</div>
-        <div id="dateText" class="sub">Statistik</div>
+        <div id="dateText" class="sub">Statistics</div>
       </div>
       <div class="livePill">
         <span class="dot"></span><span>Live</span>
@@ -35,42 +35,42 @@
 
     <div class="grid">
       <div class="stat big">
-        <div class="stLabel">Heute</div>
+        <div class="stLabel">Today</div>
         <div id="todayTotal" class="stVal">–</div>
-        <div id="todaySmall" class="stSub">Flüge heute</div>
+        <div id="todaySmall" class="stSub">flights today</div>
       </div>
       <div class="stat">
-        <div class="stLabel">Gestern</div>
+        <div class="stLabel">Yesterday</div>
         <div id="yesterdayTotal" class="stVal">–</div>
-        <div id="yesterdaySmall" class="stSub">Rückblick</div>
+        <div id="yesterdaySmall" class="stSub">recap</div>
       </div>
       <div class="stat warn">
-        <div class="stLabel">Rekordtag</div>
+        <div class="stLabel">Record day</div>
         <div id="bestDay" class="stVal">–</div>
-        <div id="bestDaySmall" class="stSub">Alltime</div>
+        <div id="bestDaySmall" class="stSub">All-time</div>
       </div>
       <div class="stat">
-        <div class="stLabel">Beste Zeit</div>
+        <div class="stLabel">Best time</div>
         <div id="bestHour" class="stVal">–</div>
-        <div id="bestHourSmall" class="stSub">allgemein</div>
+        <div id="bestHourSmall" class="stSub">overall</div>
       </div>
       <div class="stat">
-        <div class="stLabel">Heavy heute</div>
+        <div class="stLabel">Heavy today</div>
         <div id="heavyToday" class="stVal">–</div>
-        <div id="heavySmall" class="stSub">A380 / B747 separat</div>
+        <div id="heavySmall" class="stSub">A380 / B747 separately</div>
       </div>
       <div class="stat">
-        <div class="stLabel">Specials heute</div>
+        <div class="stLabel">Specials today</div>
         <div id="specialToday" class="stVal">–</div>
-        <div id="specialSmall" class="stSub">Speziallackierungen</div>
+        <div id="specialSmall" class="stSub">special liveries</div>
       </div>
     </div>
 
     <div class="panels">
-      <div class="panel"><h3>Tageshistorie</h3><pre id="dailyHistory">–</pre></div>
-      <div class="panel"><h3>Gestern</h3><pre id="yesterdayDetails">–</pre></div>
-      <div class="panel"><h3>Top Airlines Alltime</h3><pre id="alltimeAirlines">–</pre></div>
-      <div class="panel"><h3>Top Routen Alltime</h3><pre id="alltimeRoutes">–</pre></div>
+      <div class="panel"><h3>Daily history</h3><pre id="dailyHistory">–</pre></div>
+      <div class="panel"><h3>Yesterday</h3><pre id="yesterdayDetails">–</pre></div>
+      <div class="panel"><h3>Top Airlines All-time</h3><pre id="alltimeAirlines">–</pre></div>
+      <div class="panel"><h3>Top Routes All-time</h3><pre id="alltimeRoutes">–</pre></div>
     </div>
   </div>
 </div>
@@ -112,7 +112,7 @@ async function checkApi(){ try{ const r=await fetch(API_BASE+'/getPlainValue/'+e
 async function loadVis(){
   const u=new URL(location.href), no=!u.searchParams.has('apiHost')&&!u.searchParams.has('apiPort');
   const r=await fetch('/jetframe.admin/vis-config.json?v='+Date.now(),{cache:'no-store'});
-  if(!r.ok)throw new Error('vis-config.json fehlt');
+  if(!r.ok)throw new Error('vis-config.json missing');
   const c=await r.json();
   if(no){ API_BASE=(location.protocol||'http:')+'//'+String(c.simpleApiHost||location.hostname||'127.0.0.1').trim()+':'+String(c.simpleApiPort||'8087').trim(); }
   VIS_CONFIG_LOADED=true;
@@ -125,7 +125,7 @@ function clean(v){
   return v.replace(/\\"/g,'"').replace(/\\n/g,'\n').trim();
 }
 function num(v){ const n=Number(String(v).replace(',','.')); return Number.isFinite(n)?n:0; }
-function fmt(v){ return num(v).toLocaleString('de-DE'); }
+function fmt(v){ return num(v).toLocaleString('en-US'); }
 
 async function read(id){
   if(!VIS_CONFIG_LOADED)return'';
@@ -140,28 +140,28 @@ async function readAll(){
 function set(id,v){ const e=$(id); if(e)e.textContent=v; }
 
 function render(d){
-  set('dateText', d.todayDate?'Heute · '+d.todayDate:'Statistik');
+  set('dateText', d.todayDate?'Today · '+d.todayDate:'Statistics');
   set('todayTotal',      fmt(d.todayTotal));
-  set('todaySmall',      fmt(d.todayLandings)+' Landungen · '+fmt(d.todayDepartures)+' Starts');
+  set('todaySmall',      fmt(d.todayLandings)+' landings · '+fmt(d.todayDepartures)+' departures');
   set('yesterdayTotal',  fmt(d.yesterdayTotal));
-  set('yesterdaySmall',  d.yesterdayDate||'noch kein Vortag');
+  set('yesterdaySmall',  d.yesterdayDate||'no previous day yet');
   set('bestDay',         fmt(d.bestDayFlights));
-  set('bestDaySmall',    d.bestDayDate||'noch kein Rekord');
+  set('bestDaySmall',    d.bestDayDate||'no record yet');
   set('bestHour',        d.bestHour||'–');
-  set('bestHourSmall',   num(d.bestHourFlights)?fmt(d.bestHourFlights)+' Flüge insgesamt':'allgemein');
+  set('bestHourSmall',   num(d.bestHourFlights)?fmt(d.bestHourFlights)+' flights total':'overall');
   set('heavyToday',      fmt(d.todayHeavy));
-  set('heavySmall',      'A380 '+fmt(d.todayA380)+' · B747 '+fmt(d.todayB747)+' · Alltime '+fmt(d.alltimeHeavy));
+  set('heavySmall',      'A380 '+fmt(d.todayA380)+' · B747 '+fmt(d.todayB747)+' · All-time '+fmt(d.alltimeHeavy));
   set('specialToday',    fmt(d.todaySpecial));
-  set('specialSmall',    'Alltime '+fmt(d.alltimeSpecial));
-  set('dailyHistory',    d.dailyHistory||'Noch keine Tageshistorie vorhanden');
+  set('specialSmall',    'All-time '+fmt(d.alltimeSpecial));
+  set('dailyHistory',    d.dailyHistory||'No daily history available yet');
   set('yesterdayDetails', [
-    (d.yesterdayDate||'Gestern')+' · '+fmt(d.yesterdayTotal)+' Flüge',
-    'Landungen: '+fmt(d.yesterdayLandings),
-    'Starts: '+fmt(d.yesterdayDepartures),
-    'Überflüge: '+fmt(d.yesterdayOverflights),
-    d.yesterdayBestHour?'Beste Zeit: '+d.yesterdayBestHour:'',
-    d.yesterdayTopAirline?'Top Airline: '+d.yesterdayTopAirline:'',
-    d.yesterdayTopRoute?'Top Route: '+d.yesterdayTopRoute:'',
+    (d.yesterdayDate||'Yesterday')+' · '+fmt(d.yesterdayTotal)+' flights',
+    'Landings: '+fmt(d.yesterdayLandings),
+    'Departures: '+fmt(d.yesterdayDepartures),
+    'Overflights: '+fmt(d.yesterdayOverflights),
+    d.yesterdayBestHour?'Best time: '+d.yesterdayBestHour:'',
+    d.yesterdayTopAirline?'Top airline: '+d.yesterdayTopAirline:'',
+    d.yesterdayTopRoute?'Top route: '+d.yesterdayTopRoute:'',
     'Heavy: '+fmt(d.yesterdayHeavy)+' · A380: '+fmt(d.yesterdayA380)+' · B747: '+fmt(d.yesterdayB747),
     'Specials: '+fmt(d.yesterdaySpecial),
   ].filter(Boolean).join('\n'));
@@ -172,7 +172,7 @@ function render(d){
 async function poll(){ await checkApi(); render(await readAll()); }
 
 loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
-  .catch(e=>{ VIS_CONFIG_LOADED=false; console.error(e); setWarn(true,'vis-config.json fehlt'); });
+  .catch(e=>{ VIS_CONFIG_LOADED=false; console.error(e); setWarn(true,'vis-config.json missing'); });
 </script>
 
 <script>
@@ -180,7 +180,7 @@ loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
 (function(){
   let _b=false;
   function pad(n){return String(n).padStart(2,'0');}
-  function wanted(){const d=new Date();return'Heute · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
+  function wanted(){const d=new Date();return'Today · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
   function apply(){if(_b)return;_b=true;const s=document.querySelector('.header .sub');if(s){const t=wanted();if(s.textContent!==t)s.textContent=t;}_b=false;}
   apply();setInterval(apply,5000);
   const h=document.querySelector('.header');if(h)new MutationObserver(apply).observe(h,{childList:true,subtree:true,characterData:true});
@@ -202,7 +202,7 @@ loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
 /* Split panel 2-column layout for ranking text */
 (function(){
   function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function isSplit(p){const t=(p.querySelector('h3')?.textContent||'').toLowerCase();return t.includes('gestern')||t.includes('top airlines')||t.includes('top routen');}
+  function isSplit(p){const t=(p.querySelector('h3')?.textContent||'').toLowerCase();return t.includes('yesterday')||t.includes('top airlines')||t.includes('top routes');}
   function doOne(p){
     const pre=p.querySelector('pre'); if(!pre||!isSplit(p))return;
     // capture raw text before first split

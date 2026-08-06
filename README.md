@@ -75,7 +75,7 @@ http://<iobroker-ip>:<simple-api-port>/jetframe.admin/index.html
 
 ### Language
 
-The web UI pages (`index.html`, `frame.html`, `heatmap.html`, `stats.html`) are currently **German-only** and do not yet have an i18n mechanism. This is a known limitation; multi-language support for the web UI is planned for a future release. The admin configuration page itself is fully translated into all 11 supported ioBroker languages.
+The web UI pages (`index.html`, `frame.html`, `heatmap.html`, `stats.html`) are in English. The admin configuration page is fully translated into all 11 supported ioBroker languages. The optional spoken voice announcements (`speechText`, configurable via `speechTemplate`) remain German by default, since this is a user-configurable, German-targeted voice feature; the template can be freely edited to any language.
 
 ## ioBroker States
 
@@ -144,10 +144,6 @@ This adapter is intended exclusively for private, informational, non-commercial 
     ### **WORK IN PROGRESS**
 -->
 
-
-### **WORK IN PROGRESS**
-- (ioBroker-Bot) Adapter requires admin >= 7.8.23 now.
-
 ### 1.0.7 (2026-06-23)
 
 - (backfisch88) Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries
@@ -157,8 +153,6 @@ This adapter is intended exclusively for private, informational, non-commercial 
 - (backfisch88) Bugfix release: removed invalid io-package.json schema property, translated README.md to English, removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay()
 
 Older entries can be found in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
-
-[Older changelogs can be found there](CHANGELOG_OLD.md)
 
 ## License
 

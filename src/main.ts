@@ -216,7 +216,18 @@ class Jetframe extends utils.Adapter {
 		}
 	}
 
+	/**
+	 * Creates a simple, always read-only state (used for statistics, idle
+	 * runway text, and probable-runway values). NOT suitable for the
+	 * 'button' role (which requires write: true, read: false) - use
+	 * ensureState() from lib/states.ts for that instead.
+	 */
 	private async ensureSimpleState(id: string, name: string, type: ioBroker.CommonType, role: string): Promise<void> {
+		if (role === 'button') {
+			this.logWarn(`ensureSimpleState() must not be used for role 'button': ${id}`);
+			return;
+		}
+
 		try {
 			await (this as any).setForeignObjectNotExistsAsync(id, {
 				type: 'state',
@@ -325,7 +336,7 @@ class Jetframe extends utils.Adapter {
 		(a as any).probableRunwayHeading = Math.round(bestHeading);
 		(a as any).probableRunwayDiffDeg = Math.round(bestDiff);
 		(a as any).runwayConfidence = confidence;
-		(a as any).probableRunwayText = `${modeIcon} vermutlich RWY ${bestGroup || bestName} · ${modeText}`;
+		(a as any).probableRunwayText = `${modeIcon} probable RWY ${bestGroup || bestName} · ${modeText}`;
 	}
 
 	private async ensureStatisticsStates(dpRoot: string): Promise<void> {

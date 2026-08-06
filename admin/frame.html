@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -18,14 +18,14 @@
 
 <body class="jf-page-frame jf-preload">
 	<div id="simpleApiWarning" class="simpleApiWarning">
-		⚠️ Simple-API nicht erreichbar<br>
+		⚠️ Simple API unreachable<br>
 		<span id="simpleApiWarningText"></span>
 	</div>
 
 	<div id="app">
 		<div id="wall" class="jf-shell">
 			<div class="header">
-				<a class="backBtn headerBack" href="index.html" aria-label="Zurück">‹</a>
+				<a class="backBtn headerBack" href="index.html" aria-label="Back">‹</a>
 
 				<div class="headerTitleBlock">
 					<div class="title">✈️ JetFrame</div>
@@ -35,7 +35,7 @@
 				<div class="frameHeaderActions">
 					<!-- toggleBtn intentionally hidden via CSS (jfHiddenToggle) -->
 					<button id="toggleBtn" class="toggleBtn on jfHiddenToggle" type="button" aria-hidden="true">ON</button>
-					<button id="speechBtn" class="toggleBtn speechBtn" type="button" aria-label="Sprachausgabe">🔇</button>
+					<button id="speechBtn" class="toggleBtn speechBtn" type="button" aria-label="Speech output">🔇</button>
 					<div class="livePill frameLivePill" aria-label="Live">
 						<span class="dot" aria-hidden="true"></span>
 						<span>Live</span>
@@ -54,7 +54,7 @@
 						<div class="idleFlyers" aria-hidden="true">
 							<span>✈️</span><span>🛫</span><span>🛬</span>
 						</div>
-						<div class="idleText">Warte auf Flug</div>
+						<div class="idleText">Waiting for flight</div>
 					</div>
 				</div>
 
@@ -110,7 +110,7 @@
 				<div class="metrics">
 					<div class="metric">
 						<div id="altitude" class="metricValue">–</div>
-						<div class="metricLabel">HÖHE FT</div>
+						<div class="metricLabel">ALTITUDE FT</div>
 					</div>
 					<div class="metric">
 						<div id="speed" class="metricValue">–</div>
@@ -133,7 +133,7 @@
 					<div class="jfSwitchPlane jfSwitchPlaneC" aria-hidden="true">🛬</div>
 					<div class="jfSwitchPlane jfSwitchPlaneD" aria-hidden="true">✈️</div>
 					<div class="jfSwitchText">
-						<div class="jfSwitchLabel">Nächster Flug</div>
+						<div class="jfSwitchLabel">Next Flight</div>
 						<div id="jfSwitchRoute" class="jfSwitchRoute">—</div>
 					</div>
 				</div>
@@ -383,7 +383,7 @@ async function loadVisualConfig() {
 	VIS_CONFIG_LOADED = true;
 	rebuildIds();
 
-	console.log('[JetFrame] vis-config.json geladen:', cfg, API_BASE, CURRENT);
+	console.log('[JetFrame] vis-config.json loaded:', cfg, API_BASE, CURRENT);
 }
 
 /* ── Audio / Speech ─────────────────────────────────────── */
@@ -463,7 +463,7 @@ function setSpeechButton() {
 	if (!btn) return;
 	btn.textContent = speechEnabled ? '🔊' : '🔇';
 	btn.classList.toggle('on', speechEnabled);
-	btn.setAttribute('aria-label', speechEnabled ? 'Sprachausgabe an' : 'Sprachausgabe aus');
+	btn.setAttribute('aria-label', speechEnabled ? 'Speech output on' : 'Speech output off');
 }
 
 $('toggleBtn').addEventListener('click', async () => {
@@ -646,7 +646,7 @@ function render(s) {
 
 	/* ── No Flight ── */
 	if (!hasFlight) {
-		$('mode').textContent         = enabled ? '✈️ Warte auf Flug' : '⏸️ JetFrame aus';
+		$('mode').textContent         = enabled ? '✈️ Waiting for flight' : '⏸️ JetFrame off';
 		$('windowInfo').style.display = 'none';
 
 		$('iataCallsign').textContent    = '—';

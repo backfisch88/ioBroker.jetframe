@@ -13,7 +13,7 @@ const READ_ONLY_ROLES = new Set(['value', 'indicator']);
 // trigger states, e.g. buttons).
 const WRITE_ONLY_ROLES = new Set(['button']);
 
-function desiredReadWrite(role: string): { read: boolean; write: boolean } {
+export function desiredReadWrite(role: string): { read: boolean; write: boolean } {
 	if (WRITE_ONLY_ROLES.has(role)) {
 		return { read: false, write: true };
 	}
@@ -208,10 +208,6 @@ export async function ensureFlightStates(adapter: AdapterLike, base: string): Pr
 
 		'.aircraftTypeText',
 		'.aircraftSize',
-		'.squawk',
-		'.emergency',
-		'.emergencyType',
-		'.emergencyText',
 		'.squawk',
 		'.emergency',
 		'.emergencyType',

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
@@ -16,14 +16,14 @@
 <body class="jf-page-heatmap">
 
 <div id="simpleApiWarning" class="simpleApiWarning">
-  ⚠️ Simple-API nicht erreichbar<br>
+  ⚠️ Simple API unreachable<br>
   <span id="simpleApiWarningText"></span>
 </div>
 
 <div id="app">
   <div class="jf-shell">
     <div class="header">
-      <a class="backBtn" href="index.html" aria-label="Zurück">‹</a>
+      <a class="backBtn" href="index.html" aria-label="Back">‹</a>
       <div>
         <div class="title">✈️ JetFrame</div>
         <div id="dateText" class="sub">Heatmap</div>
@@ -34,22 +34,22 @@
     </div>
 
     <div class="hmStats">
-      <div class="hmStat"><div id="totalFlights" class="hmVal">–</div><div class="hmLabel">Flüge</div></div>
-      <div class="hmStat"><div id="landings"     class="hmVal">–</div><div class="hmLabel">Landungen</div></div>
-      <div class="hmStat"><div id="departures"   class="hmVal">–</div><div class="hmLabel">Starts</div></div>
-      <div class="hmStat"><div id="overflights"  class="hmVal">–</div><div class="hmLabel">Überflüge</div></div>
+      <div class="hmStat"><div id="totalFlights" class="hmVal">–</div><div class="hmLabel">Flights</div></div>
+      <div class="hmStat"><div id="landings"     class="hmVal">–</div><div class="hmLabel">Landings</div></div>
+      <div class="hmStat"><div id="departures"   class="hmVal">–</div><div class="hmLabel">Departures</div></div>
+      <div class="hmStat"><div id="overflights"  class="hmVal">–</div><div class="hmLabel">Overflights</div></div>
     </div>
 
     <div id="rushBox" class="rush">
-      <span id="rushText">Lade Traffic…</span>
-      <span id="bestText">Beste Zeit: –</span>
+      <span id="rushText">Loading traffic…</span>
+      <span id="bestText">Best time: –</span>
     </div>
 
     <div id="hourScroller" class="scroller"></div>
 
     <div class="rankings">
       <div class="panel"><h3>Top Airlines</h3><pre id="airlineRanking">–</pre></div>
-      <div class="panel"><h3>Top Routen</h3><pre  id="routeRanking">–</pre></div>
+      <div class="panel"><h3>Top Routes</h3><pre  id="routeRanking">–</pre></div>
     </div>
   </div>
 </div>
@@ -82,7 +82,7 @@ async function loadVis(){
   const u=new URL(location.href);
   const noOverride=!u.searchParams.has('apiHost')&&!u.searchParams.has('apiPort');
   const r=await fetch('/jetframe.admin/vis-config.json?v='+Date.now(),{cache:'no-store'});
-  if(!r.ok)throw new Error('vis-config.json fehlt');
+  if(!r.ok)throw new Error('vis-config.json missing');
   const c=await r.json();
   if(noOverride){ API_BASE=(location.protocol||'http:')+'//'+String(c.simpleApiHost||location.hostname||'127.0.0.1').trim()+':'+String(c.simpleApiPort||'8087').trim(); }
   VIS_CONFIG_LOADED=true;
@@ -131,8 +131,8 @@ function renderHours(hourly){
     const c=document.createElement('div');
     c.className='hourCard'+(k===nowH?' now':'')+(k===best&&v.total>0?' best':'');
     c.style.setProperty('--heat',heat.toFixed(2));
-    const badge=k===nowH?'JETZT':(k===best&&v.total>0?'PEAK':'UHR');
-    c.innerHTML='<div class="hourInner"><div class="hourTop"><div class="hour">'+k+':00</div><div class="badge">'+badge+'</div></div><div class="hourTotal">'+v.total+'</div><div class="hourSub">Flugbewegungen</div><div class="bars"><div class="bar">🛬 '+v.landings+'</div><div class="bar">🛫 '+v.departures+'</div><div class="bar">🛩️ '+v.overflights+'</div></div></div>';
+    const badge=k===nowH?'NOW':(k===best&&v.total>0?'PEAK':'HR');
+    c.innerHTML='<div class="hourInner"><div class="hourTop"><div class="hour">'+k+':00</div><div class="badge">'+badge+'</div></div><div class="hourTotal">'+v.total+'</div><div class="hourSub">Flight movements</div><div class="bars"><div class="bar">🛬 '+v.landings+'</div><div class="bar">🛫 '+v.departures+'</div><div class="bar">🛩️ '+v.overflights+'</div></div></div>';
     f.appendChild(c);
   }
   sc.appendChild(f);
@@ -142,14 +142,14 @@ function renderHours(hourly){
 function set(id,val){ const e=$(id); if(e)e.textContent=val; }
 
 function render(d){
-  set('dateText', d.date?'Heute · '+d.date:'Heatmap');
+  set('dateText', d.date?'Today · '+d.date:'Heatmap');
   set('totalFlights', num(d.totalFlights));
   set('landings',     num(d.landings));
   set('departures',   num(d.departures));
   set('overflights',  num(d.overflights));
   const rush=$('rushBox'); if(rush)rush.classList.toggle('hot',clean(d.rushHourNow)==='true');
-  set('rushText', clean(d.rushHourText)||'Noch keine Rushhour');
-  set('bestText',  clean(d.bestSpotterHour)?'Beste Zeit: '+clean(d.bestSpotterHour):'Beste Zeit: –');
+  set('rushText', clean(d.rushHourText)||'No rush hour yet');
+  set('bestText',  clean(d.bestSpotterHour)?'Best time: '+clean(d.bestSpotterHour):'Best time: –');
   set('airlineRanking', clean(d.airlineRankingText)||'–');
   set('routeRanking',   clean(d.routeRankingText)||'–');
   renderHours(parseHourly(d.hourly));
@@ -158,7 +158,7 @@ function render(d){
 async function poll(){ await checkApi(); render(await readAll()); }
 
 loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
-  .catch(e=>{ VIS_CONFIG_LOADED=false; console.error(e); setWarn(true,'vis-config.json fehlt'); });
+  .catch(e=>{ VIS_CONFIG_LOADED=false; console.error(e); setWarn(true,'vis-config.json missing'); });
 </script>
 
 <script>
@@ -166,7 +166,7 @@ loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
 (function(){
   let _b=false;
   function pad(n){return String(n).padStart(2,'0');}
-  function wanted(){const d=new Date();return'Heute · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
+  function wanted(){const d=new Date();return'Today · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
   function apply(){if(_b)return;_b=true;const s=document.querySelector('.header .sub');if(s){const t=wanted();if(s.textContent!==t)s.textContent=t;}_b=false;}
   apply();setInterval(apply,5000);
   const h=document.querySelector('.header');if(h)new MutationObserver(apply).observe(h,{childList:true,subtree:true,characterData:true});
@@ -185,12 +185,12 @@ loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
 </script>
 
 <script>
-/* Ranking-Zeilen: jede Zeile als eigener Span mit ellipsis */
+/* Ranking rows: each line as its own span with ellipsis */
 (function(){
   function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function applyOne(pre){
     if(!pre)return;
-    // Originaltext merken
+    // Remember original text
     if(pre.dataset.jfRaw===undefined) pre.dataset.jfRaw=pre.textContent||'';
     else if(!pre.querySelector('.hm-line')) pre.dataset.jfRaw=pre.textContent||'';
     const raw=(pre.dataset.jfRaw||'').trim();

@@ -19,6 +19,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var states_exports = {};
 __export(states_exports, {
   clearFlight: () => clearFlight,
+  desiredReadWrite: () => desiredReadWrite,
   ensureBaseStates: () => ensureBaseStates,
   ensureChannel: () => ensureChannel,
   ensureFlightStates: () => ensureFlightStates,
@@ -178,10 +179,6 @@ async function ensureFlightStates(adapter, base) {
     ".manufacturerLogoUrl",
     ".aircraftTypeText",
     ".aircraftSize",
-    ".squawk",
-    ".emergency",
-    ".emergencyType",
-    ".emergencyText",
     ".squawk",
     ".emergency",
     ".emergencyType",
@@ -914,6 +911,7 @@ async function keepExistingStringState(adapter, id, value) {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   clearFlight,
+  desiredReadWrite,
   ensureBaseStates,
   ensureChannel,
   ensureFlightStates,

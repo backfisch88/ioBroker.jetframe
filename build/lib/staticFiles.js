@@ -37,7 +37,7 @@ async function copyStaticFiles(adapter) {
   const sourceDir = path.resolve(__dirname, "../../admin");
   adapter.log.debug(`[JetFrame] Static source: ${sourceDir}`);
   if (!fs.existsSync(sourceDir)) {
-    adapter.log.warn(`[JetFrame] Static source fehlt: ${sourceDir}`);
+    adapter.log.warn(`[JetFrame] Static source directory missing: ${sourceDir}`);
     return;
   }
   await copyRecursiveToIoBrokerFiles(adapter, sourceDir, "");

@@ -24,8 +24,8 @@ export function enrichAircraft(config: JetFrameConfig, a: Aircraft): Aircraft {
 	/**
 	 * SIGNED DIFFERENCE
 	 *
-	 * < 0 = links vom Fenster
-	 * > 0 = rechts vom Fenster
+	 * < 0 = left of window
+	 * > 0 = right of window
 	 */
 	const windowDiffDeg = signedAngleDiff(bearingHomeDeg, config.windowBearingDeg);
 
@@ -247,7 +247,7 @@ function candidateScore(config: JetFrameConfig, a: Aircraft): number {
 	// 1) Absolute priority: Emergency / Special / Government / large aircraft
 	score += priorityBonus(config, a);
 
-	// 2) Modus-Basis
+	// 2) Mode base
 	if (a.mode === 'LANDING') {
 		score += 9000;
 	}
@@ -259,10 +259,10 @@ function candidateScore(config: JetFrameConfig, a: Aircraft): number {
 	}
 
 	// 3) Center Window Priority
-	// Nur relevant, wenn kein Special/Emergency den Score ohnehin dominiert.
+	// Only relevant if no Special/Emergency already dominates the score.
 	score += centerWindowBonus(config, a);
 
-	// 4) Gute Fluglogik
+	// 4) Good flight logic
 	if (a.mode === 'LANDING') {
 		score += Math.max(0, 2500 - Math.abs(a.verticalRate || 0) / 2);
 		score += Math.max(0, 2200 - (a.landingTrackDiffDeg || 999) * 35);
@@ -277,7 +277,7 @@ function candidateScore(config: JetFrameConfig, a: Aircraft): number {
 	// 5) Proximity to home
 	score += Math.max(0, 2600 - (a.distHomeNm || 999) * 260);
 
-	// 6) Frische ADS-B-Daten
+	// 6) Fresh ADS-B data
 	score -= (a.seenSec || 0) * 40;
 
 	return score;

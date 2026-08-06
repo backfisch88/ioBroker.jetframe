@@ -408,7 +408,7 @@ function downloadText(url: string, redirects = 0): Promise<string> {
 			res => {
 				if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
 					if (redirects >= 5) {
-						reject(new Error('Zu viele Redirects bei Special-Liveries'));
+						reject(new Error('Too many redirects for special liveries'));
 						return;
 					}
 
@@ -437,7 +437,7 @@ function downloadText(url: string, redirects = 0): Promise<string> {
 					const text = String(body || '').trim();
 
 					if (!text) {
-						reject(new Error('Special-Liveries HTML leer'));
+						reject(new Error('Special liveries HTML is empty'));
 						return;
 					}
 

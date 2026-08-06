@@ -11,7 +11,7 @@ export async function copyStaticFiles(adapter: AdapterLike): Promise<void> {
 	adapter.log.debug(`[JetFrame] Static source: ${sourceDir}`);
 
 	if (!fs.existsSync(sourceDir)) {
-		adapter.log.warn(`[JetFrame] Static source fehlt: ${sourceDir}`);
+		adapter.log.warn(`[JetFrame] Static source directory missing: ${sourceDir}`);
 		return;
 	}
 
