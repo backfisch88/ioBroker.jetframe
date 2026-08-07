@@ -142,9 +142,13 @@ This adapter is intended exclusively for private, informational, non-commercial 
 <!--
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
+
+- (backfisch88) Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup
 -->
 
 ### **WORK IN PROGRESS**
+
+- (backfisch88) Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup
 
 ### 1.0.7 (2026-06-23)
 
