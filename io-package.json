@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "jetframe",
-    "version": "1.0.7",
+    "version": "1.1.0",
     "news": {
+      "1.1.0": {
+        "en": "Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup",
+        "de": "Volle englische Lokalisierung (Logs, Zustandswerte, Web-Benutzeroberfläche), Button-Rolle-Fix (read=false), Intervallvalidierung, Bild-Cache-Größenbegrenzung, Wiederherstellung der Admin-Einstellungsseite, verwaiste statische Dateibereinigung",
+        "ru": "Полная локализация на английском языке (логи, значения состояния, веб-интерфейс), исправление роли кнопки (read=false), проверка интервала, ограничение размера кэша изображения, восстановленная страница настроек администратора, осиротевшая статическая очистка файлов",
+        "pt": "Localização completa em inglês (logs, valores de estado, UI web), correção de função de botão (leia=false), validação de intervalo, limite de tamanho de cache de imagem, página de configurações de administrador restaurada, limpeza de arquivos estáticos órfão",
+        "nl": "Volledige Engelse localisatie (logs, status waarden, web UI), knop role fix (read=false), interval validatie, afbeelding cache grootte limiet, herstelde admin instellingen pagina, wees statische bestand opruimen",
+        "fr": "Localisation complète en anglais (logs, valeurs d'état, interface utilisateur web), correction de rôle par bouton (lecture=false), validation de l'intervalle, limite de taille du cache d'image, page de paramètres d'administration restaurée, nettoyage de fichiers statiques orphelins",
+        "it": "Localizzazione completa in inglese (log, valori di stato, web UI), correzione del ruolo del pulsante (read=false), validazione dell'intervallo, limite di dimensione della cache delle immagini, pagina delle impostazioni di amministratore ripristinate, pulizia dei file statici orfani",
+        "es": "Localización completa en inglés (logs, state values, web UI), fijación de funciones (read=false), validación de intervalos, límite de tamaño de la imagen, página de configuración de administración restaurada, limpieza de archivos estáticos huérfanos",
+        "pl": "Pełna angielska lokalizacja (logi, wartości stanu, Interfejs WWW), poprawianie funkcji przycisku (read = false), walidacja interwałów, ograniczenie rozmiaru pamięci podręcznej obrazu, przywrócona strona ustawień administratora, osierocony statyczny czyszczenie pliku",
+        "uk": "Повна англійська локалізація (логи, державні цінності, веб UI), кнопка роль виправлення (читати=false), інтервальна перевірка, обмеження розміру зображень, відновлена сторінка налаштувань адміністратора, очищення статичного файлу",
+        "zh-cn": "完全英语本地化(logs, state value,web UI),按钮角色固定(read=false),间隔验证,图像缓存大小限制,恢复的admin设置页面,孤儿静态文件清理"
+      },
       "1.0.7": {
         "en": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
         "de": "Bugfix-Release: Build-Ausgabe wird nun im Repository versioniert (vom ioBroker-Repo-Checker gefordert), CHANGELOG_OLD.md für ältere Changelog-Einträge hinzugefügt.",

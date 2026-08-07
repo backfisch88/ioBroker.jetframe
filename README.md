@@ -143,10 +143,8 @@ This adapter is intended exclusively for private, informational, non-commercial 
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 
-- (backfisch88) Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup
 -->
-
-### **WORK IN PROGRESS**
+### 1.1.0 (2026-08-07)
 
 - (backfisch88) Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup
 
