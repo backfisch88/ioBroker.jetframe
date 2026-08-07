@@ -109,7 +109,7 @@ async function removeOrphanedFilesInDir(adapter: AdapterLike, dir: string, writt
 		if (!writtenPaths.has(relPath)) {
 			try {
 				await adapter.unlinkAsync('jetframe.admin', relPath);
-				adapter.log.info(`[JetFrame] Removed orphaned static file: jetframe.admin/${relPath}`);
+				adapter.log.debug(`[JetFrame] Removed orphaned static file: jetframe.admin/${relPath}`);
 			} catch (e) {
 				adapter.log.warn(
 					`[JetFrame] Could not remove orphaned file ${relPath}: ${e instanceof Error ? e.message : String(e)}`,

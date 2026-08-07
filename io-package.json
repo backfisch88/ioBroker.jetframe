@@ -179,7 +179,8 @@
     "emergencyPriorityEnabled": true,
     "emergencySquawk7500": true,
     "emergencySquawk7600": true,
-    "emergencySquawk7700": true
+    "emergencySquawk7700": true,
+    "webPort": 8189
   },
   "objects": [],
   "instanceObjects": []

@@ -33,10 +33,12 @@ var import_classify = require("./lib/classify");
 var import_states = require("./lib/states");
 var import_images = require("./lib/images");
 var import_visConfig = require("./lib/visConfig");
+var import_webServer = require("./lib/webServer");
 var import_flightInfo = require("./lib/flightInfo");
 class Jetframe extends utils.Adapter {
   timer = null;
   statisticsTimer = null;
+  webServer;
   liveTarget = null;
   liveInfo = null;
   liveStarted = 0;
@@ -67,6 +69,9 @@ class Jetframe extends utils.Adapter {
       this.subscribeStates("clearImageCache");
       this.log.debug("[JetFrame] States OK");
       await (0, import_images.ensureImageDirs)(this, this.logDebug.bind(this), this.logWarn.bind(this));
+      const rawVisualSource = String(this.config.visualSource || "current").toLowerCase();
+      const visualSource = ["current", "airport", "overflight"].includes(rawVisualSource) ? rawVisualSource : "current";
+      this.webServer = (0, import_webServer.startWebServer)(this, { dpRoot: config.dpRoot, webPort: config.webPort, visualSource });
       await (0, import_visConfig.writeVisConfig)(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
       this.log.debug("[JetFrame] Images OK");
       (0, import_airports.updateAirportJson)(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch((e) => {
@@ -1444,6 +1449,11 @@ class Jetframe extends utils.Adapter {
     try {
       this.clearTimer();
       this.clearStatisticsTimer();
+      if (this.webServer) {
+        this.webServer.close(() => callback());
+        this.webServer = void 0;
+        return;
+      }
       callback();
     } catch {
       callback();

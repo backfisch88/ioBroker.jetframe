@@ -16,8 +16,7 @@
 <body class="jf-page-home">
 
 <div id="simpleApiWarning" class="simpleApiWarning">
-	⚠️ Simple API unreachable<br>
-	<span id="simpleApiWarningText"></span>
+	⚠️ JetFrame server unreachable<br>
 </div>
 
 <div id="app">
@@ -91,22 +90,11 @@
 <script>
 'use strict';
 
-let API_BASE = (() => {
-	const proto = window.location.protocol || 'http:';
-	const host = window.location.hostname || '127.0.0.1';
-	const url = new URL(window.location.href);
-	const apiHost = url.searchParams.get('apiHost') || host;
-	const apiPort = url.searchParams.get('apiPort') || '8087';
-	return proto + '//' + apiHost + ':' + apiPort;
-})();
-
 const DP_ROOT = (() => {
 	const url = new URL(window.location.href);
 	const instance = url.searchParams.get('instance') || '0';
 	return 'jetframe.' + String(instance).replace(/[^0-9]/g, '');
 })();
-
-let VIS_CONFIG_LOADED = false;
 
 function $(id) { return document.getElementById(id); }
 
@@ -120,67 +108,31 @@ function clean(v) {
 	return v.replace(/\\"/g, '"').replace(/\\n/g, '').trim();
 }
 
-async function loadVisualConfig() {
-	const url = new URL(window.location.href);
-	const hasApiOverride = url.searchParams.has('apiHost') || url.searchParams.has('apiPort');
-
-	try {
-		const res = await fetch('/jetframe.admin/vis-config.json?v=' + Date.now(), { cache: 'no-store' });
-		if (!res.ok) throw new Error('vis-config.json not found');
-
-		const cfg = await res.json();
-
-		if (!hasApiOverride) {
-			const proto = window.location.protocol || 'http:';
-			const host = String(cfg.simpleApiHost || window.location.hostname || '127.0.0.1').trim();
-			const port = String(cfg.simpleApiPort || '8087').trim();
-			API_BASE = proto + '//' + host + ':' + port;
-		}
-
-		console.log('[JetFrame] vis-config.json loaded:', cfg, API_BASE);
-	} catch (e) {
-		console.warn('[JetFrame] vis-config.json not loaded, using fallback:', API_BASE, e);
-	}
-
-	VIS_CONFIG_LOADED = true;
-}
-
-function setSimpleApiWarning(visible, text) {
+function setServerWarning(visible) {
 	const box = $('simpleApiWarning');
-	const msg = $('simpleApiWarningText');
-	if (msg) msg.textContent = text || API_BASE;
 	if (box) box.classList.toggle('visible', !!visible);
 }
 
-async function checkSimpleApiReachable() {
-	try {
-		const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(DP_ROOT + '.status'), { cache: 'no-store' });
-		if (!res.ok) throw new Error('HTTP ' + res.status);
-		setSimpleApiWarning(false, '');
-		return true;
-	} catch (e) {
-		setSimpleApiWarning(true, API_BASE);
-		return false;
-	}
-}
-
 async function readState(id) {
-	if (!VIS_CONFIG_LOADED) return '';
 	try {
-		const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(id), { cache: 'no-store' });
-		if (!res.ok) return '';
+		const res = await fetch('/state/' + encodeURIComponent(id), { cache: 'no-store' });
+		if (!res.ok) throw new Error('HTTP ' + res.status);
+		setServerWarning(false);
 		return clean(await res.text());
 	} catch (e) {
-		setSimpleApiWarning(true, API_BASE);
+		setServerWarning(true);
 		return '';
 	}
 }
 
 async function writeState(id, value) {
 	try {
-		await fetch(API_BASE + '/set/' + encodeURIComponent(id) + '?value=' + encodeURIComponent(value), { cache: 'no-store' });
+		await fetch('/state/' + encodeURIComponent(id) + '?value=' + encodeURIComponent(value), {
+			method: 'POST',
+			cache: 'no-store',
+		});
 	} catch (e) {
-		setSimpleApiWarning(true, API_BASE);
+		setServerWarning(true);
 	}
 }
 
@@ -208,8 +160,6 @@ function applyQueryLinks() {
 }
 
 async function poll() {
-	await checkSimpleApiReachable();
-
 	const base = DP_ROOT + '.statistics';
 
 	const [status, enabled, total, current, landings, runway] = await Promise.all([
@@ -250,19 +200,8 @@ if (powerBtn) {
 }
 
 applyQueryLinks();
-
-loadVisualConfig()
-	.then(() => {
-		poll();
-		setTimeout(poll, 2500);
-		setInterval(poll, 10000);
-	})
-	.catch(e => {
-		console.error('[JetFrame] Start aborted:', e);
-		VIS_CONFIG_LOADED = true;
-		poll();
-		setInterval(poll, 10000);
-	});
+poll();
+setInterval(poll, 10000);
 </script>
 </body>
 </html>

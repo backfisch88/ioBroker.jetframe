@@ -13,12 +13,14 @@ import { ensureStates, writeFlight, clearFlight, ensureChannel } from './lib/sta
 
 import { clearImageCache, ensureImageDirs, saveImages } from './lib/images';
 import { writeVisConfig } from './lib/visConfig';
+import { startWebServer } from './lib/webServer';
 
 import { enrichFlightInfo } from './lib/flightInfo';
 
 class Jetframe extends utils.Adapter {
 	private timer: ioBroker.Timeout | undefined | null = null;
 	private statisticsTimer: ioBroker.Interval | undefined | null = null;
+	private webServer: http.Server | undefined;
 	private liveTarget: Partial<Aircraft> | null = null;
 	private liveInfo: Partial<Aircraft> | null = null;
 	private liveStarted = 0;
@@ -55,6 +57,13 @@ class Jetframe extends utils.Adapter {
 			this.log.debug('[JetFrame] States OK');
 
 			await ensureImageDirs(this, this.logDebug.bind(this), this.logWarn.bind(this));
+
+			const rawVisualSource = String((this.config as any).visualSource || 'current').toLowerCase();
+			const visualSource = (
+				['current', 'airport', 'overflight'].includes(rawVisualSource) ? rawVisualSource : 'current'
+			) as 'current' | 'airport' | 'overflight';
+
+			this.webServer = startWebServer(this, { dpRoot: config.dpRoot, webPort: config.webPort, visualSource });
 
 			await writeVisConfig(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
 			this.log.debug('[JetFrame] Images OK');
@@ -1916,6 +1925,13 @@ class Jetframe extends utils.Adapter {
 		try {
 			this.clearTimer();
 			this.clearStatisticsTimer();
+
+			if (this.webServer) {
+				this.webServer.close(() => callback());
+				this.webServer = undefined;
+				return;
+			}
+
 			callback();
 		} catch {
 			callback();

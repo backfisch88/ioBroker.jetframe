@@ -257,7 +257,12 @@ async function cacheJetIfNeeded(adapter, a, logDebug, logWarn) {
     await enforceCacheLimit(adapter, IMAGE_CACHE.jetDir, MAX_CACHED_JET_IMAGES, logDebug);
     return url;
   } catch (e) {
-    logWarn(`FR24 image download/save error: ${errorText(e)}`);
+    const message = errorText(e);
+    if (/HTTP 404 at/.test(message)) {
+      logDebug(`FR24 image not found: ${message}`);
+    } else {
+      logWarn(`FR24 image download/save error: ${message}`);
+    }
     NEGATIVE_IMAGE_CACHE.set(negativeKey, Date.now());
     logDebug(`Jet image negative-cached: ${negativeKey}`);
     return "";
@@ -324,7 +329,12 @@ async function resolveFr24AircraftImageFromPage(a, logDebug, logWarn) {
     logDebug(`FR24 aircraft image found: ${imageUrl}`);
     return imageUrl;
   } catch (e) {
-    logWarn(`FR24 aircraft error: ${errorText(e)}`);
+    const message = errorText(e);
+    if (/HTTP 404 at/.test(message)) {
+      logDebug(`FR24 aircraft page not found: ${message}`);
+    } else {
+      logWarn(`FR24 aircraft error: ${message}`);
+    }
     return "";
   }
 }

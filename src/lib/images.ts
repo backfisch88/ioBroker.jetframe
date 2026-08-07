@@ -406,7 +406,13 @@ async function cacheJetIfNeeded(
 
 		return url;
 	} catch (e) {
-		logWarn(`FR24 image download/save error: ${errorText(e)}`);
+		const message = errorText(e);
+
+		if (/HTTP 404 at/.test(message)) {
+			logDebug(`FR24 image not found: ${message}`);
+		} else {
+			logWarn(`FR24 image download/save error: ${message}`);
+		}
 
 		NEGATIVE_IMAGE_CACHE.set(negativeKey, Date.now());
 
@@ -509,7 +515,13 @@ async function resolveFr24AircraftImageFromPage(
 
 		return imageUrl;
 	} catch (e) {
-		logWarn(`FR24 aircraft error: ${errorText(e)}`);
+		const message = errorText(e);
+
+		if (/HTTP 404 at/.test(message)) {
+			logDebug(`FR24 aircraft page not found: ${message}`);
+		} else {
+			logWarn(`FR24 aircraft error: ${message}`);
+		}
 
 		return '';
 	}

@@ -109,5 +109,7 @@ export function readConfig(adapter: AdapterLike): JetFrameConfig {
 
 		dpRoot: adapter.namespace,
 		airportJsonDp: `${adapter.namespace}.airportjson`,
+
+		webPort: cfgNumClamped(native, 'webPort', 8189, 1024, 65535),
 	};
 }

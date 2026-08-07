@@ -232,7 +232,12 @@ async function loadAdsbdbByCallsign(callsign, httpJson, logDebug, logWarn) {
       ts: now,
       data: null
     };
-    logWarn(`ADSBDB error cached for ${cs}: ${errorText(e)}`);
+    const message = errorText(e);
+    if (/HTTP 404 at/.test(message)) {
+      logDebug(`ADSBDB not found for ${cs}: ${message}`);
+    } else {
+      logWarn(`ADSBDB error cached for ${cs}: ${message}`);
+    }
     return null;
   }
 }
@@ -464,12 +469,17 @@ async function resolveRouteViaFlighteraPlane(registration, operationalCallsign, 
           data: parsed
         };
         logDebug(
-          `Flightera Plane Route parsed: ${op} | ${parsed.originIata} \u2192 ${parsed.destIata} | routeCallsign=${parsed.routeCallsign || "?"} | live=${parsed.isLive ? "ja" : "nein"}`
+          `Flightera Plane Route parsed: ${op} | ${parsed.originIata} \u2192 ${parsed.destIata} | routeCallsign=${parsed.routeCallsign || "?"} | live=${parsed.isLive ? "yes" : "no"}`
         );
         return parsed;
       }
     } catch (e) {
-      logWarn(`Flightera plane error for ${cacheKey}: ${errorText(e)}`);
+      const message = errorText(e);
+      if (/HTTP 404 at/.test(message)) {
+        logDebug(`Flightera plane not found for ${cacheKey}: ${message}`);
+      } else {
+        logWarn(`Flightera plane error for ${cacheKey}: ${message}`);
+      }
     }
   }
   flighteraPlaneRouteCache[cacheKey] = {
@@ -761,7 +771,12 @@ async function resolveRouteViaFr24Live(operationalCallsign, mode, httpText, logD
       ts: now,
       data: null
     };
-    logWarn(`FR24 live error cached for ${op}: ${errorText(e)}`);
+    const message = errorText(e);
+    if (/HTTP 404 at/.test(message)) {
+      logDebug(`FR24 live not found for ${op}: ${message}`);
+    } else {
+      logWarn(`FR24 live error cached for ${op}: ${message}`);
+    }
     return null;
   }
 }
@@ -921,7 +936,12 @@ async function resolveImageViaFr24Aircraft(registration, operationalCallsign, ht
       ts: now,
       imageUrl: ""
     };
-    logWarn(`FR24 image error cached for ${reg}: ${errorText(e)}`);
+    const message = errorText(e);
+    if (/HTTP 404 at/.test(message)) {
+      logDebug(`FR24 image not found for ${reg}: ${message}`);
+    } else {
+      logWarn(`FR24 image error cached for ${reg}: ${message}`);
+    }
     return "";
   }
 }

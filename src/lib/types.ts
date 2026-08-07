@@ -128,6 +128,8 @@ export interface JetFrameConfig {
 	speechTemplate?: string;
 
 	speechEnabled: boolean;
+
+	webPort: number;
 }
 
 /**

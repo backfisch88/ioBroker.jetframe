@@ -16,8 +16,7 @@
 <body class="jf-page-stats">
 
 <div id="simpleApiWarning" class="simpleApiWarning">
-  ⚠️ Simple API unreachable<br>
-  <span id="simpleApiWarningText"></span>
+  ⚠️ JetFrame server unreachable<br>
 </div>
 
 <div id="app">
@@ -77,12 +76,7 @@
 
 <script>
 'use strict';
-let API_BASE = (() => {
-  const u = new URL(location.href);
-  return (location.protocol||'http:')+'//'+(u.searchParams.get('apiHost')||location.hostname||'127.0.0.1')+':'+(u.searchParams.get('apiPort')||'8087');
-})();
 const DP_ROOT = 'jetframe.'+(new URL(location.href).searchParams.get('instance')||'0').replace(/[^0-9]/g,'');
-let VIS_CONFIG_LOADED = false;
 
 const BASE = DP_ROOT+'.statistics';
 const IDS = {
@@ -106,17 +100,7 @@ const IDS = {
 };
 
 function $(id){ return document.getElementById(id); }
-function setWarn(v,t){ const b=$('simpleApiWarning'),m=$('simpleApiWarningText'); if(!b)return; if(m)m.textContent=t||API_BASE; b.classList.toggle('visible',!!v); }
-async function checkApi(){ try{ const r=await fetch(API_BASE+'/getPlainValue/'+encodeURIComponent(DP_ROOT+'.status'),{cache:'no-store'}); if(!r.ok)throw 0; setWarn(false); return true; }catch{ setWarn(true); return false; } }
-
-async function loadVis(){
-  const u=new URL(location.href), no=!u.searchParams.has('apiHost')&&!u.searchParams.has('apiPort');
-  const r=await fetch('/jetframe.admin/vis-config.json?v='+Date.now(),{cache:'no-store'});
-  if(!r.ok)throw new Error('vis-config.json missing');
-  const c=await r.json();
-  if(no){ API_BASE=(location.protocol||'http:')+'//'+String(c.simpleApiHost||location.hostname||'127.0.0.1').trim()+':'+String(c.simpleApiPort||'8087').trim(); }
-  VIS_CONFIG_LOADED=true;
-}
+function setWarn(v){ const b=$('simpleApiWarning'); if(!b)return; b.classList.toggle('visible',!!v); }
 
 function clean(v){
   if(v==null)return''; v=String(v).trim();
@@ -128,8 +112,7 @@ function num(v){ const n=Number(String(v).replace(',','.')); return Number.isFin
 function fmt(v){ return num(v).toLocaleString('en-US'); }
 
 async function read(id){
-  if(!VIS_CONFIG_LOADED)return'';
-  try{ const r=await fetch(API_BASE+'/getPlainValue/'+encodeURIComponent(id),{cache:'no-store'}); if(!r.ok)return''; return clean(await r.text()); }
+  try{ const r=await fetch('/state/'+encodeURIComponent(id),{cache:'no-store'}); if(!r.ok)throw 0; setWarn(false); return clean(await r.text()); }
   catch{ setWarn(true); return''; }
 }
 
@@ -169,10 +152,10 @@ function render(d){
   set('alltimeRoutes',   d.alltimeRoutes||'–');
 }
 
-async function poll(){ await checkApi(); render(await readAll()); }
+async function poll(){ render(await readAll()); }
 
-loadVis().then(async()=>{ await checkApi(); poll(); setInterval(poll,10000); })
-  .catch(e=>{ VIS_CONFIG_LOADED=false; console.error(e); setWarn(true,'vis-config.json missing'); });
+poll();
+setInterval(poll,10000);
 </script>
 
 <script>

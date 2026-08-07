@@ -97,7 +97,8 @@ function readConfig(adapter) {
       "{modeSpeechText}: {airlineName} {bestCallsign} {routeDirectionText} {routeOtherAirport} in {altitudeFt} ft. {windowPositionSpeechText}."
     ),
     dpRoot: adapter.namespace,
-    airportJsonDp: `${adapter.namespace}.airportjson`
+    airportJsonDp: `${adapter.namespace}.airportjson`,
+    webPort: cfgNumClamped(native, "webPort", 8189, 1024, 65535)
   };
 }
 // Annotate the CommonJS export names for ESM import in node:

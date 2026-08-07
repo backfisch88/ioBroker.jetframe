@@ -18,8 +18,7 @@
 
 <body class="jf-page-frame jf-preload">
 	<div id="simpleApiWarning" class="simpleApiWarning">
-		⚠️ Simple API unreachable<br>
-		<span id="simpleApiWarningText"></span>
+		⚠️ JetFrame server unreachable<br>
 	</div>
 
 	<div id="app">
@@ -182,15 +181,6 @@
 
 /* ── Konfiguration ───────────────────────────────────────── */
 
-let API_BASE = (() => {
-	const proto = window.location.protocol || 'http:';
-	const host  = window.location.hostname  || '127.0.0.1';
-	const url   = new URL(window.location.href);
-	const apiHost = url.searchParams.get('apiHost') || host;
-	const apiPort = url.searchParams.get('apiPort') || '8087';
-	return proto + '//' + apiHost + ':' + apiPort;
-})();
-
 const DP_ROOT = (() => {
 	const url = new URL(window.location.href);
 	const instance = url.searchParams.get('instance') || '0';
@@ -204,7 +194,6 @@ let VIS_SOURCE = (() => {
 })();
 
 let CURRENT = DP_ROOT + '.' + VIS_SOURCE;
-let VIS_CONFIG_LOADED = false;
 
 /* IDS werden als Getter-Funktion aufgebaut, damit rebuildIds() sauber ist */
 function makeIds() {
@@ -275,26 +264,12 @@ let speechUnlocked  = false;
 
 function $(id) { return document.getElementById(id); }
 
-/* ── API Warning ────────────────────────────────────────── */
+/* ── Server Warning ─────────────────────────────────────── */
 
-function setSimpleApiWarning(visible, text) {
+function setServerWarning(visible) {
 	const box = $('simpleApiWarning');
-	const msg = $('simpleApiWarningText');
 	if (!box) return;
-	if (msg) msg.textContent = text || API_BASE;
 	box.classList.toggle('visible', !!visible);
-}
-
-async function checkSimpleApiReachable() {
-	try {
-		const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(DP_ROOT + '.status'), { cache: 'no-store' });
-		if (!res.ok) throw new Error('HTTP ' + res.status);
-		setSimpleApiWarning(false, '');
-		return true;
-	} catch (e) {
-		setSimpleApiWarning(true, API_BASE);
-		return false;
-	}
 }
 
 /* ── Value Helpers ──────────────────────────────────────── */
@@ -329,23 +304,26 @@ function formatSigned(v) {
 /* ── API Calls ──────────────────────────────────────────── */
 
 async function readState(id) {
-	if (!VIS_CONFIG_LOADED) return '';
 	try {
-		const res = await fetch(API_BASE + '/getPlainValue/' + encodeURIComponent(id), { cache: 'no-store' });
-		if (!res.ok) return '';
+		const res = await fetch('/state/' + encodeURIComponent(id), { cache: 'no-store' });
+		if (!res.ok) throw new Error('HTTP ' + res.status);
+		setServerWarning(false);
 		const text = await res.text();
 		const cleaned = cleanValue(text);
 		if (!cleaned || cleaned === 'null' || cleaned.toLowerCase().startsWith('error:')) return '';
 		return cleaned;
 	} catch (e) {
-		setSimpleApiWarning(true, API_BASE);
+		setServerWarning(true);
 		return '';
 	}
 }
 
 async function writeState(id, value) {
 	try {
-		await fetch(API_BASE + '/set/' + encodeURIComponent(id) + '?value=' + encodeURIComponent(value), { cache: 'no-store' });
+		await fetch('/state/' + encodeURIComponent(id) + '?value=' + encodeURIComponent(value), {
+			method: 'POST',
+			cache: 'no-store',
+		});
 	} catch (e) {}
 }
 
@@ -360,30 +338,25 @@ async function readAll() {
 
 async function loadVisualConfig() {
 	const url = new URL(window.location.href);
-	const hasApiOverride    = url.searchParams.has('apiHost') || url.searchParams.has('apiPort');
 	const hasSourceOverride = url.searchParams.has('source');
 
-	const res = await fetch('/jetframe.admin/vis-config.json?v=' + Date.now(), { cache: 'no-store' });
-	if (!res.ok) throw new Error('vis-config.json nicht gefunden');
+	try {
+		const res = await fetch('/config', { cache: 'no-store' });
+		if (res.ok) {
+			const cfg = await res.json();
 
-	const cfg = await res.json();
+			if (!hasSourceOverride) {
+				const src = String(cfg.visualSource || 'current').toLowerCase();
+				VIS_SOURCE = ['current', 'airport', 'overflight'].includes(src) ? src : 'current';
+			}
 
-	if (!hasApiOverride) {
-		const proto = window.location.protocol || 'http:';
-		const host  = String(cfg.simpleApiHost || window.location.hostname || '127.0.0.1').trim();
-		const port  = String(cfg.simpleApiPort || '8087').trim();
-		API_BASE = proto + '//' + host + ':' + port;
+			console.log('[JetFrame] config loaded:', cfg, CURRENT);
+		}
+	} catch (e) {
+		console.warn('[JetFrame] config not loaded, using URL/default source:', e);
 	}
 
-	if (!hasSourceOverride) {
-		const src = String(cfg.visualSource || 'current').toLowerCase();
-		VIS_SOURCE = ['current', 'airport', 'overflight'].includes(src) ? src : 'current';
-	}
-
-	VIS_CONFIG_LOADED = true;
 	rebuildIds();
-
-	console.log('[JetFrame] vis-config.json loaded:', cfg, API_BASE, CURRENT);
 }
 
 /* ── Audio / Speech ─────────────────────────────────────── */
@@ -775,14 +748,12 @@ async function poll() {
 setSpeechButton();
 
 loadVisualConfig()
-	.then(async () => {
-		await checkSimpleApiReachable();
+	.then(() => {
 		poll();
 		setInterval(poll, 1500);
 	})
 	.catch(e => {
-		VIS_CONFIG_LOADED = false;
-		console.error('[JetFrame] Start abgebrochen:', e);
+		console.error('[JetFrame] Start aborted:', e);
 	});
 </script>
 

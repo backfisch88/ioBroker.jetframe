@@ -325,7 +325,13 @@ async function loadAdsbdbByCallsign(
 			data: null,
 		};
 
-		logWarn(`ADSBDB error cached for ${cs}: ${errorText(e)}`);
+		const message = errorText(e);
+
+		if (/HTTP 404 at/.test(message)) {
+			logDebug(`ADSBDB not found for ${cs}: ${message}`);
+		} else {
+			logWarn(`ADSBDB error cached for ${cs}: ${message}`);
+		}
 		return null;
 	}
 }
@@ -676,13 +682,22 @@ async function resolveRouteViaFlighteraPlane(
 				};
 
 				logDebug(
-					`Flightera Plane Route parsed: ${op} | ${parsed.originIata} → ${parsed.destIata} | routeCallsign=${parsed.routeCallsign || '?'} | live=${parsed.isLive ? 'ja' : 'nein'}`,
+					`Flightera Plane Route parsed: ${op} | ${parsed.originIata} → ${parsed.destIata} | routeCallsign=${parsed.routeCallsign || '?'} | live=${parsed.isLive ? 'yes' : 'no'}`,
 				);
 
 				return parsed;
 			}
 		} catch (e) {
-			logWarn(`Flightera plane error for ${cacheKey}: ${errorText(e)}`);
+			const message = errorText(e);
+
+			// A 404 just means Flightera has no page for this aircraft - a
+			// normal, expected outcome (not every registration is known to
+			// them), so it doesn't warrant a warning-level log entry.
+			if (/HTTP 404 at/.test(message)) {
+				logDebug(`Flightera plane not found for ${cacheKey}: ${message}`);
+			} else {
+				logWarn(`Flightera plane error for ${cacheKey}: ${message}`);
+			}
 		}
 	}
 
@@ -1119,7 +1134,13 @@ async function resolveRouteViaFr24Live(
 			data: null,
 		};
 
-		logWarn(`FR24 live error cached for ${op}: ${errorText(e)}`);
+		const message = errorText(e);
+
+		if (/HTTP 404 at/.test(message)) {
+			logDebug(`FR24 live not found for ${op}: ${message}`);
+		} else {
+			logWarn(`FR24 live error cached for ${op}: ${message}`);
+		}
 		return null;
 	}
 }
@@ -1358,7 +1379,13 @@ export async function resolveImageViaFr24Aircraft(
 			imageUrl: '',
 		};
 
-		logWarn(`FR24 image error cached for ${reg}: ${errorText(e)}`);
+		const message = errorText(e);
+
+		if (/HTTP 404 at/.test(message)) {
+			logDebug(`FR24 image not found for ${reg}: ${message}`);
+		} else {
+			logWarn(`FR24 image error cached for ${reg}: ${message}`);
+		}
 		return '';
 	}
 }

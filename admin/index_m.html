@@ -271,6 +271,7 @@
 				simpleApiHost: '',
 				simpleApiPort: 8087,
 				visualSource: 'current',
+				webPort: 8189,
 				minAltitudeFt: 1000,
 				maxAltitudeFt: 5000,
 				autoRunwayTrackToleranceDeg: 65,
@@ -1690,29 +1691,20 @@ EMBRAER=https://example.com/embraer.svg'
 						<div class="jetframe-title">&#128250; Visualisierung</div>
 
 						<div class="jetframe-hint" style="margin-bottom:14px;">
-							Einstellungen für die externe JetFrame-Visualisierung.
-			
+							JetFrame liefert seine Web-Oberfläche über einen eigenen, integrierten Server aus &ndash; es wird
+							<b>keine</b> Simple-API-Installation benötigt. Erreichbar unter
+							<b>http://&lt;iobroker-ip&gt;:&lt;Port&gt;/index.html</b>.
 						</div>
 
 						<div class="grid-2">
 							<div class="input-field">
 								<input
-									id="simpleApiHost"
-									class="value"
-									type="text"
-									placeholder="leer = gleicher Host"
-								/>
-								<label for="simpleApiHost">Simple-API Host/IP</label>
-							</div>
-
-							<div class="input-field">
-								<input
-									id="simpleApiPort"
+									id="webPort"
 									class="value"
 									type="number"
 									step="1"
 								/>
-								<label for="simpleApiPort">Simple-API Port</label>
+								<label for="webPort">JetFrame Web-Server Port</label>
 							</div>
 
 							<div class="input-field">
@@ -1724,7 +1716,35 @@ EMBRAER=https://example.com/embraer.svg'
 									<option value="airport">Start/Landung</option>
 									<option value="overflight">Überflug</option>
 								</select>
-								<label>VIS Anzeigequelle</label>
+								<label>Standard-Anzeigequelle</label>
+							</div>
+						</div>
+
+						<div class="jetframe-hint" style="margin-top:14px;">
+							Die folgenden zwei Felder werden nur benötigt, wenn du JetFrame-Daten zusätzlich in einem
+							klassischen ioBroker-VIS-Widget über die Simple-API anzeigen willst. Für die normale JetFrame-Weboberfläche
+							sind sie nicht erforderlich.
+						</div>
+
+						<div class="grid-2">
+							<div class="input-field">
+								<input
+									id="simpleApiHost"
+									class="value"
+									type="text"
+									placeholder="leer = gleicher Host"
+								/>
+								<label for="simpleApiHost">Simple-API Host/IP (optional)</label>
+							</div>
+
+							<div class="input-field">
+								<input
+									id="simpleApiPort"
+									class="value"
+									type="number"
+									step="1"
+								/>
+								<label for="simpleApiPort">Simple-API Port (optional)</label>
 							</div>
 						</div>
 					</div>

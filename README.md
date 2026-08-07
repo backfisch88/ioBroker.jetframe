@@ -49,11 +49,13 @@ After installation, configure the adapter under **Admin → JetFrame → Instanc
 
 ## Web Interface
 
-The web app is reachable through the Simple-API adapter:
+JetFrame runs its own built-in web server - no Simple-API or other adapter is required. The web app is reachable directly at:
 
 ```
-http://<iobroker-ip>:<simple-api-port>/jetframe.admin/index.html
+http://<iobroker-ip>:<webPort>/index.html
 ```
+
+The port (`webPort`, default `8189`) is configurable in the adapter settings.
 
 ### Pages
 
@@ -69,9 +71,11 @@ http://<iobroker-ip>:<simple-api-port>/jetframe.admin/index.html
 | Parameter | Example | Description |
 |---|---|---|
 | `instance` | `?instance=1` | Adapter instance (default: `0`) |
-| `apiHost` | `?apiHost=192.168.1.10` | Simple-API hostname |
-| `apiPort` | `?apiPort=8087` | Simple-API port |
 | `source` | `?source=overflight` | Display mode: `current`, `airport`, `overflight` |
+
+### Optional: ioBroker VIS integration
+
+If you want to show JetFrame data inside a classic ioBroker VIS widget instead of (or in addition to) the built-in pages, JetFrame can still write a `vis-config.json` for the Simple-API adapter if you configure `Simple-API Host/IP` and `Simple-API Port` in the settings. This is entirely optional and not needed for the built-in web pages above.
 
 ### Language
 
@@ -142,11 +146,10 @@ This adapter is intended exclusively for private, informational, non-commercial 
 <!--
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
-
 -->
-### 1.1.0 (2026-08-07)
+### **WORK IN PROGRESS**
 
-- (backfisch88) Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup
+- (backfisch88) JetFrame now runs its own built-in web server for the user-facing pages (index.html, frame.html, heatmap.html, stats.html) - no external Simple-API adapter is required anymore. New `webPort` setting (default 8189). Simple-API config is now optional and only used for classic ioBroker VIS widget integration.
 
 ### 1.0.7 (2026-06-23)
 
