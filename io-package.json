@@ -157,7 +157,16 @@
     "manufacturerLogoUrls": "",
     "externalAirlineLogos": false,
     "airlineLogoBaseUrl": "",
-    "cacheExternalImages": false
+    "cacheExternalImages": false,
+    "adsbCustomUrl": "",
+    "priorityEnabled": true,
+    "prioritySpecialLivery": true,
+    "priorityAircraftSize": true,
+    "priorityMilitaryGov": true,
+    "emergencyPriorityEnabled": true,
+    "emergencySquawk7500": true,
+    "emergencySquawk7600": true,
+    "emergencySquawk7700": true
   },
   "objects": [],
   "instanceObjects": []

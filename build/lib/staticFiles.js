@@ -33,6 +33,7 @@ __export(staticFiles_exports, {
 module.exports = __toCommonJS(staticFiles_exports);
 var fs = __toESM(require("node:fs"));
 var path = __toESM(require("node:path"));
+const RUNTIME_MANAGED_TOP_LEVEL_DIRS = ["img"];
 async function copyStaticFiles(adapter) {
   const sourceDir = path.resolve(__dirname, "../../admin");
   adapter.log.debug(`[JetFrame] Static source: ${sourceDir}`);
@@ -40,10 +41,12 @@ async function copyStaticFiles(adapter) {
     adapter.log.warn(`[JetFrame] Static source directory missing: ${sourceDir}`);
     return;
   }
-  await copyRecursiveToIoBrokerFiles(adapter, sourceDir, "");
+  const writtenPaths = /* @__PURE__ */ new Set();
+  await copyRecursiveToIoBrokerFiles(adapter, sourceDir, "", writtenPaths);
   adapter.log.debug("[JetFrame] Static files copied to ioBroker files");
+  await removeOrphanedFiles(adapter, writtenPaths);
 }
-async function copyRecursiveToIoBrokerFiles(adapter, srcDir, relDir) {
+async function copyRecursiveToIoBrokerFiles(adapter, srcDir, relDir, writtenPaths) {
   const entries = fs.readdirSync(srcDir, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.name === "src") {
@@ -58,12 +61,47 @@ async function copyRecursiveToIoBrokerFiles(adapter, srcDir, relDir) {
     const srcPath = path.join(srcDir, entry.name);
     const relPath = relDir ? `${relDir}/${entry.name}` : entry.name;
     if (entry.isDirectory()) {
-      await copyRecursiveToIoBrokerFiles(adapter, srcPath, relPath);
+      await copyRecursiveToIoBrokerFiles(adapter, srcPath, relPath, writtenPaths);
       continue;
     }
     const buffer = fs.readFileSync(srcPath);
     await adapter.writeFileAsync("jetframe.admin", relPath, buffer);
+    writtenPaths.add(relPath);
     adapter.log.debug(`[JetFrame] Static written: jetframe.admin/${relPath}`);
+  }
+}
+async function removeOrphanedFiles(adapter, writtenPaths) {
+  await removeOrphanedFilesInDir(adapter, "", writtenPaths);
+}
+async function removeOrphanedFilesInDir(adapter, dir, writtenPaths) {
+  let entries;
+  try {
+    entries = await adapter.readDirAsync("jetframe.admin", dir);
+  } catch {
+    return;
+  }
+  for (const entry of entries || []) {
+    if (!(entry == null ? void 0 : entry.file)) {
+      continue;
+    }
+    if (!dir && RUNTIME_MANAGED_TOP_LEVEL_DIRS.includes(entry.file)) {
+      continue;
+    }
+    const relPath = dir ? `${dir}/${entry.file}` : entry.file;
+    if (entry.isDir) {
+      await removeOrphanedFilesInDir(adapter, relPath, writtenPaths);
+      continue;
+    }
+    if (!writtenPaths.has(relPath)) {
+      try {
+        await adapter.unlinkAsync("jetframe.admin", relPath);
+        adapter.log.info(`[JetFrame] Removed orphaned static file: jetframe.admin/${relPath}`);
+      } catch (e) {
+        adapter.log.warn(
+          `[JetFrame] Could not remove orphaned file ${relPath}: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+    }
   }
 }
 // Annotate the CommonJS export names for ESM import in node:
