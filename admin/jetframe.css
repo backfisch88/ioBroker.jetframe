@@ -900,8 +900,11 @@ body.jf-page-heatmap .jf-shell {
   font-size: clamp(12px, 1.8vmin, 18px);
   font-weight: 900;
   min-height: clamp(36px, 5vmin, 50px);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
-.rush span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rush span { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rush.hot  { background: rgba(255,77,94,.12); border-color: rgba(255,77,94,.28); color: rgba(255,220,224,.95); }
 
 .scroller {

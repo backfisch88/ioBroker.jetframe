@@ -272,6 +272,7 @@
 				simpleApiPort: 8087,
 				visualSource: 'current',
 				webPort: 8189,
+				webLanguage: 'auto',
 				minAltitudeFt: 1000,
 				maxAltitudeFt: 5000,
 				autoRunwayTrackToleranceDeg: 65,
@@ -1705,6 +1706,18 @@ EMBRAER=https://example.com/embraer.svg'
 									step="1"
 								/>
 								<label for="webPort">JetFrame Web-Server Port</label>
+							</div>
+
+							<div class="input-field">
+								<select
+									id="webLanguage"
+									class="value"
+								>
+									<option value="auto">Automatisch (ioBroker-Systemsprache)</option>
+									<option value="en">Englisch</option>
+									<option value="de">Deutsch</option>
+								</select>
+								<label>Sprache der Web-Oberfläche</label>
 							</div>
 
 							<div class="input-field">

@@ -35,10 +35,12 @@ var import_images = require("./lib/images");
 var import_visConfig = require("./lib/visConfig");
 var import_webServer = require("./lib/webServer");
 var import_flightInfo = require("./lib/flightInfo");
+var import_lang = require("./lib/lang");
 class Jetframe extends utils.Adapter {
   timer = null;
   statisticsTimer = null;
   webServer;
+  contentLang = "en";
   liveTarget = null;
   liveInfo = null;
   liveStarted = 0;
@@ -56,9 +58,22 @@ class Jetframe extends utils.Adapter {
     this.on("stateChange", this.onStateChange.bind(this));
   }
   async onReady() {
+    var _a;
     this.log.info("JetFrame adapter started");
     await (0, import_staticFiles.copyStaticFiles)(this);
     try {
+      const rawWebLanguage = String(this.config.webLanguage || "auto").toLowerCase();
+      if (rawWebLanguage === "de" || rawWebLanguage === "en") {
+        this.contentLang = rawWebLanguage;
+      } else {
+        try {
+          const systemConfig = await this.getForeignObjectAsync("system.config");
+          this.contentLang = ((_a = systemConfig == null ? void 0 : systemConfig.common) == null ? void 0 : _a.language) === "de" ? "de" : "en";
+        } catch (e) {
+          this.logWarn(`Could not read system language, defaulting to English: ${this.errorText(e)}`);
+          this.contentLang = "en";
+        }
+      }
       const config = (0, import_config.readConfig)(this);
       await (0, import_states.ensureStates)(this, config);
       await this.ensureStatisticsStates(config.dpRoot);
@@ -71,7 +86,12 @@ class Jetframe extends utils.Adapter {
       await (0, import_images.ensureImageDirs)(this, this.logDebug.bind(this), this.logWarn.bind(this));
       const rawVisualSource = String(this.config.visualSource || "current").toLowerCase();
       const visualSource = ["current", "airport", "overflight"].includes(rawVisualSource) ? rawVisualSource : "current";
-      this.webServer = (0, import_webServer.startWebServer)(this, { dpRoot: config.dpRoot, webPort: config.webPort, visualSource });
+      this.webServer = (0, import_webServer.startWebServer)(this, {
+        dpRoot: config.dpRoot,
+        webPort: config.webPort,
+        visualSource,
+        webLang: this.contentLang
+      });
       await (0, import_visConfig.writeVisConfig)(this, this.config, this.logDebug.bind(this), this.logWarn.bind(this));
       this.log.debug("[JetFrame] Images OK");
       (0, import_airports.updateAirportJson)(this, this.logDebug.bind(this), this.logWarn.bind(this)).catch((e) => {
@@ -167,11 +187,11 @@ class Jetframe extends utils.Adapter {
     }
     let runway = "";
     if (bestName && bestDiff <= 35) {
-      runway = `RWY ${bestGroup || bestName} active`;
+      runway = `RWY ${bestGroup || bestName} ${(0, import_lang.t)(this.contentLang, "rwyActive")}`;
     } else {
-      runway = `Active heading ${Math.round(track)}\xB0`;
+      runway = `${(0, import_lang.t)(this.contentLang, "activeHeading")} ${Math.round(track)}\xB0`;
     }
-    const mode = a.mode === "LANDING" ? "Landings" : a.mode === "TAKEOFF" ? "Departures" : "Traffic";
+    const mode = a.mode === "LANDING" ? (0, import_lang.t)(this.contentLang, "landingsPlural") : a.mode === "TAKEOFF" ? (0, import_lang.t)(this.contentLang, "takeoffsPlural") : (0, import_lang.t)(this.contentLang, "traffic");
     const text = `${runway} \xB7 ${mode}`;
     if (text === this.lastIdleRunwayText) {
       return;
@@ -278,13 +298,13 @@ class Jetframe extends utils.Adapter {
       return;
     }
     const modeIcon = a.mode === "LANDING" ? "\u{1F6EC}" : a.mode === "TAKEOFF" ? "\u{1F6EB}" : "\u{1F4E1}";
-    const modeText = a.mode === "LANDING" ? "Landing" : a.mode === "TAKEOFF" ? "Takeoff" : "Traffic";
+    const modeText = a.mode === "LANDING" ? (0, import_lang.t)(this.contentLang, "landing") : a.mode === "TAKEOFF" ? (0, import_lang.t)(this.contentLang, "takeoff") : (0, import_lang.t)(this.contentLang, "traffic");
     const confidence = Math.max(0, Math.min(100, Math.round(100 - bestDiff / 35 * 100)));
     a.probableRunway = bestGroup || bestName;
     a.probableRunwayHeading = Math.round(bestHeading);
     a.probableRunwayDiffDeg = Math.round(bestDiff);
     a.runwayConfidence = confidence;
-    a.probableRunwayText = `${modeIcon} probable RWY ${bestGroup || bestName} \xB7 ${modeText}`;
+    a.probableRunwayText = `${modeIcon} ${(0, import_lang.t)(this.contentLang, "probableRwy")} ${bestGroup || bestName} \xB7 ${modeText}`;
   }
   async ensureStatisticsStates(dpRoot) {
     const base = `${dpRoot}.statistics`;
@@ -513,7 +533,7 @@ class Jetframe extends utils.Adapter {
     return sorted;
   }
   async updateGlobalDetailedStatistics(base, a, info) {
-    const type = this.clean(a.aircraftTypeText) || this.clean(a.aircraftModel) || this.clean(a.aircraftType) || this.clean(a.type) || "Unknown";
+    const type = this.clean(a.aircraftTypeText) || this.clean(a.aircraftModel) || this.clean(a.aircraftType) || this.clean(a.type) || (0, import_lang.t)(this.contentLang, "unknown");
     await this.incrementRankingState(`${base}.aircraftTypeRanking`, `${base}.aircraftTypeRankingText`, type, 40, 8);
     if (info.registration) {
       await this.incrementRankingState(
@@ -642,7 +662,7 @@ class Jetframe extends utils.Adapter {
     await this.setForeignStateAsync(`${yesterdayBase}.overflights`, overflights, true);
     await this.setForeignStateAsync(
       `${yesterdayBase}.bestSpotterHour`,
-      bestHour.hour ? `${bestHour.hour} \xB7 ${bestHour.total} flights` : "",
+      bestHour.hour ? `${bestHour.hour} \xB7 ${bestHour.total} ${(0, import_lang.t)(this.contentLang, "flights")}` : "",
       true
     );
     await this.setForeignStateAsync(`${yesterdayBase}.bestHourFlights`, bestHour.total, true);
@@ -676,12 +696,12 @@ class Jetframe extends utils.Adapter {
     };
     const limitedHistory = [entry, ...history.filter((item) => this.clean(item == null ? void 0 : item.date) !== storedDate)].slice(0, 365);
     const historyText = limitedHistory.slice(0, 14).map((item) => {
-      const best = item.bestHour ? ` \xB7 best time ${item.bestHour}` : "";
+      const best = item.bestHour ? ` \xB7 ${(0, import_lang.t)(this.contentLang, "bestTime")} ${item.bestHour}` : "";
       const special = Number(item.specialLiveryCount || 0) > 0 ? ` \xB7 \u2B50 ${item.specialLiveryCount}` : "";
       const heavy = Number(item.heavyAircraftCount || 0) > 0 ? ` \xB7 Heavy ${item.heavyAircraftCount}` : "";
       const a380 = Number(item.a380Count || 0) > 0 ? ` \xB7 A380 ${item.a380Count}` : "";
       const b747 = Number(item.b747Count || 0) > 0 ? ` \xB7 B747 ${item.b747Count}` : "";
-      return `${item.date}: ${item.totalFlights} flights${best}${heavy}${a380}${b747}${special}`;
+      return `${item.date}: ${item.totalFlights} ${(0, import_lang.t)(this.contentLang, "flights")}${best}${heavy}${a380}${b747}${special}`;
     }).join("\n");
     await this.setForeignStateAsync(historyId, JSON.stringify(limitedHistory), true);
     await this.setForeignStateAsync(`${base}.history.dailyText`, historyText, true);
@@ -860,12 +880,12 @@ class Jetframe extends utils.Adapter {
     const currentHourTotal = ((_a = hourly[hour]) == null ? void 0 : _a.total) || 0;
     const avgActive = activeEntries.length > 0 ? activeEntries.reduce((sum, [, v]) => sum + v.total, 0) / activeEntries.length : 0;
     const rushHourNow = currentHourTotal >= 5 && currentHourTotal >= Math.max(3, Math.ceil(avgActive * 1.35));
-    const rushHourText = rushHourNow ? `\u{1F525} Rush hour: ${currentHourTotal} flights since ${hour}:00` : currentHourTotal > 0 ? `Current hour: ${currentHourTotal} flights` : "";
+    const rushHourText = rushHourNow ? `\u{1F525} ${(0, import_lang.t)(this.contentLang, "rushHour")}: ${currentHourTotal} ${(0, import_lang.t)(this.contentLang, "flightsSince")} ${hour}:00` : currentHourTotal > 0 ? `${(0, import_lang.t)(this.contentLang, "currentHour")}: ${currentHourTotal} ${(0, import_lang.t)(this.contentLang, "flights")}` : "";
     await this.setForeignStateAsync(`${todayBase}.hourly`, JSON.stringify(hourly), true);
     await this.setForeignStateAsync(`${todayBase}.hourlyText`, hourlyText, true);
     await this.setForeignStateAsync(
       `${todayBase}.bestSpotterHour`,
-      best ? `${best[0]}:00 \xB7 ${best[1].total} flights` : "",
+      best ? `${best[0]}:00 \xB7 ${best[1].total} ${(0, import_lang.t)(this.contentLang, "flights")}` : "",
       true
     );
     await this.setForeignStateAsync(`${todayBase}.currentHourFlights`, currentHourTotal, true);
@@ -980,7 +1000,7 @@ class Jetframe extends utils.Adapter {
     const base = `${dpRoot}.statistics`;
     const mode = String(a.mode || "").toUpperCase();
     const callsign = this.clean(a.routeCallsign || a.callsign || a.hex || "");
-    const airline = this.clean(a.airlineName || "Unknown Airline");
+    const airline = this.clean(a.airlineName || (0, import_lang.t)(this.contentLang, "unknownAirline"));
     const registration = this.clean(a.registration || "");
     const origin = this.clean(a.originIata || "");
     const dest = this.clean(a.destIata || "");
@@ -1081,7 +1101,7 @@ class Jetframe extends utils.Adapter {
     if (!matches.length) {
       await this.setForeignStateAsync(
         `${config.dpRoot}.current.text`,
-        `No takeoff/landing/overflight near ${config.airport.iata}`,
+        `${(0, import_lang.t)(this.contentLang, "noFlightNear")} ${config.airport.iata}`,
         true
       );
       this.scheduleNext(config.searchPollSeconds);
@@ -1141,7 +1161,7 @@ class Jetframe extends utils.Adapter {
     const enrichedLive = {
       ...this.liveInfo || {},
       ...live,
-      // Diese Werte kommen nur aus saveImages()/enrichFlightInfo
+      // These values come only from saveImages()/enrichFlightInfo
       // and must not be overwritten with empty values by the live ADS-B update.
       localLogoUrl: ((_b = this.liveInfo) == null ? void 0 : _b.localLogoUrl) || live.localLogoUrl || "",
       localImageUrl: ((_c = this.liveInfo) == null ? void 0 : _c.localImageUrl) || live.localImageUrl || "",
@@ -1161,7 +1181,7 @@ class Jetframe extends utils.Adapter {
       ...enrichedLive
     };
     for (const base of bases) {
-      await (0, import_states.writeFlight)(this, base, enrichedLive);
+      await (0, import_states.writeFlight)(this, config, base, enrichedLive);
     }
     await this.setForeignStateAsync(`${config.dpRoot}.status`, "live", true);
     this.scheduleNext(config.livePollSeconds);
@@ -1226,8 +1246,10 @@ class Jetframe extends utils.Adapter {
     );
     await this.applySpecialLivery(best, config.dpRoot);
     await this.applyProbableRunway(best, config);
+    const logModeText = best.mode === "LANDING" ? "Landing" : best.mode === "TAKEOFF" ? "Takeoff" : best.mode === "OVERFLIGHT" ? "Overflight" : "Flight";
+    const logRunway = best.probableRunway ? ` | probable RWY ${best.probableRunway} \xB7 ${logModeText}` : "";
     this.log.info(
-      `New flight: callsign=${best.callsign || ""} route=${best.originIata || "?"} \u2192 ${best.destIata || "?"} | ${best.originName || "?"} \u2192 ${best.destName || "?"}${best.probableRunwayText ? ` | ${best.probableRunwayText}` : ""}`
+      `New flight: callsign=${best.callsign || ""} route=${best.originIata || "?"} \u2192 ${best.destIata || "?"}${logRunway}`
     );
     await this.updateStatistics(config.dpRoot, best);
     this.liveTarget = {
@@ -1244,11 +1266,11 @@ class Jetframe extends utils.Adapter {
       ...best
     };
     this.liveStarted = Date.now();
-    await (0, import_states.writeFlight)(this, `${config.dpRoot}.current`, best);
+    await (0, import_states.writeFlight)(this, config, `${config.dpRoot}.current`, best);
     if (best.mode === "OVERFLIGHT") {
-      await (0, import_states.writeFlight)(this, `${config.dpRoot}.overflight`, best);
+      await (0, import_states.writeFlight)(this, config, `${config.dpRoot}.overflight`, best);
     } else {
-      await (0, import_states.writeFlight)(this, `${config.dpRoot}.airport`, best);
+      await (0, import_states.writeFlight)(this, config, `${config.dpRoot}.airport`, best);
     }
     await this.setForeignStateAsync(`${config.dpRoot}.status`, "live", true);
     this.scheduleNext(config.livePollSeconds);
@@ -1391,7 +1413,14 @@ class Jetframe extends utils.Adapter {
           });
           res.on("end", () => {
             if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-              this.httpRequest(res.headers.location, options).then(resolve).catch(reject);
+              let redirectUrl;
+              try {
+                redirectUrl = new URL(res.headers.location, url).toString();
+              } catch {
+                reject(new Error(`Invalid redirect location at ${url}: ${res.headers.location}`));
+                return;
+              }
+              this.httpRequest(redirectUrl, options).then(resolve).catch(reject);
               return;
             }
             if (res.statusCode && res.statusCode >= 400) {

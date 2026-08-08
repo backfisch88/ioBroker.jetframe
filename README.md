@@ -147,9 +147,22 @@ This adapter is intended exclusively for private, informational, non-commercial 
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### 1.3.0 (2026-08-08)
+
+- (backfisch88) Full bilingual support (English/German) for both the web UI and all dynamic flight/statistics text written to states, following a new `webLanguage` setting (auto/en/de). Adapter log messages remain English-only regardless of this setting, as required.
+- (backfisch88) Fixed 404s for cached aircraft/airline images after the Simple-API removal; images are now served directly by the built-in web server.
+- (backfisch88) Fixed relative HTTP redirects causing "Invalid URL" errors in external API requests.
+- (backfisch88) HTTP 400/404 responses from external flight-data APIs (expected for aircraft with no available data) are now logged at debug level instead of warn.
+- (backfisch88) Fixed a visual flicker on the Live Frame page caused by redundant DOM updates every 5 seconds.
+- (backfisch88) Various smaller layout and translation fixes across the web UI.
+
 ### 1.2.0 (2026-08-07)
 
 - (backfisch88) JetFrame now runs its own built-in web server for the user-facing pages (index.html, frame.html, heatmap.html, stats.html) - no external Simple-API adapter is required anymore. New `webPort` setting (default 8189). Simple-API config is now optional and only used for classic ioBroker VIS widget integration.
+
+### 1.1.0 (2026-08-07)
+
+- (backfisch88) Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup
 
 ### 1.0.7 (2026-06-23)
 

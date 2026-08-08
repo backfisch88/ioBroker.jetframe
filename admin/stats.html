@@ -22,7 +22,7 @@
 <div id="app">
   <div class="jf-shell">
     <div class="header">
-      <a class="backBtn" href="index.html" aria-label="Back">‹</a>
+      <a class="backBtn" href="index.html" aria-label="{{t.back}}">‹</a>
       <div>
         <div class="title">✈️ JetFrame</div>
         <div id="dateText" class="sub">Statistics</div>
@@ -34,48 +34,49 @@
 
     <div class="grid">
       <div class="stat big">
-        <div class="stLabel">Today</div>
+        <div class="stLabel">{{t.today}}</div>
         <div id="todayTotal" class="stVal">–</div>
-        <div id="todaySmall" class="stSub">flights today</div>
+        <div id="todaySmall" class="stSub">{{t.flightsToday}}</div>
       </div>
       <div class="stat">
-        <div class="stLabel">Yesterday</div>
+        <div class="stLabel">{{t.yesterday}}</div>
         <div id="yesterdayTotal" class="stVal">–</div>
-        <div id="yesterdaySmall" class="stSub">recap</div>
+        <div id="yesterdaySmall" class="stSub">{{t.recap}}</div>
       </div>
       <div class="stat warn">
-        <div class="stLabel">Record day</div>
+        <div class="stLabel">{{t.recordDay}}</div>
         <div id="bestDay" class="stVal">–</div>
         <div id="bestDaySmall" class="stSub">All-time</div>
       </div>
       <div class="stat">
-        <div class="stLabel">Best time</div>
+        <div class="stLabel">{{t.bestTime}}</div>
         <div id="bestHour" class="stVal">–</div>
-        <div id="bestHourSmall" class="stSub">overall</div>
+        <div id="bestHourSmall" class="stSub">{{t.overall}}</div>
       </div>
       <div class="stat">
-        <div class="stLabel">Heavy today</div>
+        <div class="stLabel">{{t.heavyToday}}</div>
         <div id="heavyToday" class="stVal">–</div>
-        <div id="heavySmall" class="stSub">A380 / B747 separately</div>
+        <div id="heavySmall" class="stSub">{{t.a380b747Sep}}</div>
       </div>
       <div class="stat">
-        <div class="stLabel">Specials today</div>
+        <div class="stLabel">{{t.specialsToday}}</div>
         <div id="specialToday" class="stVal">–</div>
-        <div id="specialSmall" class="stSub">special liveries</div>
+        <div id="specialSmall" class="stSub">{{t.specialLiveries}}</div>
       </div>
     </div>
 
     <div class="panels">
-      <div class="panel"><h3>Daily history</h3><pre id="dailyHistory">–</pre></div>
-      <div class="panel"><h3>Yesterday</h3><pre id="yesterdayDetails">–</pre></div>
-      <div class="panel"><h3>Top Airlines All-time</h3><pre id="alltimeAirlines">–</pre></div>
-      <div class="panel"><h3>Top Routes All-time</h3><pre id="alltimeRoutes">–</pre></div>
+      <div class="panel"><h3>{{t.dailyHistory}}</h3><pre id="dailyHistory">–</pre></div>
+      <div class="panel"><h3>{{t.yesterday}}</h3><pre id="yesterdayDetails">–</pre></div>
+      <div class="panel"><h3>{{t.topAirlinesAllTime}}</h3><pre id="alltimeAirlines">–</pre></div>
+      <div class="panel"><h3>{{t.topRoutesAllTime}}</h3><pre id="alltimeRoutes">–</pre></div>
     </div>
   </div>
 </div>
 
 <script>
 'use strict';
+window.T = {{T_JSON}};
 const DP_ROOT = 'jetframe.'+(new URL(location.href).searchParams.get('instance')||'0').replace(/[^0-9]/g,'');
 
 const BASE = DP_ROOT+'.statistics';
@@ -123,28 +124,28 @@ async function readAll(){
 function set(id,v){ const e=$(id); if(e)e.textContent=v; }
 
 function render(d){
-  set('dateText', d.todayDate?'Today · '+d.todayDate:'Statistics');
+  set('dateText', d.todayDate?T.today+' · '+d.todayDate:T.statsTitle);
   set('todayTotal',      fmt(d.todayTotal));
-  set('todaySmall',      fmt(d.todayLandings)+' landings · '+fmt(d.todayDepartures)+' departures');
+  set('todaySmall',      fmt(d.todayLandings)+' '+T.landings.toLowerCase()+' · '+fmt(d.todayDepartures)+' '+T.departures.toLowerCase());
   set('yesterdayTotal',  fmt(d.yesterdayTotal));
-  set('yesterdaySmall',  d.yesterdayDate||'no previous day yet');
+  set('yesterdaySmall',  d.yesterdayDate||T.noPreviousDayYet);
   set('bestDay',         fmt(d.bestDayFlights));
-  set('bestDaySmall',    d.bestDayDate||'no record yet');
+  set('bestDaySmall',    d.bestDayDate||T.noRecordYet);
   set('bestHour',        d.bestHour||'–');
-  set('bestHourSmall',   num(d.bestHourFlights)?fmt(d.bestHourFlights)+' flights total':'overall');
+  set('bestHourSmall',   num(d.bestHourFlights)?fmt(d.bestHourFlights)+' '+T.flightsTotal:T.overall);
   set('heavyToday',      fmt(d.todayHeavy));
-  set('heavySmall',      'A380 '+fmt(d.todayA380)+' · B747 '+fmt(d.todayB747)+' · All-time '+fmt(d.alltimeHeavy));
+  set('heavySmall',      'A380 '+fmt(d.todayA380)+' · B747 '+fmt(d.todayB747)+' · '+T.allTime+' '+fmt(d.alltimeHeavy));
   set('specialToday',    fmt(d.todaySpecial));
-  set('specialSmall',    'All-time '+fmt(d.alltimeSpecial));
-  set('dailyHistory',    d.dailyHistory||'No daily history available yet');
+  set('specialSmall',    T.allTime+' '+fmt(d.alltimeSpecial));
+  set('dailyHistory',    d.dailyHistory||T.dailyHistory);
   set('yesterdayDetails', [
-    (d.yesterdayDate||'Yesterday')+' · '+fmt(d.yesterdayTotal)+' flights',
-    'Landings: '+fmt(d.yesterdayLandings),
-    'Departures: '+fmt(d.yesterdayDepartures),
-    'Overflights: '+fmt(d.yesterdayOverflights),
-    d.yesterdayBestHour?'Best time: '+d.yesterdayBestHour:'',
-    d.yesterdayTopAirline?'Top airline: '+d.yesterdayTopAirline:'',
-    d.yesterdayTopRoute?'Top route: '+d.yesterdayTopRoute:'',
+    (d.yesterdayDate||T.yesterday)+' · '+fmt(d.yesterdayTotal)+' '+T.flights.toLowerCase(),
+    T.landings+': '+fmt(d.yesterdayLandings),
+    T.departures+': '+fmt(d.yesterdayDepartures),
+    T.overflights+': '+fmt(d.yesterdayOverflights),
+    d.yesterdayBestHour?T.bestTime+': '+d.yesterdayBestHour:'',
+    d.yesterdayTopAirline?T.topAirline+': '+d.yesterdayTopAirline:'',
+    d.yesterdayTopRoute?T.topRoute+': '+d.yesterdayTopRoute:'',
     'Heavy: '+fmt(d.yesterdayHeavy)+' · A380: '+fmt(d.yesterdayA380)+' · B747: '+fmt(d.yesterdayB747),
     'Specials: '+fmt(d.yesterdaySpecial),
   ].filter(Boolean).join('\n'));
@@ -163,7 +164,7 @@ setInterval(poll,10000);
 (function(){
   let _b=false;
   function pad(n){return String(n).padStart(2,'0');}
-  function wanted(){const d=new Date();return'Today · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
+  function wanted(){const d=new Date();return T.today+' · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
   function apply(){if(_b)return;_b=true;const s=document.querySelector('.header .sub');if(s){const t=wanted();if(s.textContent!==t)s.textContent=t;}_b=false;}
   apply();setInterval(apply,5000);
   const h=document.querySelector('.header');if(h)new MutationObserver(apply).observe(h,{childList:true,subtree:true,characterData:true});

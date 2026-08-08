@@ -31,6 +31,7 @@ __export(states_exports, {
 module.exports = __toCommonJS(states_exports);
 var import_geo = require("./geo");
 var import_images = require("./images");
+var import_lang = require("./lang");
 const LAST_SPEECH_TRIGGER = {};
 const READ_ONLY_ROLES = /* @__PURE__ */ new Set(["value", "indicator"]);
 const WRITE_ONLY_ROLES = /* @__PURE__ */ new Set(["button"]);
@@ -227,13 +228,13 @@ async function ensureFlightStates(adapter, base) {
   await ensureState(adapter, `${base}.isEmergency`, false, "boolean", "indicator");
   await ensureState(adapter, `${base}.speechTrigger`, false, "boolean", "button");
 }
-function trackDirectionText(degRaw) {
+function trackDirectionText(degRaw, lang = "en") {
   const deg = Number(degRaw);
   if (!Number.isFinite(deg)) {
     return "";
   }
   const normalized = (deg % 360 + 360) % 360;
-  const dirs = ["\u2191 North", "\u2197 Northeast", "\u2192 East", "\u2198 Southeast", "\u2193 South", "\u2199 Southwest", "\u2190 West", "\u2196 Northwest"];
+  const dirs = import_lang.COMPASS_DIRECTIONS[lang] || import_lang.COMPASS_DIRECTIONS.en;
   const index = Math.round(normalized / 45) % 8;
   return dirs[index];
 }
@@ -293,11 +294,11 @@ async function setForeignStateChanged(adapter, id, value, ack = true) {
   }
   await adapter.setForeignStateAsync(id, value, ack);
 }
-async function writeFlight(adapter, base, a) {
+async function writeFlight(adapter, config, base, a) {
   const routeCallsign = String(a.routeCallsign || a.callsign || "").trim().toUpperCase();
-  const display = await buildDisplayInfo(adapter, adapter.config, a);
+  const display = await buildDisplayInfo(adapter, config, a);
   display.speechText = await buildSpeechTextForWrite(adapter, base, a, display);
-  await setForeignStateChanged(adapter, `${base}.text`, buildMessage(a), true);
+  await setForeignStateChanged(adapter, `${base}.text`, buildMessage(a, config.contentLang), true);
   const rawCallsign = String(a.rawCallsign || a.callsign || "").trim();
   const cleanedCallsign = String(a.cleanedCallsign || a.callsign || "").trim().replace(/\s+/g, "").toUpperCase();
   await setForeignStateChanged(adapter, `${base}.callsign`, a.callsign || "", true);
@@ -367,7 +368,12 @@ async function writeFlight(adapter, base, a) {
   await setForeignStateChanged(adapter, `${base}.speedKt`, Math.round(a.speedKt || 0), true);
   await setForeignStateChanged(adapter, `${base}.verticalRate`, Math.round(a.verticalRate || 0), true);
   await setForeignStateChanged(adapter, `${base}.trackDeg`, Math.round(a.trackDeg || 0), true);
-  await setForeignStateChanged(adapter, `${base}.trackDirectionText`, trackDirectionText(a.trackDeg), true);
+  await setForeignStateChanged(
+    adapter,
+    `${base}.trackDirectionText`,
+    trackDirectionText(a.trackDeg, config.contentLang),
+    true
+  );
   await setForeignStateChanged(adapter, `${base}.distHomeNm`, a.distHomeNm || 0, true);
   await setForeignStateChanged(
     adapter,
@@ -498,8 +504,8 @@ async function buildDisplayInfo(adapter, config, a) {
   const mode = String(a.mode || "").toUpperCase();
   const departureAirport = airportLabel(originDisplayName, a.originIata) || (mode === "TAKEOFF" ? configuredAirportLabel : "");
   const approachAirport = airportLabel(destDisplayName, a.destIata) || (mode === "LANDING" ? configuredAirportLabel : "");
-  const modeVisText = modeVisTextFromFlight(a, originDisplayName, destDisplayName);
-  const window = windowPositionInfo(a);
+  const modeVisText = modeVisTextFromFlight(a, originDisplayName, destDisplayName, config.contentLang);
+  const window = windowPositionInfo(a, config.contentLang);
   const aircraft = await aircraftDisplayInfo(adapter, config, a);
   const specialDisplayText = String(a.specialLiveryVisText || a.specialLiveryFull || a.specialText || "").trim();
   return {
@@ -535,48 +541,48 @@ function airportLabel(name, iata) {
   }
   return "";
 }
-function modeVisTextFromFlight(a, originDisplayName, destDisplayName) {
+function modeVisTextFromFlight(a, originDisplayName, destDisplayName, lang) {
   const mode = String(a.mode || "").toUpperCase();
   if (mode === "TAKEOFF") {
-    return `\u{1F6EB} Takeoff ${originDisplayName !== "\u2014" ? originDisplayName : ""}`.trim();
+    return `\u{1F6EB} ${(0, import_lang.t)(lang, "takeoff")} ${originDisplayName !== "\u2014" ? originDisplayName : ""}`.trim();
   }
   if (mode === "LANDING") {
-    return `\u{1F6EC} Landing ${destDisplayName !== "\u2014" ? destDisplayName : ""}`.trim();
+    return `\u{1F6EC} ${(0, import_lang.t)(lang, "landing")} ${destDisplayName !== "\u2014" ? destDisplayName : ""}`.trim();
   }
   if (mode === "OVERFLIGHT") {
-    return "\u{1F6E9}\uFE0F Overflight";
+    return `\u{1F6E9}\uFE0F ${(0, import_lang.t)(lang, "overflight")}`;
   }
-  return "\u2708\uFE0F Flight";
+  return `\u2708\uFE0F ${(0, import_lang.t)(lang, "flight")}`;
 }
-function windowPositionInfo(a) {
+function windowPositionInfo(a, lang) {
   const bearing = Number(a.bearingHomeDeg || 0);
   const diff = Number(a.windowDiffDeg || 0);
   if (!bearing && !diff) {
     return {
-      text: "\u2197\uFE0F Position unknown",
+      text: `\u2197\uFE0F ${(0, import_lang.t)(lang, "positionUnknown")}`,
       className: "side",
-      speechText: "at the window"
+      speechText: (0, import_lang.t)(lang, "atWindow")
     };
   }
   const abs = Math.abs(diff);
   if (abs <= 8) {
     return {
-      text: "\u2B06\uFE0F directly in front of the window",
+      text: `\u2B06\uFE0F ${(0, import_lang.t)(lang, "directlyInFrontOfWindow")}`,
       className: "center",
-      speechText: "directly in front of the window"
+      speechText: (0, import_lang.t)(lang, "directlyInFrontOfWindow")
     };
   }
   if (diff < 0) {
     return {
-      text: `\u2B05\uFE0F left of window \xB7 ${Math.round(abs)}\xB0`,
+      text: `\u2B05\uFE0F ${(0, import_lang.t)(lang, "leftOfWindow")} \xB7 ${Math.round(abs)}\xB0`,
       className: "side",
-      speechText: "left of the window"
+      speechText: (0, import_lang.t)(lang, "leftOfWindow")
     };
   }
   return {
-    text: `\u27A1\uFE0F right of window \xB7 ${Math.round(abs)}\xB0`,
+    text: `\u27A1\uFE0F ${(0, import_lang.t)(lang, "rightOfWindow")} \xB7 ${Math.round(abs)}\xB0`,
     className: "side",
-    speechText: "right of the window"
+    speechText: (0, import_lang.t)(lang, "rightOfWindow")
   };
 }
 async function aircraftDisplayInfo(adapter, config, a) {
@@ -584,7 +590,7 @@ async function aircraftDisplayInfo(adapter, config, a) {
   const type = String(a.aircraftType || a.type || "").trim().toUpperCase();
   const model = String(a.aircraftModel || "").trim().toUpperCase();
   const all = `${type} ${model} ${raw}`.toUpperCase();
-  let manufacturer = "Aircraft";
+  let manufacturer = (0, import_lang.t)(config.contentLang, "manufacturerFallback");
   let manufacturerLogoText = "\u2708";
   let aircraftTypeText = raw || type || "\u2014";
   if (all.includes("AIRBUS") || /^A\d/.test(type)) {
@@ -836,62 +842,64 @@ function cityOnly(name) {
   }
   return v;
 }
-function buildMessage(a) {
+function buildMessage(a, lang) {
   const lines = [];
   const routeCallsign = String(a.routeCallsign || a.callsign || "").trim().toUpperCase();
   lines.push("\u2708\uFE0F JetFrame");
   lines.push("");
-  lines.push(`${a.icon || "\u2708\uFE0F"} ${modeText(a.mode || "")}`);
-  lines.push(`Flight: ${a.callsign || a.hex || "unknown"}`);
+  lines.push(`${a.icon || "\u2708\uFE0F"} ${modeText(a.mode || "", lang)}`);
+  lines.push(`${(0, import_lang.t)(lang, "msgFlight")}: ${a.callsign || a.hex || "unknown"}`);
   if (routeCallsign) {
-    lines.push(`Route via: ${routeCallsign}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgRouteVia")}: ${routeCallsign}`);
   }
   if (a.airlineName) {
-    lines.push(`Airline: ${a.airlineName}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgAirline")}: ${a.airlineName}`);
   }
   if (a.routeTextLong) {
-    lines.push(`Route: ${a.routeTextLong}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgRoute")}: ${a.routeTextLong}`);
   } else if (a.routeText) {
-    lines.push(`Route: ${a.routeText}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgRoute")}: ${a.routeText}`);
   } else if (a.routeWarning) {
-    lines.push(`Route: ${a.routeWarning}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgRoute")}: ${a.routeWarning}`);
   } else if (a.directionText) {
-    lines.push(`Direction: ${a.directionText}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgDirection")}: ${a.directionText}`);
   }
   if (a.routeSource) {
-    lines.push(`Source: ${a.routeSource}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgSource")}: ${a.routeSource}`);
   }
   if (a.aircraftModel) {
-    lines.push(`Aircraft: ${a.aircraftModel}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgAircraft")}: ${a.aircraftModel}`);
   } else if (a.aircraftType || a.type) {
-    lines.push(`Type: ${a.aircraftType || a.type}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgType")}: ${a.aircraftType || a.type}`);
   }
   if (a.registration) {
-    lines.push(`Reg.: ${a.registration}`);
+    lines.push(`${(0, import_lang.t)(lang, "msgReg")}: ${a.registration}`);
   }
   lines.push("");
-  lines.push(`Altitude: ${Math.round(a.altFt || 0)} ft`);
-  lines.push(`Speed: ${Math.round(a.speedKt || 0)} kt`);
-  lines.push(`Climb rate: ${Math.round(a.verticalRate || 0)} ft/min`);
-  lines.push(`Heading: ${Math.round(a.trackDeg || 0)}\xB0`);
+  lines.push(`${(0, import_lang.t)(lang, "msgAltitude")}: ${Math.round(a.altFt || 0)} ft`);
+  lines.push(`${(0, import_lang.t)(lang, "msgSpeed")}: ${Math.round(a.speedKt || 0)} kt`);
+  lines.push(`${(0, import_lang.t)(lang, "msgClimbRate")}: ${Math.round(a.verticalRate || 0)} ft/min`);
+  lines.push(`${(0, import_lang.t)(lang, "msgHeading")}: ${Math.round(a.trackDeg || 0)}\xB0`);
   const specialDisplayText = a.specialLiveryVisText || a.specialLiveryFull || a.specialText || "";
   if (specialDisplayText) {
     lines.push("");
-    lines.push(`${a.isSpecial ? "\u2B50 Special: " : "\u2139\uFE0F Info: "}${specialDisplayText}`);
+    lines.push(
+      `${a.isSpecial ? `\u2B50 ${(0, import_lang.t)(lang, "msgSpecial")}: ` : `\u2139\uFE0F ${(0, import_lang.t)(lang, "msgInfo")}: `}${specialDisplayText}`
+    );
   }
   return lines.join("\n");
 }
-function modeText(mode) {
+function modeText(mode, lang) {
   if (mode === "LANDING") {
-    return "Landing";
+    return (0, import_lang.t)(lang, "landing");
   }
   if (mode === "TAKEOFF") {
-    return "Takeoff";
+    return (0, import_lang.t)(lang, "takeoff");
   }
   if (mode === "OVERFLIGHT") {
-    return "Overflight";
+    return (0, import_lang.t)(lang, "overflight");
   }
-  return "Flight";
+  return (0, import_lang.t)(lang, "flight");
 }
 async function ensureStates(adapter, config) {
   await ensureBaseStates(adapter, config);

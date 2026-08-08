@@ -46,6 +46,8 @@ export function readConfig(adapter: AdapterLike): JetFrameConfig {
 	return {
 		enabled: cfgBool(native, 'enabled', true),
 
+		contentLang: adapter.contentLang === 'de' ? 'de' : 'en',
+
 		homeLat: cfgNum(native, 'homeLat', 50.08637),
 		homeLon: cfgNum(native, 'homeLon', 8.69163),
 
@@ -111,5 +113,9 @@ export function readConfig(adapter: AdapterLike): JetFrameConfig {
 		airportJsonDp: `${adapter.namespace}.airportjson`,
 
 		webPort: cfgNumClamped(native, 'webPort', 8189, 1024, 65535),
+		webLanguage: (native.webLanguage === 'en' || native.webLanguage === 'de' ? native.webLanguage : 'auto') as
+			| 'auto'
+			| 'en'
+			| 'de',
 	};
 }

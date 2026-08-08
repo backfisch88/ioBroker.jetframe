@@ -34,6 +34,7 @@ module.exports = __toCommonJS(webServer_exports);
 var fs = __toESM(require("node:fs"));
 var http = __toESM(require("node:http"));
 var path = __toESM(require("node:path"));
+var import_webI18n = require("./webI18n");
 const STATIC_FILES = {
   "/": { file: "index.html", contentType: "text/html; charset=utf-8" },
   "/index.html": { file: "index.html", contentType: "text/html; charset=utf-8" },
@@ -85,12 +86,28 @@ async function handleRequest(adapter, config, staticDir, req, res) {
   }
   const staticEntry = STATIC_FILES[pathname];
   if (staticEntry) {
-    serveStaticFile(adapter, staticDir, staticEntry, res);
+    serveStaticFile(adapter, staticDir, staticEntry, config.webLang, res);
+    return;
+  }
+  if (pathname.startsWith("/img/")) {
+    await serveCachedFile(adapter, pathname.slice(1), res);
     return;
   }
   sendText(res, 404, "Not found");
 }
-function serveStaticFile(adapter, staticDir, entry, res) {
+async function serveCachedFile(adapter, relPath, res) {
+  var _a;
+  try {
+    const result = await adapter.readFileAsync("jetframe.admin", relPath);
+    const buffer = Buffer.isBuffer(result) ? result : Buffer.isBuffer(result == null ? void 0 : result.file) ? result.file : Buffer.from((_a = result == null ? void 0 : result.file) != null ? _a : result);
+    const contentType = (result == null ? void 0 : result.mimeType) || (relPath.endsWith(".png") ? "image/png" : relPath.endsWith(".svg") ? "image/svg+xml" : "image/jpeg");
+    res.writeHead(200, { "Content-Type": contentType, "Cache-Control": "no-store" });
+    res.end(buffer);
+  } catch {
+    sendText(res, 404, "Not found");
+  }
+}
+function serveStaticFile(adapter, staticDir, entry, webLang, res) {
   const filePath = path.join(staticDir, entry.file);
   fs.readFile(filePath, (err, data) => {
     if (err) {
@@ -99,7 +116,11 @@ function serveStaticFile(adapter, staticDir, entry, res) {
       return;
     }
     res.writeHead(200, { "Content-Type": entry.contentType, "Cache-Control": "no-store" });
-    res.end(data);
+    if (entry.file.endsWith(".html")) {
+      res.end((0, import_webI18n.applyWebTranslations)(data.toString("utf8"), webLang));
+    } else {
+      res.end(data);
+    }
   });
 }
 async function handleStateRequest(adapter, config, rawId, url, req, res) {

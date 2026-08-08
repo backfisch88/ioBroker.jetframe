@@ -22,10 +22,10 @@
 <div id="app">
   <div class="jf-shell">
     <div class="header">
-      <a class="backBtn" href="index.html" aria-label="Back">‹</a>
+      <a class="backBtn" href="index.html" aria-label="{{t.back}}">‹</a>
       <div>
         <div class="title">✈️ JetFrame</div>
-        <div id="dateText" class="sub">Heatmap</div>
+        <div id="dateText" class="sub">{{t.heatmapTitle}}</div>
       </div>
       <div class="livePill">
         <span class="dot"></span><span>Live</span>
@@ -33,28 +33,29 @@
     </div>
 
     <div class="hmStats">
-      <div class="hmStat"><div id="totalFlights" class="hmVal">–</div><div class="hmLabel">Flights</div></div>
-      <div class="hmStat"><div id="landings"     class="hmVal">–</div><div class="hmLabel">Landings</div></div>
-      <div class="hmStat"><div id="departures"   class="hmVal">–</div><div class="hmLabel">Departures</div></div>
-      <div class="hmStat"><div id="overflights"  class="hmVal">–</div><div class="hmLabel">Overflights</div></div>
+      <div class="hmStat"><div id="totalFlights" class="hmVal">–</div><div class="hmLabel">{{t.flights}}</div></div>
+      <div class="hmStat"><div id="landings"     class="hmVal">–</div><div class="hmLabel">{{t.landings}}</div></div>
+      <div class="hmStat"><div id="departures"   class="hmVal">–</div><div class="hmLabel">{{t.departures}}</div></div>
+      <div class="hmStat"><div id="overflights"  class="hmVal">–</div><div class="hmLabel">{{t.overflights}}</div></div>
     </div>
 
     <div id="rushBox" class="rush">
-      <span id="rushText">Loading traffic…</span>
-      <span id="bestText">Best time: –</span>
+      <span id="rushText">{{t.loadingTraffic}}</span>
+      <span id="bestText">{{t.bestTimeDash}}</span>
     </div>
 
     <div id="hourScroller" class="scroller"></div>
 
     <div class="rankings">
-      <div class="panel"><h3>Top Airlines</h3><pre id="airlineRanking">–</pre></div>
-      <div class="panel"><h3>Top Routes</h3><pre  id="routeRanking">–</pre></div>
+      <div class="panel"><h3>{{t.topAirlines}}</h3><pre id="airlineRanking">–</pre></div>
+      <div class="panel"><h3>{{t.topRoutes}}</h3><pre  id="routeRanking">–</pre></div>
     </div>
   </div>
 </div>
 
 <script>
 'use strict';
+window.T = {{T_JSON}};
 const DP_ROOT = 'jetframe.'+(new URL(location.href).searchParams.get('instance')||'0').replace(/[^0-9]/g,'');
 
 const BASE = DP_ROOT+'.statistics.today';
@@ -114,7 +115,7 @@ function renderHours(hourly){
     c.className='hourCard'+(k===nowH?' now':'')+(k===best&&v.total>0?' best':'');
     c.style.setProperty('--heat',heat.toFixed(2));
     const badge=k===nowH?'NOW':(k===best&&v.total>0?'PEAK':'HR');
-    c.innerHTML='<div class="hourInner"><div class="hourTop"><div class="hour">'+k+':00</div><div class="badge">'+badge+'</div></div><div class="hourTotal">'+v.total+'</div><div class="hourSub">Flight movements</div><div class="bars"><div class="bar">🛬 '+v.landings+'</div><div class="bar">🛫 '+v.departures+'</div><div class="bar">🛩️ '+v.overflights+'</div></div></div>';
+    c.innerHTML='<div class="hourInner"><div class="hourTop"><div class="hour">'+k+':00</div><div class="badge">'+badge+'</div></div><div class="hourTotal">'+v.total+'</div><div class="hourSub">'+T.flightMovements+'</div><div class="bars"><div class="bar">🛬 '+v.landings+'</div><div class="bar">🛫 '+v.departures+'</div><div class="bar">🛩️ '+v.overflights+'</div></div></div>';
     f.appendChild(c);
   }
   sc.appendChild(f);
@@ -124,14 +125,14 @@ function renderHours(hourly){
 function set(id,val){ const e=$(id); if(e)e.textContent=val; }
 
 function render(d){
-  set('dateText', d.date?'Today · '+d.date:'Heatmap');
+  set('dateText', d.date?T.today+' · '+d.date:T.heatmapTitle);
   set('totalFlights', num(d.totalFlights));
   set('landings',     num(d.landings));
   set('departures',   num(d.departures));
   set('overflights',  num(d.overflights));
   const rush=$('rushBox'); if(rush)rush.classList.toggle('hot',clean(d.rushHourNow)==='true');
-  set('rushText', clean(d.rushHourText)||'No rush hour yet');
-  set('bestText',  clean(d.bestSpotterHour)?'Best time: '+clean(d.bestSpotterHour):'Best time: –');
+  set('rushText', clean(d.rushHourText)||T.loadingTraffic);
+  set('bestText',  clean(d.bestSpotterHour)?T.bestTime+': '+clean(d.bestSpotterHour):T.bestTimeDash);
   set('airlineRanking', clean(d.airlineRankingText)||'–');
   set('routeRanking',   clean(d.routeRankingText)||'–');
   renderHours(parseHourly(d.hourly));
@@ -148,7 +149,7 @@ setInterval(poll,10000);
 (function(){
   let _b=false;
   function pad(n){return String(n).padStart(2,'0');}
-  function wanted(){const d=new Date();return'Today · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
+  function wanted(){const d=new Date();return T.today+' · '+pad(d.getHours())+':'+pad(d.getMinutes())+' · '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear();}
   function apply(){if(_b)return;_b=true;const s=document.querySelector('.header .sub');if(s){const t=wanted();if(s.textContent!==t)s.textContent=t;}_b=false;}
   apply();setInterval(apply,5000);
   const h=document.querySelector('.header');if(h)new MutationObserver(apply).observe(h,{childList:true,subtree:true,characterData:true});

@@ -1,5 +1,6 @@
 import type { Aircraft, JetFrameConfig } from './types';
 import { bearingDeg, distanceNm, smallestAngleDiff, signedAngleDiff } from './geo';
+import { t } from './lang';
 
 /**
  *
@@ -69,7 +70,7 @@ export function classifyAircraft(config: JetFrameConfig, a: Aircraft): Aircraft 
 			...a,
 			mode: 'LANDING',
 			icon: '🛬',
-			directionText: `to ${config.airport.iata}`,
+			directionText: `${t(config.contentLang, 'to')} ${config.airport.iata}`,
 			relevant: true,
 			priority: 1,
 		};
@@ -80,7 +81,7 @@ export function classifyAircraft(config: JetFrameConfig, a: Aircraft): Aircraft 
 			...a,
 			mode: 'TAKEOFF',
 			icon: '🛫',
-			directionText: `from ${config.airport.iata}`,
+			directionText: `${t(config.contentLang, 'from')} ${config.airport.iata}`,
 			relevant: true,
 			priority: 2,
 		};
@@ -98,7 +99,7 @@ export function classifyAircraft(config: JetFrameConfig, a: Aircraft): Aircraft 
 			...a,
 			mode: 'OVERFLIGHT',
 			icon: '🛩️',
-			directionText: 'Overflight',
+			directionText: t(config.contentLang, 'overflight'),
 			relevant: true,
 			priority: 3,
 		};
@@ -133,7 +134,7 @@ export function getMatches(config: JetFrameConfig, aircraft: Aircraft[]): Aircra
 				...a,
 				mode: 'OVERFLIGHT' as const,
 				icon: '🛩️',
-				directionText: 'Overflight',
+				directionText: t(config.contentLang, 'overflight'),
 				relevant: true,
 				priority: 1,
 			}))

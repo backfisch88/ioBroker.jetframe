@@ -27,6 +27,7 @@ __export(classify_exports, {
 });
 module.exports = __toCommonJS(classify_exports);
 var import_geo = require("./geo");
+var import_lang = require("./lang");
 function enrichAircraft(config, a) {
   const bearingHomeDeg = (0, import_geo.bearingDeg)(config.homeLat, config.homeLon, a.lat, a.lon);
   const distHomeNm = (0, import_geo.distanceNm)(config.homeLat, config.homeLon, a.lat, a.lon);
@@ -61,7 +62,7 @@ function classifyAircraft(config, a) {
       ...a,
       mode: "LANDING",
       icon: "\u{1F6EC}",
-      directionText: `to ${config.airport.iata}`,
+      directionText: `${(0, import_lang.t)(config.contentLang, "to")} ${config.airport.iata}`,
       relevant: true,
       priority: 1
     };
@@ -71,7 +72,7 @@ function classifyAircraft(config, a) {
       ...a,
       mode: "TAKEOFF",
       icon: "\u{1F6EB}",
-      directionText: `from ${config.airport.iata}`,
+      directionText: `${(0, import_lang.t)(config.contentLang, "from")} ${config.airport.iata}`,
       relevant: true,
       priority: 2
     };
@@ -82,7 +83,7 @@ function classifyAircraft(config, a) {
       ...a,
       mode: "OVERFLIGHT",
       icon: "\u{1F6E9}\uFE0F",
-      directionText: "Overflight",
+      directionText: (0, import_lang.t)(config.contentLang, "overflight"),
       relevant: true,
       priority: 3
     };
@@ -101,7 +102,7 @@ function getMatches(config, aircraft) {
       ...a,
       mode: "OVERFLIGHT",
       icon: "\u{1F6E9}\uFE0F",
-      directionText: "Overflight",
+      directionText: (0, import_lang.t)(config.contentLang, "overflight"),
       relevant: true,
       priority: 1
     })).sort((a, b) => sortOverflightAircraft(config, a, b));

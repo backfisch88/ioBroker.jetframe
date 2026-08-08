@@ -47,6 +47,7 @@ function readConfig(adapter) {
   const native = adapter.config;
   return {
     enabled: cfgBool(native, "enabled", true),
+    contentLang: adapter.contentLang === "de" ? "de" : "en",
     homeLat: cfgNum(native, "homeLat", 50.08637),
     homeLon: cfgNum(native, "homeLon", 8.69163),
     airport: {
@@ -98,7 +99,8 @@ function readConfig(adapter) {
     ),
     dpRoot: adapter.namespace,
     airportJsonDp: `${adapter.namespace}.airportjson`,
-    webPort: cfgNumClamped(native, "webPort", 8189, 1024, 65535)
+    webPort: cfgNumClamped(native, "webPort", 8189, 1024, 65535),
+    webLanguage: native.webLanguage === "en" || native.webLanguage === "de" ? native.webLanguage : "auto"
   };
 }
 // Annotate the CommonJS export names for ESM import in node:

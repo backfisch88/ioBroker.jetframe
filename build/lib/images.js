@@ -258,7 +258,7 @@ async function cacheJetIfNeeded(adapter, a, logDebug, logWarn) {
     return url;
   } catch (e) {
     const message = errorText(e);
-    if (/HTTP 404 at/.test(message)) {
+    if (/HTTP (400|404) at/.test(message)) {
       logDebug(`FR24 image not found: ${message}`);
     } else {
       logWarn(`FR24 image download/save error: ${message}`);
@@ -330,7 +330,7 @@ async function resolveFr24AircraftImageFromPage(a, logDebug, logWarn) {
     return imageUrl;
   } catch (e) {
     const message = errorText(e);
-    if (/HTTP 404 at/.test(message)) {
+    if (/HTTP (400|404) at/.test(message)) {
       logDebug(`FR24 aircraft page not found: ${message}`);
     } else {
       logWarn(`FR24 aircraft error: ${message}`);
@@ -369,7 +369,7 @@ function detectImageExt(buf) {
   return "jpg";
 }
 function publicUrl(relPath) {
-  return `/jetframe.admin/${relPath}`;
+  return `/${relPath}`;
 }
 function safeFileName(name) {
   return String(name || "unknown").trim().replace(/[^a-zA-Z0-9_-]/g, "_");

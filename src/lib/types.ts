@@ -7,6 +7,7 @@ export interface AdapterLike {
 	namespace: string;
 	instance?: number;
 	config: any;
+	contentLang?: 'en' | 'de';
 
 	log: {
 		info: (msg: string) => void;
@@ -130,6 +131,8 @@ export interface JetFrameConfig {
 	speechEnabled: boolean;
 
 	webPort: number;
+	webLanguage: 'auto' | 'en' | 'de';
+	contentLang: 'en' | 'de';
 }
 
 /**

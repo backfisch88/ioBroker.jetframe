@@ -22,6 +22,7 @@ __export(flightInfo_exports, {
   resolveImageViaFr24Aircraft: () => resolveImageViaFr24Aircraft
 });
 module.exports = __toCommonJS(flightInfo_exports);
+var import_lang = require("./lang");
 const flighteraPlaneRouteCache = {};
 const fr24LiveRouteCache = {};
 const fr24AircraftCache = {};
@@ -79,13 +80,13 @@ async function enrichFlightInfo(adapter, config, a, httpJson, httpText, logDebug
       parsed.destIata = mergedRoute.destIata;
       parsed.routeReliable = true;
       if ((hexRoute == null ? void 0 : hexRoute.originIata) && (hexRoute == null ? void 0 : hexRoute.destIata) && (flighteraRoute == null ? void 0 : flighteraRoute.originIata) && (flighteraRoute == null ? void 0 : flighteraRoute.destIata) && (hexRoute.originIata !== flighteraRoute.originIata || hexRoute.destIata !== flighteraRoute.destIata)) {
-        parsed.routeWarning = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? "Flightera live preferred, HexDB divergent" : "HexDB preferred, Flightera divergent";
+        parsed.routeWarning = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? (0, import_lang.t)(config.contentLang, "routeFlighteraPreferred") : (0, import_lang.t)(config.contentLang, "routeHexdbPreferred");
         parsed.routeSource = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? "flightera-live-route-conflict-hexdb+airportjson" : "hexdb-route-verified-conflict+airportjson";
       } else if ((hexRoute == null ? void 0 : hexRoute.originIata) && (hexRoute == null ? void 0 : hexRoute.destIata)) {
-        parsed.routeWarning = flighteraRoute ? "HexDB + Flightera verified" : "HexDB route";
+        parsed.routeWarning = flighteraRoute ? (0, import_lang.t)(config.contentLang, "routeVerified") : (0, import_lang.t)(config.contentLang, "routeHexdbOnly");
         parsed.routeSource = flighteraRoute ? "hexdb-route+flightera-check+airportjson" : "hexdb-route+airportjson";
       } else {
-        parsed.routeWarning = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? "Live flight detected" : "";
+        parsed.routeWarning = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? (0, import_lang.t)(config.contentLang, "routeLiveDetected") : "";
         parsed.routeSource = (flighteraRoute == null ? void 0 : flighteraRoute.isLive) ? "flightera-plane-live-route+airportjson" : "flightera-plane-callsign-route+airportjson";
       }
       parsed.routeText = `${parsed.originIata} \u2192 ${parsed.destIata}`;
@@ -105,7 +106,7 @@ async function enrichFlightInfo(adapter, config, a, httpJson, httpText, logDebug
         parsed.originIata = fr24Live.originIata;
         parsed.destIata = fr24Live.destIata;
         parsed.routeReliable = true;
-        parsed.routeWarning = "FR24 live fallback";
+        parsed.routeWarning = (0, import_lang.t)(config.contentLang, "routeFr24LiveFallback");
         parsed.routeSource = "fr24-live-route+airportjson";
         parsed.routeText = `${parsed.originIata} \u2192 ${parsed.destIata}`;
         routeFound = true;
@@ -121,7 +122,7 @@ async function enrichFlightInfo(adapter, config, a, httpJson, httpText, logDebug
         parsed.originIata = adsbdbRoute.originIata;
         parsed.destIata = adsbdbRoute.destIata;
         parsed.routeReliable = true;
-        parsed.routeWarning = "ADSBDB Fallback";
+        parsed.routeWarning = (0, import_lang.t)(config.contentLang, "routeAdsbdbFallback");
         parsed.routeSource = "adsbdb-route-fallback+airportjson";
         parsed.routeText = `${parsed.originIata} \u2192 ${parsed.destIata}`;
         routeFound = true;
@@ -233,7 +234,7 @@ async function loadAdsbdbByCallsign(callsign, httpJson, logDebug, logWarn) {
       data: null
     };
     const message = errorText(e);
-    if (/HTTP 404 at/.test(message)) {
+    if (/HTTP (400|404) at/.test(message)) {
       logDebug(`ADSBDB not found for ${cs}: ${message}`);
     } else {
       logWarn(`ADSBDB error cached for ${cs}: ${message}`);
@@ -475,7 +476,7 @@ async function resolveRouteViaFlighteraPlane(registration, operationalCallsign, 
       }
     } catch (e) {
       const message = errorText(e);
-      if (/HTTP 404 at/.test(message)) {
+      if (/HTTP (400|404) at/.test(message)) {
         logDebug(`Flightera plane not found for ${cacheKey}: ${message}`);
       } else {
         logWarn(`Flightera plane error for ${cacheKey}: ${message}`);
@@ -772,7 +773,7 @@ async function resolveRouteViaFr24Live(operationalCallsign, mode, httpText, logD
       data: null
     };
     const message = errorText(e);
-    if (/HTTP 404 at/.test(message)) {
+    if (/HTTP (400|404) at/.test(message)) {
       logDebug(`FR24 live not found for ${op}: ${message}`);
     } else {
       logWarn(`FR24 live error cached for ${op}: ${message}`);
@@ -937,7 +938,7 @@ async function resolveImageViaFr24Aircraft(registration, operationalCallsign, ht
       imageUrl: ""
     };
     const message = errorText(e);
-    if (/HTTP 404 at/.test(message)) {
+    if (/HTTP (400|404) at/.test(message)) {
       logDebug(`FR24 image not found for ${reg}: ${message}`);
     } else {
       logWarn(`FR24 image error cached for ${reg}: ${message}`);
@@ -965,8 +966,7 @@ async function applyAirportNamesFromJson(adapter, config, parsed, logWarn) {
   return parsed;
 }
 async function cityNameFromIata(adapter, config, iata, logWarn) {
-  const lang = await getSystemLanguage(adapter);
-  const useGermanNames = lang.toLowerCase().startsWith("de");
+  const useGermanNames = config.contentLang === "de";
   const code = clean(iata).toUpperCase();
   if (!code) {
     return "";
@@ -1007,15 +1007,6 @@ async function cityNameFromIata(adapter, config, iata, logWarn) {
     return code;
   }
 }
-async function getSystemLanguage(adapter) {
-  var _a, _b;
-  try {
-    const obj = await adapter.getForeignObjectAsync("system.config");
-    return String(((_a = obj == null ? void 0 : obj.common) == null ? void 0 : _a.language) || ((_b = obj == null ? void 0 : obj.native) == null ? void 0 : _b.language) || "").trim();
-  } catch {
-    return "";
-  }
-}
 function makeUnknownAirportRoute(mode, parsed, config) {
   const A = config.airport.iata;
   if (mode === "TAKEOFF") {
@@ -1028,7 +1019,7 @@ function makeUnknownAirportRoute(mode, parsed, config) {
       routeText: `${A} \u2192 ?`,
       routeTextLong: "",
       routeReliable: false,
-      routeWarning: "Destination unknown",
+      routeWarning: (0, import_lang.t)(config.contentLang, "routeDestUnknown"),
       routeSource: "no-route"
     };
   }
@@ -1042,7 +1033,7 @@ function makeUnknownAirportRoute(mode, parsed, config) {
       routeText: `? \u2192 ${A}`,
       routeTextLong: "",
       routeReliable: false,
-      routeWarning: "Origin unknown",
+      routeWarning: (0, import_lang.t)(config.contentLang, "routeOriginUnknown"),
       routeSource: "no-route"
     };
   }
@@ -1053,7 +1044,7 @@ function makeUnknownAirportRoute(mode, parsed, config) {
     routeText: "",
     routeTextLong: "",
     routeReliable: false,
-    routeWarning: "Route unknown",
+    routeWarning: (0, import_lang.t)(config.contentLang, "routeUnknown"),
     routeSource: "no-route"
   };
 }

@@ -1,34 +1,8 @@
 {
   "common": {
     "name": "jetframe",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "news": {
-      "1.2.0": {
-        "en": "JetFrame now runs its own built-in web server for the user-facing pages (index.html, frame.html, heatmap.html, stats.html) - no external Simple-API adapter is required anymore. New `webPort` setting (default 8189). Simple-API config is now optional and only used for classic ioBroker VIS widget integration.",
-        "de": "JetFrame betreibt nun einen eigenen eingebauten Webserver für die benutzerseitigen Seiten (index.html, frame.html, heatmap.html, stats.html) - es wird kein externer Simple-API-Adapter mehr benötigt. Neue `webPort`-Einstellung (Standard 8189). Simple-API Config ist jetzt optional und wird nur für die klassische ioBroker VIS Widget-Integration verwendet.",
-        "ru": "JetFrame теперь запускает собственный встроенный веб-сервер для страниц, ориентированных на пользователя (index.html, frame.html, heatmap.html, stats.html) - внешний адаптер Simple-API больше не требуется. Новый параметр «webPort» (по умолчанию 8189). Конфигурация Simple-API теперь опциональна и используется только для классической интеграции виджетов ioBroker VIS.",
-        "pt": "O JetFrame agora executa seu próprio servidor web integrado para as páginas voltadas para o usuário (index.html, frame.html, heatmap.html, stats.html) - não é mais necessário um adaptador de API simples externo. Nova configuração 'webPort' (padrão 8189). A configuração simples de API agora é opcional e usada apenas para integração clássica de widgets ioBroker VIS.",
-        "nl": "JetFrame heeft nu zijn eigen ingebouwde webserver voor de gebruikersgerichte pagina's (index.html, frame.html, heatmap.html, stats.html) - er is geen externe Simple-API-adapter meer nodig. Nieuwe instelling voor webpoort (standaard 8189). Simple-API config is nu optioneel en alleen gebruikt voor klassieke ioBroker VIS widget integratie.",
-        "fr": "JetFrame gère désormais son propre serveur Web intégré pour les pages orientées vers l'utilisateur (index.html, frame.html, heatingmap.html, stats.html) - aucun adaptateur API simple externe n'est plus nécessaire. Nouveau réglage `webPort` (par défaut 8189). La configuration simple-API est désormais optionnelle et n'est utilisée que pour l'intégration classique du widget ioBroker VIS.",
-        "it": "JetFrame ora gestisce il proprio server web integrato per le pagine di interfaccia utente (index.html, frame.html, heatmap.html, stats.html) - non è più richiesto alcun adattatore esterno Simple-API. Nuova impostazione `webPort` (default 8189). Simple-API config è ora opzionale e utilizzato solo per l'integrazione dei widget ioBroker VIS classica.",
-        "es": "JetFrame ahora ejecuta su propio servidor web integrado para las páginas de usuario (index.html, frame.html, heatmap.html, statistics.html) - no se requiere ningún adaptador externo Simple-API. Nuevo \" webPort \" (predeterminado 8189). Simple-API config es ahora opcional y sólo se utiliza para la integración clásica del widget ioBroker VIS.",
-        "pl": "JetFrame teraz uruchamia swój własny built- w serwerze internetowym dla stron zwróconych do użytkownika (index.html, frame.html, heatmap.html, stats.html) - nie jest już wymagany zewnętrzny adapter Simple- API. Nowe ustawienie 'webPort' (domyślnie 8189). Simplemen- API config jest teraz opcjonalne i używane tylko do klasycznej integracji widżetu iBroker VIS.",
-        "uk": "JetFrame тепер працює свій власний вбудований веб-сервер для сторінок користувача (index.html, Frame.html, heatmap.html, stats.html) - немає зовнішнього адаптера Simple-API. Нове налаштування `webPort` (default 8189). Simple-API config тепер необов'язково і використовується тільки для класичної інтеграції віджетів ioBroker VIS.",
-        "zh-cn": "JetFrame现在运行自己的内置网页服务器,用于用户造型页面(index.html,frame.html,heatmap.html,stats.html) - 不再需要外部的简单-API适配器. 新建“webPort”设置(默认为8189). 简单的API配置现在是可选的,只用于经典的ioBroker ViS部件集成."
-      },
-      "1.1.0": {
-        "en": "Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup",
-        "de": "Volle englische Lokalisierung (Logs, Zustandswerte, Web-Benutzeroberfläche), Button-Rolle-Fix (read=false), Intervallvalidierung, Bild-Cache-Größenbegrenzung, Wiederherstellung der Admin-Einstellungsseite, verwaiste statische Dateibereinigung",
-        "ru": "Полная локализация на английском языке (логи, значения состояния, веб-интерфейс), исправление роли кнопки (read=false), проверка интервала, ограничение размера кэша изображения, восстановленная страница настроек администратора, осиротевшая статическая очистка файлов",
-        "pt": "Localização completa em inglês (logs, valores de estado, UI web), correção de função de botão (leia=false), validação de intervalo, limite de tamanho de cache de imagem, página de configurações de administrador restaurada, limpeza de arquivos estáticos órfão",
-        "nl": "Volledige Engelse localisatie (logs, status waarden, web UI), knop role fix (read=false), interval validatie, afbeelding cache grootte limiet, herstelde admin instellingen pagina, wees statische bestand opruimen",
-        "fr": "Localisation complète en anglais (logs, valeurs d'état, interface utilisateur web), correction de rôle par bouton (lecture=false), validation de l'intervalle, limite de taille du cache d'image, page de paramètres d'administration restaurée, nettoyage de fichiers statiques orphelins",
-        "it": "Localizzazione completa in inglese (log, valori di stato, web UI), correzione del ruolo del pulsante (read=false), validazione dell'intervallo, limite di dimensione della cache delle immagini, pagina delle impostazioni di amministratore ripristinate, pulizia dei file statici orfani",
-        "es": "Localización completa en inglés (logs, state values, web UI), fijación de funciones (read=false), validación de intervalos, límite de tamaño de la imagen, página de configuración de administración restaurada, limpieza de archivos estáticos huérfanos",
-        "pl": "Pełna angielska lokalizacja (logi, wartości stanu, Interfejs WWW), poprawianie funkcji przycisku (read = false), walidacja interwałów, ograniczenie rozmiaru pamięci podręcznej obrazu, przywrócona strona ustawień administratora, osierocony statyczny czyszczenie pliku",
-        "uk": "Повна англійська локалізація (логи, державні цінності, веб UI), кнопка роль виправлення (читати=false), інтервальна перевірка, обмеження розміру зображень, відновлена сторінка налаштувань адміністратора, очищення статичного файлу",
-        "zh-cn": "完全英语本地化(logs, state value,web UI),按钮角色固定(read=false),间隔验证,图像缓存大小限制,恢复的admin设置页面,孤儿静态文件清理"
-      },
       "1.0.7": {
         "en": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
         "de": "Bugfix-Release: Build-Ausgabe wird nun im Repository versioniert (vom ioBroker-Repo-Checker gefordert), CHANGELOG_OLD.md für ältere Changelog-Einträge hinzugefügt.",
@@ -144,7 +118,7 @@
     ],
     "globalDependencies": [
       {
-        "admin": ">=7.8.23"
+        "admin": ">=7.6.20"
       }
     ]
   },
@@ -179,6 +153,8 @@
     "simpleApiHost": "",
     "simpleApiPort": 8087,
     "visualSource": "current",
+    "webPort": 8189,
+    "webLanguage": "auto",
     "externalManufacturerLogos": false,
     "manufacturerLogoUrls": "",
     "externalAirlineLogos": false,
@@ -192,8 +168,7 @@
     "emergencyPriorityEnabled": true,
     "emergencySquawk7500": true,
     "emergencySquawk7600": true,
-    "emergencySquawk7700": true,
-    "webPort": 8189
+    "emergencySquawk7700": true
   },
   "objects": [],
   "instanceObjects": []

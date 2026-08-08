@@ -2,6 +2,7 @@ import type { AdapterLike } from './types';
 import * as fs from 'node:fs';
 import * as http from 'node:http';
 import * as path from 'node:path';
+import { applyWebTranslations, type WebLang } from './webI18n';
 
 // Static files served to the browser. Only these exact files are ever
 // served - nothing else on disk is reachable through this server.
@@ -68,6 +69,7 @@ export interface JetFrameWebConfig {
 	dpRoot: string;
 	webPort: number;
 	visualSource: 'current' | 'airport' | 'overflight';
+	webLang: WebLang;
 }
 
 async function handleRequest(
@@ -94,17 +96,47 @@ async function handleRequest(
 	const staticEntry = STATIC_FILES[pathname];
 
 	if (staticEntry) {
-		serveStaticFile(adapter, staticDir, staticEntry, res);
+		serveStaticFile(adapter, staticDir, staticEntry, config.webLang, res);
+		return;
+	}
+
+	if (pathname.startsWith('/img/')) {
+		await serveCachedFile(adapter, pathname.slice(1), res);
 		return;
 	}
 
 	sendText(res, 404, 'Not found');
 }
 
+/**
+ * Serves images/logos that were cached at runtime into ioBroker's own file
+ * storage (jetframe.admin namespace) by images.ts - these are not part of
+ * the on-disk admin/ folder, so they need a separate read path.
+ */
+async function serveCachedFile(adapter: AdapterLike, relPath: string, res: http.ServerResponse): Promise<void> {
+	try {
+		const result = await adapter.readFileAsync('jetframe.admin', relPath);
+		const buffer = Buffer.isBuffer(result)
+			? result
+			: Buffer.isBuffer(result?.file)
+				? result.file
+				: Buffer.from(result?.file ?? result);
+		const contentType =
+			result?.mimeType ||
+			(relPath.endsWith('.png') ? 'image/png' : relPath.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg');
+
+		res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-store' });
+		res.end(buffer);
+	} catch {
+		sendText(res, 404, 'Not found');
+	}
+}
+
 function serveStaticFile(
 	adapter: AdapterLike,
 	staticDir: string,
 	entry: { file: string; contentType: string },
+	webLang: WebLang,
 	res: http.ServerResponse,
 ): void {
 	const filePath = path.join(staticDir, entry.file);
@@ -117,7 +149,12 @@ function serveStaticFile(
 		}
 
 		res.writeHead(200, { 'Content-Type': entry.contentType, 'Cache-Control': 'no-store' });
-		res.end(data);
+
+		if (entry.file.endsWith('.html')) {
+			res.end(applyWebTranslations(data.toString('utf8'), webLang));
+		} else {
+			res.end(data);
+		}
 	});
 }
 

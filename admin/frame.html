@@ -24,17 +24,17 @@
 	<div id="app">
 		<div id="wall" class="jf-shell">
 			<div class="header">
-				<a class="backBtn headerBack" href="index.html" aria-label="Back">‹</a>
+				<a class="backBtn headerBack" href="index.html" aria-label="{{t.back}}">‹</a>
 
 				<div class="headerTitleBlock">
 					<div class="title">✈️ JetFrame</div>
-					<div id="frameDateText" class="sub">Heute</div>
+					<div id="frameDateText" class="sub">{{t.today}}</div>
 				</div>
 
 				<div class="frameHeaderActions">
 					<!-- toggleBtn intentionally hidden via CSS (jfHiddenToggle) -->
 					<button id="toggleBtn" class="toggleBtn on jfHiddenToggle" type="button" aria-hidden="true">ON</button>
-					<button id="speechBtn" class="toggleBtn speechBtn" type="button" aria-label="Speech output">🔇</button>
+					<button id="speechBtn" class="toggleBtn speechBtn" type="button" aria-label="{{t.speechOutput}}">🔇</button>
 					<div class="livePill frameLivePill" aria-label="Live">
 						<span class="dot" aria-hidden="true"></span>
 						<span>Live</span>
@@ -53,7 +53,7 @@
 						<div class="idleFlyers" aria-hidden="true">
 							<span>✈️</span><span>🛫</span><span>🛬</span>
 						</div>
-						<div class="idleText">Waiting for flight</div>
+						<div class="idleText">{{t.waitingForFlight}}</div>
 					</div>
 				</div>
 
@@ -62,7 +62,7 @@
 				</div>
 
 				<section class="info">
-					<div id="mode" class="mode">Flight</div>
+					<div id="mode" class="mode">{{t.flight}}</div>
 
 					<div class="flightInfoPillRow">
 						<div id="windowInfo" class="windowInfo side">
@@ -109,7 +109,7 @@
 				<div class="metrics">
 					<div class="metric">
 						<div id="altitude" class="metricValue">–</div>
-						<div class="metricLabel">ALTITUDE FT</div>
+						<div class="metricLabel">{{t.altitudeFt}}</div>
 					</div>
 					<div class="metric">
 						<div id="speed" class="metricValue">–</div>
@@ -121,7 +121,7 @@
 					</div>
 					<div class="metric">
 						<div id="track" class="metricValue">–</div>
-						<div class="metricLabel">KURS</div>
+						<div class="metricLabel">{{t.heading}}</div>
 					</div>
 				</div>
 
@@ -132,7 +132,7 @@
 					<div class="jfSwitchPlane jfSwitchPlaneC" aria-hidden="true">🛬</div>
 					<div class="jfSwitchPlane jfSwitchPlaneD" aria-hidden="true">✈️</div>
 					<div class="jfSwitchText">
-						<div class="jfSwitchLabel">Next Flight</div>
+						<div class="jfSwitchLabel">{{t.nextFlight}}</div>
 						<div id="jfSwitchRoute" class="jfSwitchRoute">—</div>
 					</div>
 				</div>
@@ -178,8 +178,10 @@
 
 <script>
 'use strict';
+window.T = {{T_JSON}};
+const SPEECH_LOCALE = document.documentElement.lang === 'de' ? 'de-DE' : 'en-US';
 
-/* ── Konfiguration ───────────────────────────────────────── */
+/* ── Configuration ──────────────────────────────────────── */
 
 const DP_ROOT = (() => {
 	const url = new URL(window.location.href);
@@ -373,7 +375,7 @@ function unlockSpeech() {
 	try {
 		if (!('speechSynthesis' in window)) return;
 		const u = new SpeechSynthesisUtterance(' ');
-		u.lang = 'de-DE'; u.volume = 0.01; u.rate = 1;
+		u.lang = SPEECH_LOCALE; u.volume = 0.01; u.rate = 1;
 		speechSynthesis.cancel();
 		speechSynthesis.speak(u);
 		speechUnlocked = true;
@@ -424,7 +426,7 @@ function speakFlight(text) {
 	try {
 		speechSynthesis.cancel();
 		const msg = new SpeechSynthesisUtterance(text);
-		msg.lang = 'de-DE'; msg.rate = 0.85; msg.pitch = 1.05; msg.volume = 1;
+		msg.lang = SPEECH_LOCALE; msg.rate = 0.85; msg.pitch = 1.05; msg.volume = 1;
 		speechSynthesis.speak(msg);
 	} catch (e) {}
 }
@@ -436,7 +438,7 @@ function setSpeechButton() {
 	if (!btn) return;
 	btn.textContent = speechEnabled ? '🔊' : '🔇';
 	btn.classList.toggle('on', speechEnabled);
-	btn.setAttribute('aria-label', speechEnabled ? 'Speech output on' : 'Speech output off');
+	btn.setAttribute('aria-label', T.speechOutput);
 }
 
 $('toggleBtn').addEventListener('click', async () => {
@@ -619,7 +621,7 @@ function render(s) {
 
 	/* ── No Flight ── */
 	if (!hasFlight) {
-		$('mode').textContent         = enabled ? '✈️ Waiting for flight' : '⏸️ JetFrame off';
+		$('mode').textContent         = enabled ? '✈️ ' + T.waitingForFlight : '⏸️ ' + T.jetframeOff;
 		$('windowInfo').style.display = 'none';
 
 		$('iataCallsign').textContent    = '—';
@@ -654,7 +656,7 @@ function render(s) {
 	const visibleCallsign = cleanValue(s.routeCallsign) || cleanValue(s.callsign) || '—';
 	const opCallsign      = cleanValue(s.operationalCallsign) || cleanValue(s.callsign) || '—';
 
-	$('mode').textContent = cleanValue(s.modeVisText) || '✈️ Flight';
+	$('mode').textContent = cleanValue(s.modeVisText) || '✈️ ' + T.flight;
 
 	renderWindow(s);
 	setRunwayInfo(cleanValue(s.probableRunwayText));
@@ -767,7 +769,7 @@ loadVisualConfig()
 
 	function wantedText() {
 		const d = new Date();
-		return 'Heute · ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) +
+		return T.today + ' · ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) +
 			' · ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
 	}
 
@@ -776,7 +778,7 @@ loadVisualConfig()
 		_busy = true;
 		const sub = document.querySelector('.header .sub, .header .frameTimeSub');
 		if (sub) {
-			sub.className = 'sub';
+			if (sub.className !== 'sub') sub.className = 'sub';
 			const text = wantedText();
 			if (sub.textContent !== text) sub.textContent = text;
 		}
@@ -784,7 +786,7 @@ loadVisualConfig()
 	}
 
 	applyHeaderSubline();
-	setInterval(applyHeaderSubline, 5000); // Reduziert von 1s auf 5s
+	setInterval(applyHeaderSubline, 5000); // Reduced from 1s to 5s
 
 	const target = document.querySelector('.header');
 	if (target) {
@@ -798,6 +800,7 @@ loadVisualConfig()
 <script>
 (function () {
 	const RE_DATE = /\b(\d{4})-(\d{2})-(\d{2})\b/g;
+	const RE_DATE_TEST = /\b(\d{4})-(\d{2})-(\d{2})\b/;
 
 	function fmtDateText(text) {
 		return String(text || '').replace(RE_DATE, '$3.$2.$1');
@@ -810,14 +813,14 @@ loadVisualConfig()
 		const nodes = [];
 		while (walker.nextNode()) nodes.push(walker.currentNode);
 		for (const n of nodes) {
-			if (!RE_DATE.test(n.nodeValue)) continue;
+			if (!RE_DATE_TEST.test(n.nodeValue)) continue;
 			const next = fmtDateText(n.nodeValue);
 			if (next !== n.nodeValue) n.nodeValue = next;
 		}
 	}
 
 	applyDateFormat();
-	setInterval(applyDateFormat, 5000); // Reduziert von 1s auf 5s
+	setInterval(applyDateFormat, 5000); // Reduced from 1s to 5s
 
 	const root = document.querySelector('.jf-shell, .card, .wall');
 	if (root) {

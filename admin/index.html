@@ -16,7 +16,7 @@
 <body class="jf-page-home">
 
 <div id="simpleApiWarning" class="simpleApiWarning">
-	⚠️ JetFrame server unreachable<br>
+	⚠️ {{t.serverUnreachable}}<br>
 </div>
 
 <div id="app">
@@ -24,15 +24,15 @@
 		<div class="hero">
 			<div class="logo">✈️</div>
 			<h1>JetFrame</h1>
-			<div class="sub">Your live flight radar for home</div>
-			<div id="statusText" class="statusPill">Connecting to JetFrame…</div>
+			<div class="sub">{{t.heroSub}}</div>
+			<div id="statusText" class="statusPill">{{t.statusConnecting}}</div>
 		</div>
 
 		<div class="buttons">
 			<div id="globalPowerBtn" class="powerBtn on" role="button" tabindex="0" aria-label="JetFrame on/off">
 				<div>
-					<div class="btnTitle">JetFrame active</div>
-					<div id="globalPowerSub" class="btnSub">Live detection is enabled</div>
+					<div class="btnTitle">{{t.jetframeActive}}</div>
+					<div id="globalPowerSub" class="btnSub">{{t.liveDetectionOn}}</div>
 				</div>
 				<div id="globalPowerState" class="powerBadge">ON</div>
 			</div>
@@ -40,8 +40,8 @@
 			<a id="frameLink" href="frame.html">
 				<div class="btn primary">
 					<div>
-						<div class="btnTitle">Live Frame</div>
-						<div class="btnSub">Show current aircraft</div>
+						<div class="btnTitle">{{t.navFrameTitle}}</div>
+						<div class="btnSub">{{t.navFrameSub}}</div>
 					</div>
 					<div class="arrow">›</div>
 				</div>
@@ -50,8 +50,8 @@
 			<a id="heatmapLink" href="heatmap.html">
 				<div class="btn heat">
 					<div>
-						<div class="btnTitle">Heatmap</div>
-						<div class="btnSub">Daily statistics & best spotting time</div>
+						<div class="btnTitle">{{t.navHeatmapTitle}}</div>
+						<div class="btnSub">{{t.navHeatmapSub}}</div>
 					</div>
 					<div class="arrow">›</div>
 				</div>
@@ -60,8 +60,8 @@
 			<a id="statsLink" href="stats.html">
 				<div class="btn">
 					<div>
-						<div class="btnTitle">Statistics</div>
-						<div class="btnSub">Yesterday, records & spotting times</div>
+						<div class="btnTitle">{{t.navStatsTitle}}</div>
+						<div class="btnSub">{{t.navStatsSub}}</div>
 					</div>
 					<div class="arrow">›</div>
 				</div>
@@ -71,24 +71,25 @@
 		<div class="statsRow">
 			<div class="statCard">
 				<div id="totalFlights" class="statVal">–</div>
-				<div class="statLabel">TODAY</div>
+				<div class="statLabel">{{t.statToday}}</div>
 			</div>
 			<div class="statCard">
 				<div id="currentHour" class="statVal">–</div>
-				<div class="statLabel">CURRENT</div>
+				<div class="statLabel">{{t.statCurrent}}</div>
 			</div>
 			<div class="statCard">
 				<div id="landings" class="statVal">–</div>
-				<div class="statLabel">LANDINGS</div>
+				<div class="statLabel">{{t.statLandings}}</div>
 			</div>
 		</div>
 
-		<div class="footer">JetFrame · Auto-refresh every 10 seconds</div>
+		<div class="footer">{{t.footer}}</div>
 	</div>
 </div>
 
 <script>
 'use strict';
+window.T = {{T_JSON}};
 
 const DP_ROOT = (() => {
 	const url = new URL(window.location.href);
@@ -147,9 +148,9 @@ function setGlobalPowerButton(enabled) {
 	btn.classList.toggle('on', !!enabled); btn.classList.toggle('off', !enabled);
 	btn.classList.toggle('off', !enabled);
 
-	if (title) title.textContent = enabled ? 'JetFrame active' : 'JetFrame paused';
+	if (title) title.textContent = enabled ? T.jetframeActive : T.jetframePaused;
 	if (state) state.textContent = enabled ? 'ON' : 'OFF';
-	if (sub) sub.textContent = enabled ? 'Live detection is enabled' : 'Live detection is paused';
+	if (sub) sub.textContent = enabled ? T.liveDetectionOn : T.liveDetectionOff;
 }
 
 function applyQueryLinks() {
@@ -178,9 +179,9 @@ async function poll() {
 	setGlobalPowerButton(clean(enabled) !== 'false');
 
 	const parts = [];
-	if (status) parts.push('Status: ' + status);
+	if (status) parts.push((T.statusLabel || 'Status') + ': ' + (T['status_' + status] || status));
 	if (runway) parts.push(runway);
-	if ($('statusText')) $('statusText').textContent = parts.length ? parts.join(' · ') : 'JetFrame ready';
+	if ($('statusText')) $('statusText').textContent = parts.length ? parts.join(' · ') : T.statusReady;
 }
 
 async function toggleGlobalPower() {
