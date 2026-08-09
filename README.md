@@ -147,6 +147,10 @@ This adapter is intended exclusively for private, informational, non-commercial 
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### 1.3.1 (2026-08-09)
+
+- (backfisch88) Fixed flicker on all web UI pages caused by redundant DOM writes on every poll cycle (most noticeable on the Live Frame page). Added mouse wheel and click-and-drag support for the heatmap hour scroller (previously touch-only). Fixed runway/window-position display logic that only recognized German words, breaking display in English mode.
+
 ### 1.3.0 (2026-08-08)
 
 - (backfisch88) Full bilingual support (English/German) for both the web UI and all dynamic flight/statistics text written to states, following a new `webLanguage` setting (auto/en/de). Adapter log messages remain English-only regardless of this setting, as required.
