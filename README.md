@@ -147,6 +147,10 @@ This adapter is intended exclusively for private, informational, non-commercial 
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (backfisch88) Translated the remaining hardcoded English hour-card badges (NOW/PEAK/HR) on the Heatmap page to follow the `webLanguage` setting.
+
 ### 1.3.1 (2026-08-09)
 
 - (backfisch88) Fixed flicker on all web UI pages caused by redundant DOM writes on every poll cycle (most noticeable on the Live Frame page). Added mouse wheel and click-and-drag support for the heatmap hour scroller (previously touch-only). Fixed runway/window-position display logic that only recognized German words, breaking display in English mode.
