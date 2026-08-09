@@ -114,7 +114,7 @@ function renderHours(hourly){
     const c=document.createElement('div');
     c.className='hourCard'+(k===nowH?' now':'')+(k===best&&v.total>0?' best':'');
     c.style.setProperty('--heat',heat.toFixed(2));
-    const badge=k===nowH?'NOW':(k===best&&v.total>0?'PEAK':'HR');
+    const badge=k===nowH?T.badgeNow:(k===best&&v.total>0?T.badgePeak:T.badgeHour);
     c.innerHTML='<div class="hourInner"><div class="hourTop"><div class="hour">'+k+':00</div><div class="badge">'+badge+'</div></div><div class="hourTotal">'+v.total+'</div><div class="hourSub">'+T.flightMovements+'</div><div class="bars"><div class="bar">🛬 '+v.landings+'</div><div class="bar">🛫 '+v.departures+'</div><div class="bar">🛩️ '+v.overflights+'</div></div></div>';
     f.appendChild(c);
   }
