@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "jetframe",
-    "version": "1.3.1",
+    "version": "1.3.2",
     "news": {
+      "1.3.2": {
+        "en": "Translated the remaining hardcoded English hour-card badges (NOW/PEAK/HR) on the Heatmap page to follow the `webLanguage` setting.",
+        "de": "Übersetzte die verbleibenden hartcodierten englischen Stundenkartenabzeichen (NOW/PEAK/HR) auf der Heatmap-Seite, um der Einstellung \"webLanguage\" zu folgen.",
+        "ru": "Перевел оставшиеся значки английской часовой карты с жесткой кодировкой (NOW/PEAK/HR) на странице Heatmap, чтобы следовать настройке «webLanguage».",
+        "pt": "Traduziu os restantes crachás em inglês de hora-cartão (NOW/PEAK/HR) na página de Mapa de calor para seguir a configuração 'webLanguage'.",
+        "nl": "Vertaalde de resterende hardgecodeerde Engelse uurkaart badges (NOW/PEAK/HR) op de Heatmap pagina om de instelling te volgen.",
+        "fr": "Traduit les autres badges de cartes d'heure en anglais codés en dur (NOW/PEAK/HR) sur la page Heatmap pour suivre le réglage `webLanguage`.",
+        "it": "Tradotto i rimanenti badge carta d'ora in inglese (NOW/PEAK/HR) sulla pagina Heatmap per seguire l'impostazione `webLanguage`.",
+        "es": "Tradujo las placas restantes de tarjetas de hora en inglés (NOW/PEAK/HR) en la página Heatmap para seguir el ajuste de `webLanguage`.",
+        "pl": "Przetłumaczył pozostałe zaszyfrowane znaczniki angielskiej karty godzinowej (TERAZ / PEAK / HR) na stronie Mapa Heatmap, aby śledzić ustawienie 'webLanguage'.",
+        "uk": "На сторінці \"Тепла карта\", щоб дотримуватися налаштування `webLanguage`.",
+        "zh-cn": "在Heatmap页面上翻译了其余硬码的英语时卡徽章(NOW/PEAK/HR),以遵循“webLanguage”设置."
+      },
       "1.0.7": {
         "en": "Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries.",
         "de": "Bugfix-Release: Build-Ausgabe wird nun im Repository versioniert (vom ioBroker-Repo-Checker gefordert), CHANGELOG_OLD.md für ältere Changelog-Einträge hinzugefügt.",

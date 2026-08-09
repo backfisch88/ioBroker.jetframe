@@ -25,3 +25,10 @@
 ### 0.1.0 (2026-02-01)
 
 - (backfisch88) Initial release
+## 1.0.7 (2026-06-23)
+
+- (backfisch88) Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries
+
+## 1.0.6 (2026-06-23)
+
+- (backfisch88) Bugfix release: removed invalid io-package.json schema property, translated README.md to English, removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay()

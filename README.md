@@ -147,7 +147,7 @@ This adapter is intended exclusively for private, informational, non-commercial 
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
-### **WORK IN PROGRESS**
+### 1.3.2 (2026-08-09)
 
 - (backfisch88) Translated the remaining hardcoded English hour-card badges (NOW/PEAK/HR) on the Heatmap page to follow the `webLanguage` setting.
 
@@ -171,14 +171,6 @@ This adapter is intended exclusively for private, informational, non-commercial 
 ### 1.1.0 (2026-08-07)
 
 - (backfisch88) Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup
-
-### 1.0.7 (2026-06-23)
-
-- (backfisch88) Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries
-
-### 1.0.6 (2026-06-23)
-
-- (backfisch88) Bugfix release: removed invalid io-package.json schema property, translated README.md to English, removed the last plain setTimeout()-based fallback in favor of mandatory adapter-managed delay()
 
 Older entries can be found in [CHANGELOG_OLD.md](CHANGELOG_OLD.md).
 
