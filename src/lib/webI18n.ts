@@ -43,6 +43,7 @@ export const WEB_TRANSLATIONS: Record<WebLang, Record<string, string>> = {
 		nextFlight: 'Next Flight',
 		altitudeFt: 'ALTITUDE FT',
 		heading: 'HEADING',
+		registration: 'Reg.',
 		speechOutput: 'Speech output',
 		back: 'Back',
 
@@ -111,6 +112,7 @@ export const WEB_TRANSLATIONS: Record<WebLang, Record<string, string>> = {
 		nextFlight: 'Nächster Flug',
 		altitudeFt: 'HÖHE FT',
 		heading: 'KURS',
+		registration: 'Kennz.',
 		speechOutput: 'Sprachausgabe',
 		back: 'Zurück',
 

@@ -99,6 +99,12 @@ const DP_ROOT = (() => {
 
 function $(id) { return document.getElementById(id); }
 
+function setText(el, text) {
+	if (!el) return;
+	const str = String(text);
+	if (el.textContent !== str) el.textContent = str;
+}
+
 function clean(v) {
 	if (v === null || v === undefined) return '';
 	v = String(v).trim();
@@ -148,9 +154,9 @@ function setGlobalPowerButton(enabled) {
 	btn.classList.toggle('on', !!enabled); btn.classList.toggle('off', !enabled);
 	btn.classList.toggle('off', !enabled);
 
-	if (title) title.textContent = enabled ? T.jetframeActive : T.jetframePaused;
-	if (state) state.textContent = enabled ? 'ON' : 'OFF';
-	if (sub) sub.textContent = enabled ? T.liveDetectionOn : T.liveDetectionOff;
+	if (title) setText(title, enabled ? T.jetframeActive : T.jetframePaused);
+	if (state) setText(state, enabled ? 'ON' : 'OFF');
+	if (sub) setText(sub, enabled ? T.liveDetectionOn : T.liveDetectionOff);
 }
 
 function applyQueryLinks() {
@@ -172,16 +178,16 @@ async function poll() {
 		readState(DP_ROOT + '.idleRunwayText'),
 	]);
 
-	if ($('totalFlights')) $('totalFlights').textContent = Number(total  || 0);
-	if ($('currentHour'))  $('currentHour').textContent  = Number(current || 0);
-	if ($('landings'))     $('landings').textContent     = Number(landings || 0);
+	if ($('totalFlights')) setText($('totalFlights'), Number(total  || 0));
+	if ($('currentHour'))  setText($('currentHour'),  Number(current || 0));
+	if ($('landings'))     setText($('landings'),     Number(landings || 0));
 
 	setGlobalPowerButton(clean(enabled) !== 'false');
 
 	const parts = [];
 	if (status) parts.push((T.statusLabel || 'Status') + ': ' + (T['status_' + status] || status));
 	if (runway) parts.push(runway);
-	if ($('statusText')) $('statusText').textContent = parts.length ? parts.join(' · ') : T.statusReady;
+	if ($('statusText')) setText($('statusText'), parts.length ? parts.join(' · ') : T.statusReady);
 }
 
 async function toggleGlobalPower() {

@@ -266,6 +266,12 @@ let speechUnlocked  = false;
 
 function $(id) { return document.getElementById(id); }
 
+function setText(el, text) {
+	if (!el) return;
+	const str = String(text);
+	if (el.textContent !== str) el.textContent = str;
+}
+
 /* ── Server Warning ─────────────────────────────────────── */
 
 function setServerWarning(visible) {
@@ -526,18 +532,18 @@ function setRunwayInfo(text) {
 	text = cleanValue(text);
 
 	if (!text) {
-		el.textContent = '';
+		setText(el, '');
 		el.classList.remove('visible');
 		el.style.display = 'none';
 		return;
 	}
 
 	text = text
-		.replace(/vermutlich\s+/i, '')
-		.replace(/\s*[·|]\s*(Landung|Start|Traffic).*$/i, '')
+		.replace(/vermutlich\s+|probable\s+/i, '')
+		.replace(/\s*[·|]\s*(Landung|Start|Traffic|Landing|Takeoff|Überflug|Overflight).*$/i, '')
 		.trim();
 
-	el.textContent    = text;
+	setText(el, text);
 	el.style.display  = 'inline-flex';
 	requestAnimationFrame(() => el.classList.add('visible'));
 }
@@ -557,15 +563,15 @@ function renderWindow(s) {
 	el.classList.add(cls);
 
 	const cleanText = text.replace(/^[^a-zA-ZäöüÄÖÜß0-9]+\s*/u, '').trim();
-	if (textEl) textEl.textContent = cleanText;
-	else el.textContent = cleanText;
+	if (textEl) setText(textEl, cleanText);
+	else setText(el, cleanText);
 
 	if (arrow) {
 		const match = text.match(/(\d+(?:[.,]\d+)?)°/);
 		let deg = match ? (Number(String(match[1]).replace(',', '.')) || 0) : 0;
-		if (text.toLowerCase().includes('links')) deg = -Math.abs(deg);
-		else if (!text.toLowerCase().includes('rechts')) deg = 0;
-		arrow.textContent = '▲';
+		if (/links|left/i.test(text)) deg = -Math.abs(deg);
+		else if (!/rechts|right/i.test(text)) deg = 0;
+		setText(arrow, '▲');
 		arrow.style.transform = 'rotate(' + deg + 'deg)';
 	}
 }
@@ -576,12 +582,12 @@ function setIdleRunwayText(text) {
 	text = cleanValue(text);
 
 	if (!text) {
-		el.textContent = '';
+		setText(el, '');
 		el.classList.remove('visible');
 		return;
 	}
 
-	el.textContent = text;
+	setText(el, text);
 	el.classList.add('visible');
 }
 
@@ -601,7 +607,7 @@ function triggerFlyover() {
 function setEnabledButton(enabled) {
 	const btn = $('toggleBtn');
 	if (!btn) return;
-	btn.textContent = enabled ? 'ON' : 'OFF';
+	setText(btn, enabled ? 'ON' : 'OFF');
 	btn.classList.toggle('on', enabled);
 }
 
@@ -621,28 +627,28 @@ function render(s) {
 
 	/* ── No Flight ── */
 	if (!hasFlight) {
-		$('mode').textContent         = enabled ? '✈️ ' + T.waitingForFlight : '⏸️ ' + T.jetframeOff;
+		setText($('mode'), enabled ? '✈️ ' + T.waitingForFlight : '⏸️ ' + T.jetframeOff);
 		$('windowInfo').style.display = 'none';
 
-		$('iataCallsign').textContent    = '—';
-		$('operatorCallsign').textContent = '—';
-		$('routeCities').textContent     = '— → —';
-		$('routeCodes').textContent      = '— → —';
-		$('airline').textContent         = '—';
+		setText($('iataCallsign'), '—');
+		setText($('operatorCallsign'), '—');
+		setText($('routeCities'), '— → —');
+		setText($('routeCodes'), '— → —');
+		setText($('airline'), '—');
 		setAirlineLogo({});
-		$('aircraftTypeText').textContent = '—';
-		$('aircraftSize').textContent     = '—';
-		$('registration').textContent     = 'Kennzeichen: —';
+		setText($('aircraftTypeText'), '—');
+		setText($('aircraftSize'), '—');
+		setText($('registration'), T.registration + ': —');
 
 		const sp = $('special');
-		sp.textContent = '';
+		setText(sp, '');
 		sp.style.display = 'none';
 		sp.classList.remove('emergency');
 
-		$('altitude').textContent    = '–';
-		$('speed').textContent       = '–';
-		$('verticalRate').textContent = '–';
-		$('track').textContent       = '–';
+		setText($('altitude'), '–');
+		setText($('speed'), '–');
+		setText($('verticalRate'), '–');
+		setText($('track'), '–');
 
 		setManufacturerLogo({});
 		setImage($('planePhoto'), '', $('placeholder'));
@@ -656,36 +662,36 @@ function render(s) {
 	const visibleCallsign = cleanValue(s.routeCallsign) || cleanValue(s.callsign) || '—';
 	const opCallsign      = cleanValue(s.operationalCallsign) || cleanValue(s.callsign) || '—';
 
-	$('mode').textContent = cleanValue(s.modeVisText) || '✈️ ' + T.flight;
+	setText($('mode'), cleanValue(s.modeVisText) || '✈️ ' + T.flight);
 
 	renderWindow(s);
 	setRunwayInfo(cleanValue(s.probableRunwayText));
 
-	$('iataCallsign').textContent     = visibleCallsign;
-	$('operatorCallsign').textContent = opCallsign;
-	$('routeCities').textContent      = cleanValue(s.routeDisplayText) || '— → —';
-	$('routeCodes').textContent       = cleanValue(s.routeCodesText)   || '— → —';
-	$('airline').textContent          = cleanValue(s.airlineName)      || '—';
+	setText($('iataCallsign'), visibleCallsign);
+	setText($('operatorCallsign'), opCallsign);
+	setText($('routeCities'), cleanValue(s.routeDisplayText) || '— → —');
+	setText($('routeCodes'), cleanValue(s.routeCodesText) || '— → —');
+	setText($('airline'), cleanValue(s.airlineName) || '—');
 	setAirlineLogo(s);
 	setManufacturerLogo(s);
 
-	$('aircraftTypeText').textContent = cleanValue(s.aircraftTypeText) || '—';
-	$('aircraftSize').textContent     = cleanValue(s.aircraftSize)     || '—';
-	$('registration').textContent     = 'Kennzeichen: ' + (cleanValue(s.registration) || '—');
+	setText($('aircraftTypeText'), cleanValue(s.aircraftTypeText) || '—');
+	setText($('aircraftSize'), cleanValue(s.aircraftSize) || '—');
+	setText($('registration'), T.registration + ': ' + (cleanValue(s.registration) || '—'));
 
 	const emergencyText = cleanValue(s.emergencyText);
 	const special = emergencyText || cleanValue(s.specialLiveryVisText) || cleanValue(s.specialDisplayText);
 	const sp = $('special');
-	sp.textContent   = special ? '⭐ ' + special : '';
+	setText(sp, special ? '⭐ ' + special : '');
 	sp.style.display = special ? 'block' : 'none';
 	sp.classList.toggle('emergency', !!emergencyText);
 
-	$('altitude').textContent     = formatNumber(s.altitudeFt);
-	$('speed').textContent        = formatNumber(s.speedKt);
-	$('verticalRate').textContent = formatSigned(s.verticalRate);
+	setText($('altitude'), formatNumber(s.altitudeFt));
+	setText($('speed'), formatNumber(s.speedKt));
+	setText($('verticalRate'), formatSigned(s.verticalRate));
 
 	const trackVal = num(s.trackDeg);
-	$('track').textContent = trackVal ? Math.round(trackVal) + '°' : '–';
+	setText($('track'), trackVal ? Math.round(trackVal) + '°' : '–');
 
 	setImage(
 		$('planePhoto'),

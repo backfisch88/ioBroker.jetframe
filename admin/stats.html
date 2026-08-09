@@ -121,7 +121,13 @@ async function readAll(){
   return Object.fromEntries(await Promise.all(Object.entries(IDS).map(async([k,id])=>[k,await read(id)])));
 }
 
-function set(id,v){ const e=$(id); if(e)e.textContent=v; }
+function set(id,v){
+  const e=$(id);
+  if(!e) return;
+  const current = (e.dataset && e.dataset.jfRaw !== undefined) ? e.dataset.jfRaw : e.textContent;
+  if (current === v) return;
+  e.textContent = v;
+}
 
 function render(d){
   set('dateText', d.todayDate?T.today+' · '+d.todayDate:T.statsTitle);
@@ -175,8 +181,9 @@ setInterval(poll,10000);
 /* Date format */
 (function(){
   const RE=/\b(\d{4})-(\d{2})-(\d{2})\b/g;
+  const RE_TEST=/\b(\d{4})-(\d{2})-(\d{2})\b/;
   function fmt(t){return String(t||'').replace(RE,'$3.$2.$1');}
-  function apply(){const root=document.querySelector('.jf-shell');if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const ns=[];while(w.nextNode())ns.push(w.currentNode);for(const n of ns){if(!RE.test(n.nodeValue))continue;const nx=fmt(n.nodeValue);if(nx!==n.nodeValue)n.nodeValue=nx;}}
+  function apply(){const root=document.querySelector('.jf-shell');if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const ns=[];while(w.nextNode())ns.push(w.currentNode);for(const n of ns){if(!RE_TEST.test(n.nodeValue))continue;const nx=fmt(n.nodeValue);if(nx!==n.nodeValue)n.nodeValue=nx;}}
   apply();setInterval(apply,5000);
   const r=document.querySelector('.jf-shell');if(r)new MutationObserver(apply).observe(r,{childList:true,subtree:true,characterData:true});
 })();
