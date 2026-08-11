@@ -25,6 +25,10 @@
 ### 0.1.0 (2026-02-01)
 
 - (backfisch88) Initial release
+## 1.1.0 (2026-08-07)
+
+- (backfisch88) Full English localization (logs, state values, web UI), button role fix (read=false), interval validation, image cache size limit, restored admin settings page, orphaned static file cleanup
+
 ## 1.0.7 (2026-06-23)
 
 - (backfisch88) Bugfix release: build output is now committed to the repository (required by the ioBroker repo-checker), added CHANGELOG_OLD.md for older changelog entries
