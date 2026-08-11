@@ -121,12 +121,37 @@ async function readAll(){
   return Object.fromEntries(await Promise.all(Object.entries(IDS).map(async([k,id])=>[k,await read(id)])));
 }
 
+const SPLIT_IDS = new Set(['yesterdayDetails', 'alltimeAirlines', 'alltimeRoutes']);
+
+function escHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 function set(id,v){
   const e=$(id);
   if(!e) return;
-  const current = (e.dataset && e.dataset.jfRaw !== undefined) ? e.dataset.jfRaw : e.textContent;
-  if (current === v) return;
-  e.textContent = v;
+  const str = String(v);
+
+  if (SPLIT_IDS.has(id)) {
+    if (e.dataset.jfRaw === str) return;
+    e.dataset.jfRaw = str;
+
+    const panel = e.closest('.panel');
+    const lines = str.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+
+    if (!str || str === '–' || str === '-' || lines.length < 2) {
+      panel?.classList.remove('jf-split-panel');
+      if (e.textContent !== str) e.textContent = str;
+      return;
+    }
+
+    panel?.classList.add('jf-split-panel');
+    const html = lines.map(l => '<span class="jf-line">'+escHtml(l)+'</span>').join('');
+    if (e.innerHTML !== html) e.innerHTML = html;
+    return;
+  }
+
+  const current = e.textContent;
+  if (current === str) return;
+  e.textContent = str;
 }
 
 function render(d){
@@ -186,32 +211,6 @@ setInterval(poll,10000);
   function apply(){const root=document.querySelector('.jf-shell');if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const ns=[];while(w.nextNode())ns.push(w.currentNode);for(const n of ns){if(!RE_TEST.test(n.nodeValue))continue;const nx=fmt(n.nodeValue);if(nx!==n.nodeValue)n.nodeValue=nx;}}
   apply();setInterval(apply,5000);
   const r=document.querySelector('.jf-shell');if(r)new MutationObserver(apply).observe(r,{childList:true,subtree:true,characterData:true});
-})();
-</script>
-
-<script>
-/* Split panel 2-column layout for ranking text */
-(function(){
-  function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function isSplit(p){const t=(p.querySelector('h3')?.textContent||'').toLowerCase();return t.includes('yesterday')||t.includes('top airlines')||t.includes('top routes');}
-  function doOne(p){
-    const pre=p.querySelector('pre'); if(!pre||!isSplit(p))return;
-    // capture raw text before first split
-    if(pre.dataset.jfRaw===undefined) pre.dataset.jfRaw=pre.textContent||'';
-    // if render() updated textContent, capture it
-    else if(!pre.querySelector('.jf-line')) pre.dataset.jfRaw=pre.textContent||'';
-    const raw=(pre.dataset.jfRaw||'').trim();
-    if(!raw||raw==='–'||raw==='-'){p.classList.remove('jf-split-panel');return;}
-    const lines=raw.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-    if(lines.length<2)return;
-    p.classList.add('jf-split-panel');
-    const html=lines.map(l=>'<span class="jf-line">'+esc(l)+'</span>').join('');
-    if(pre.innerHTML!==html)pre.innerHTML=html;
-  }
-  function all(){document.querySelectorAll('.panel').forEach(doOne);}
-  let t=null;
-  new MutationObserver(()=>{clearTimeout(t);t=setTimeout(all,30);}).observe(document.body,{childList:true,subtree:true,characterData:true});
-  all();
 })();
 </script>
 

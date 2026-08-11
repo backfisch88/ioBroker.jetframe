@@ -921,6 +921,7 @@ body.jf-page-heatmap .jf-shell {
   cursor: grab;
 }
 .scroller.dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+.scroller.wheeling { scroll-snap-type: none; }
 .scroller::-webkit-scrollbar { display: none; }
 
 .hourCard {
@@ -1114,6 +1115,10 @@ body.jf-page-stats .panel pre {
   row-gap: 2px;
   white-space: normal;
 }
+#alltimeAirlines, #alltimeRoutes {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(5, auto);
+}
 .panel.jf-split-panel pre .jf-line {
   display: block;
   min-width: 0;
@@ -1257,7 +1262,7 @@ body.jf-page-stats .panel pre {
   body.jf-page-stats .stat { min-height: 0; }
 }
 
-/* Schmale Geräte im Hochformat: Heatmap-Stats und Stats-Grid auf 2 Spalten */
+/* Narrow devices in portrait: Heatmap-Stats and Stats-Grid use 2 columns */
 @media (orientation: portrait) and (max-width: 600px) {
   body.jf-page-heatmap .hmStats { grid-template-columns: repeat(2, 1fr); }
   body.jf-page-stats .grid      { grid-template-columns: repeat(2, 1fr); }

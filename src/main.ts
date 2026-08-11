@@ -910,7 +910,7 @@ class Jetframe extends utils.Adapter {
 		const limitedHistory = [entry, ...history.filter(item => this.clean(item?.date) !== storedDate)].slice(0, 365);
 
 		const historyText = limitedHistory
-			.slice(0, 14)
+			.slice(0, 5)
 			.map(item => {
 				const best = item.bestHour ? ` · ${t(this.contentLang, 'bestTime')} ${item.bestHour}` : '';
 				const special = Number(item.specialLiveryCount || 0) > 0 ? ` · ⭐ ${item.specialLiveryCount}` : '';
@@ -992,7 +992,7 @@ class Jetframe extends utils.Adapter {
 		);
 		await this.setForeignStateAsync(
 			`${base}.alltime.airlineRankingText`,
-			this.topRankingText(alltimeAirlineSorted, 8),
+			this.topRankingText(alltimeAirlineSorted, 10),
 			true,
 		);
 		await this.setForeignStateAsync(
@@ -1002,7 +1002,7 @@ class Jetframe extends utils.Adapter {
 		);
 		await this.setForeignStateAsync(
 			`${base}.alltime.routeRankingText`,
-			this.topRankingText(alltimeRouteSorted, 8),
+			this.topRankingText(alltimeRouteSorted, 10),
 			true,
 		);
 
@@ -1330,7 +1330,7 @@ class Jetframe extends utils.Adapter {
 		const origin = this.clean(a.originIata || '');
 		const dest = this.clean(a.destIata || '');
 
-		// Route nur verwenden, wenn Start UND Ziel bekannt sind.
+		// Only use the route if both origin AND destination are known.
 		// Incomplete routes like "? → FRA" or "FCO → ?" are ignored.
 		const route = origin && dest ? `${origin} → ${dest}` : '';
 

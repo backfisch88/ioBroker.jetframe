@@ -155,10 +155,16 @@ setInterval(poll,10000);
   const sc = $('hourScroller');
   if (!sc) return;
 
+  let wheelTimer = null;
+
   sc.addEventListener('wheel', e => {
     if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    sc.classList.add('wheeling');
     sc.scrollLeft += e.deltaY;
     e.preventDefault();
+
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(() => sc.classList.remove('wheeling'), 150);
   }, { passive: false });
 
   let dragging = false, startX = 0, startScroll = 0;

@@ -147,6 +147,10 @@ This adapter is intended exclusively for private, informational, non-commercial 
     Placeholder for the next version (at the beginning of the line):
     ### **WORK IN PROGRESS**
 -->
+### **WORK IN PROGRESS**
+
+- (backfisch88) Fixed a flicker regression on the Statistics page (Yesterday/Top Airlines/Top Routes panels) caused by two competing DOM-update mechanisms; unified into a single, race-free update path. Reduced daily history to 5 entries and expanded alltime airline/route rankings to top 10 with column-fill layout. Fixed intermittent mouse-wheel scrolling on the Heatmap hour scroller (scroll-snap was fighting small wheel deltas).
+
 ### 1.3.2 (2026-08-09)
 
 - (backfisch88) Translated the remaining hardcoded English hour-card badges (NOW/PEAK/HR) on the Heatmap page to follow the `webLanguage` setting.

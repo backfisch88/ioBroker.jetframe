@@ -1460,9 +1460,9 @@ async function cityNameFromIata(
 			return code;
 		}
 
-		// municipality bevorzugen:
-		// IAD => Washington statt Dulles
-		// CDG => Paris statt Roissy
+		// Prefer municipality:
+		// IAD => Washington instead of Dulles
+		// CDG => Paris instead of Roissy
 
 		const cityDe = clean(found.city_DE);
 

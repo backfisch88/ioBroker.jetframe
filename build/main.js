@@ -695,7 +695,7 @@ class Jetframe extends utils.Adapter {
       specialLiveryCount
     };
     const limitedHistory = [entry, ...history.filter((item) => this.clean(item == null ? void 0 : item.date) !== storedDate)].slice(0, 365);
-    const historyText = limitedHistory.slice(0, 14).map((item) => {
+    const historyText = limitedHistory.slice(0, 5).map((item) => {
       const best = item.bestHour ? ` \xB7 ${(0, import_lang.t)(this.contentLang, "bestTime")} ${item.bestHour}` : "";
       const special = Number(item.specialLiveryCount || 0) > 0 ? ` \xB7 \u2B50 ${item.specialLiveryCount}` : "";
       const heavy = Number(item.heavyAircraftCount || 0) > 0 ? ` \xB7 Heavy ${item.heavyAircraftCount}` : "";
@@ -758,7 +758,7 @@ class Jetframe extends utils.Adapter {
     );
     await this.setForeignStateAsync(
       `${base}.alltime.airlineRankingText`,
-      this.topRankingText(alltimeAirlineSorted, 8),
+      this.topRankingText(alltimeAirlineSorted, 10),
       true
     );
     await this.setForeignStateAsync(
@@ -768,7 +768,7 @@ class Jetframe extends utils.Adapter {
     );
     await this.setForeignStateAsync(
       `${base}.alltime.routeRankingText`,
-      this.topRankingText(alltimeRouteSorted, 8),
+      this.topRankingText(alltimeRouteSorted, 10),
       true
     );
     await this.setForeignStateAsync(
