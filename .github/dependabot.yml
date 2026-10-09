@@ -29,7 +29,5 @@ updates:
       cron: '32 3 * * 2'
       timezone: 'Europe/Berlin'
     open-pull-requests-limit: 15
-    cooldown:
-      default: 7
     assignees:
       - 'backfisch88'
