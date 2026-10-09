@@ -17,14 +17,6 @@ updates:
     assignees:
       - 'backfisch88'
     versioning-strategy: 'increase'
-    ignore:
-      - dependency-name: '@types/node'
-        update-types:
-          - 'version-update:semver-major'
-
-      - dependency-name: '*'
-        update-types:
-          - 'version-update:semver-major'
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
@@ -34,7 +26,3 @@ updates:
     open-pull-requests-limit: 15
     assignees:
       - 'backfisch88'
-    ignore:
-      - dependency-name: '*'
-        update-types:
-          - 'version-update:semver-major'
