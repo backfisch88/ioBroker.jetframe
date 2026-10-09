@@ -9,7 +9,7 @@ updates:
     directory: '/'
     schedule:
       interval: 'cron'
-      cron: '17 3 * * 2'
+      cronjob: '17 3 * * 2'
       timezone: 'Europe/Berlin'
     open-pull-requests-limit: 15
     cooldown:
@@ -21,7 +21,7 @@ updates:
     directory: '/'
     schedule:
       interval: 'cron'
-      cron: '32 3 * * 2'
+      cronjob: '32 3 * * 2'
       timezone: 'Europe/Berlin'
     open-pull-requests-limit: 15
     assignees:
