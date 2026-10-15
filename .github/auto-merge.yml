@@ -3,3 +3,6 @@
 
 - match:
     update_type: 'semver:minor'
+
+- match:
+    update_type: 'semver:patch'

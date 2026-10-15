@@ -4,24 +4,33 @@
 # Reference: https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
 version: 2
 updates:
-
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: 'cron'
-      cronjob: '17 3 * * 2'
+      cron: '17 3 * * 2'
       timezone: 'Europe/Berlin'
     open-pull-requests-limit: 15
     cooldown:
-      default-days: 7
+      default: 7
     assignees:
       - 'backfisch88'
     versioning-strategy: 'increase'
+    ignore:
+      # Major updates of @types/node must match the minimum supported Node.js (22); never bump automatically.
+      - dependency-name: '@types/node'
+        update-types:
+          - 'version-update:semver-major'
+      # TypeScript 7 is not yet supported by typescript-eslint.
+      - dependency-name: 'typescript'
+        update-types:
+          - 'version-update:semver-major'
+
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
       interval: 'cron'
-      cronjob: '32 3 * * 2'
+      cron: '32 3 * * 2'
       timezone: 'Europe/Berlin'
     open-pull-requests-limit: 15
     assignees:
